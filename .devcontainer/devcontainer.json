@@ -1,0 +1,82 @@
+{
+    "name": "merkle-go",
+    "dockerComposeFile": [
+      "./docker-compose.yml"
+    ],
+    "service": "merkle-go",
+    "build": {
+      "shutdownAction": "none",
+      "args": {
+        "VARIANT": "1"
+      }
+    },
+    "runArgs": [
+      "--cap-add=SYS_PTRACE",
+      "--security-opt",
+      "seccomp=unconfined"
+    ],
+    "settings": {
+      "terminal.integrated.shell.linux": "/bin/bash",
+      "go.gopath": "/go",
+      "go.inferGopath": true,
+      "go.useLanguageServer": true,
+      "files.eol": "\n",
+      "remote.extensionKind": {
+        "ms-azuretools.vscode-docker": "workspace"
+      },
+      "editor.codeActionsOnSaveTimeout": 3000,
+      "[go]": {
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.organizeImports": true
+        },
+        "editor.snippetSuggestions": "none"
+      },
+      "[go.mod]": {
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.organizeImports": true
+        }
+      },
+      "gopls": {
+        "usePlaceholders": false,
+        "staticcheck": true
+      },
+      "go.autocompleteUnimportedPackages": true,
+      "go.gotoSymbol.includeImports": true,
+      "go.gotoSymbol.includeGoroot": true,
+      "go.lintTool": "golangci-lint",
+      "go.buildOnSave": "workspace",
+      "go.lintOnSave": "workspace",
+      "go.vetOnSave": "workspace",
+      "editor.formatOnSave": true,
+      "go.toolsEnvVars": {
+        "GOFLAGS": "-tags=",
+        "CGO_ENABLED": 1
+      },
+      "gopls.env": {
+        "GOFLAGS": "-tags="
+      },
+      "go.testEnvVars": {
+        "": ""
+      },
+      "go.testFlags": [
+        "-v",
+        "-race"
+      ],
+      "go.testTimeout": "10s",
+      "go.coverOnSingleTest": true,
+      "go.coverOnSingleTestFile": true
+    },
+    "extensions": [
+      "golang.Go"
+    ],
+    "forwardPorts": [
+      1317
+    ],
+    "postCreateCommand": "export PATH=\"$PATH:$GOPATH/bin\"",
+    "remoteUser": "vscode",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/home/vscode/go/src/github.com/ComposableFi/merkle-go,type=bind,consistency=delegated",
+    "workspaceFolder": "/home/vscode/go/src/github.com/ComposableFi/merkle-go"
+  }
+  

@@ -1,0 +1,44 @@
+version: "3.3"
+services:
+  merkle-go:
+    build: .
+    # networks:
+    #   - merkle-go-net
+    # ports:
+    #   - "8080:8080"
+    # expose:
+    #   - "8080"
+    volumes:
+      - "..:/home/vscode/go/src/github.com/ComposableFi/merkle-go:rw"
+      # Docker socket to access Docker server
+      # - /var/run/docker.sock:/var/run/docker.sock
+      # SSH directory
+      - ~/.ssh:/home/vscode/.ssh
+      - ~/.ssh:/root/.ssh
+      # Git config
+      - ~/.gitconfig:/home/vscode/.gitconfig
+      - ~/.gitconfig:/root/.gitconfig
+      # Kubernetes
+      # - ~/.kube:/home/districter/.kube
+      # - ~/.kube:/root/.kube
+      # VSCODE Extensions
+      - merkle-go-vscode-extensions:/home/vscode/.vscode-server/extensions
+      # And/or for VS Code Insiders
+      - merkle-go-vscode-extensions-insider:/home/vscode/.vscode-server-insiders/extensions
+    # environment:
+    # - TZ=
+    # cap_add:
+    # For debugging with dlv
+    # - SYS_PTRACE
+    # security_opt:
+    # For debugging with dlv
+    # - seccomp:unconfined
+    command: /bin/sh -c "while sleep 1000; do :; done"
+
+# networks:
+#   merkle-go-net:
+#     driver: bridge
+
+volumes:
+  merkle-go-vscode-extensions:
+  merkle-go-vscode-extensions-insider:

@@ -1,0 +1,20 @@
+repos:
+  - repo: git://github.com/pre-commit/pre-commit-hooks
+    rev: v4.0.1
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-json
+      - id: pretty-format-json
+        args: [--autofix, --indent=2, --no-sort-keys]
+  - repo: git://github.com/golangci/golangci-lint
+    rev: v1.43.0
+    hooks:
+      - id: golangci-lint
+  - repo: git://github.com/dnephin/pre-commit-golang
+    rev: v0.4.0
+    hooks:
+      - id: go-unit-tests
+      - id: go-build
+      - id: go-mod-tidy
