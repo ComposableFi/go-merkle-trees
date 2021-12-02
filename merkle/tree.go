@@ -7,42 +7,42 @@ import (
 )
 
 // BuildRoot builds the merkle root from a merkle tree
-func (mtree Tree) BuildRoot(leaves []uint64) uint64 {
+func (mtree Tree) BuildRoot(leaves []interface{}) interface{} {
 	if len(leaves) == 0 {
 		return 0
 	}
-	var queue []uint64
+	var queue []interface{}
 
 	for len(leaves) >= 2 {
-		var leaf1, leaf2 uint64
-		leaf1, leaf2, leaves = helpers.PopTwoElementsFromEndUint64Queue(leaves)
+		var leaf1, leaf2 interface{}
+		leaf1, leaf2, leaves = helpers.PopTwoElementsFromEndInterfaceQueue(leaves)
 
 		m := mtree.Merge.Merge(leaf1, leaf2)
 		queue = append(queue, m)
 	}
 	if len(leaves) == 1 {
 		leaf := leaves[0]
-		queue = append([]uint64{leaf}, queue...)
+		queue = append([]interface{}{leaf}, queue...)
 	}
 
 	for len(queue) > 1 {
-		var right, left uint64
-		right, queue = helpers.PopFromUint64Queue(queue)
-		left, queue = helpers.PopFromUint64Queue(queue)
+		var right, left interface{}
+		right, queue = helpers.PopFromInterfaceQueue(queue)
+		left, queue = helpers.PopFromInterfaceQueue(queue)
 		queue = append(queue, mtree.Merge.Merge(left, right))
 	}
 
-	res, _ := helpers.PopFromUint64Queue(queue)
+	res, _ := helpers.PopFromInterfaceQueue(queue)
 	return res
 }
 
 // BuildTree constructs merkle tree into the merkle
-func (mtree Tree) BuildTree(leaves []uint64) Tree {
+func (mtree Tree) BuildTree(leaves []interface{}) Tree {
 	leaveLen := len(leaves)
 
 	if leaveLen > 0 {
 
-		nodes := make([]uint64, leaveLen-1)
+		nodes := make([]interface{}, leaveLen-1)
 		nodes = append(nodes, leaves...)
 
 		for i := leaveLen - 2; 0 <= i; i-- {
@@ -60,24 +60,24 @@ func (mtree Tree) BuildTree(leaves []uint64) Tree {
 }
 
 // BuildProof builds the merkle proof by leaf index slice
-func (mtree Tree) BuildProof(leafIndices []uint64) (Proof, error) {
+func (mtree Tree) BuildProof(leafIndices []uint32) (Proof, error) {
 	if len(leafIndices) == 0 || len(mtree.Nodes) == 0 {
 		return Proof{Merge: mtree.Merge}, errors.New("empty nodes or indices not allowed")
 	}
 
-	leavesCount := uint64((len(mtree.Nodes) >> 1) + 1)
-	var indices []uint64
+	leavesCount := uint32((len(mtree.Nodes) >> 1) + 1)
+	var indices []uint32
 
 	for _, leafIdx := range leafIndices {
 		indices = append(indices, leavesCount+leafIdx-1)
 	}
-	helpers.ReverseSortUint64Slice(indices)
+	helpers.ReverseSortUint32Slice(indices)
 
 	if indices[0] >= (leavesCount<<1)-1 {
 		return Proof{Merge: mtree.Merge}, errors.New("first element of indices is not valid")
 	}
-	var lemmas []uint64
-	queue := append([]uint64{}, indices...)
+	var lemmas []interface{}
+	queue := append([]uint32{}, indices...)
 
 	for {
 
@@ -85,8 +85,8 @@ func (mtree Tree) BuildProof(leafIndices []uint64) (Proof, error) {
 			break
 		}
 
-		var idx uint64
-		idx, queue = helpers.PopFromUint64Queue(queue)
+		var idx uint32
+		idx, queue = helpers.PopFromUint32Queue(queue)
 
 		if idx == 0 {
 			if len(queue) != 0 {
@@ -97,7 +97,7 @@ func (mtree Tree) BuildProof(leafIndices []uint64) (Proof, error) {
 		sibling := helpers.GetSibling(idx)
 
 		if len(queue) > 0 && sibling == queue[0] {
-			_, queue = helpers.PopFromUint64Queue(queue)
+			_, queue = helpers.PopFromUint32Queue(queue)
 		} else {
 			lemmas = append(lemmas, mtree.Nodes[sibling])
 		}
@@ -107,7 +107,7 @@ func (mtree Tree) BuildProof(leafIndices []uint64) (Proof, error) {
 		}
 	}
 
-	helpers.SortUint64Slice(indices)
+	helpers.SortUint32Slice(indices)
 
 	return Proof{
 		Indices: indices,
@@ -118,12 +118,12 @@ func (mtree Tree) BuildProof(leafIndices []uint64) (Proof, error) {
 }
 
 // BuildTreeAndProof builds merkle proof from the tree and leaves
-func (mtree Tree) BuildTreeAndProof(leaves []uint64, leafIndices []uint64) (Proof, error) {
+func (mtree Tree) BuildTreeAndProof(leaves []interface{}, leafIndices []uint32) (Proof, error) {
 	return mtree.BuildTree(leaves).BuildProof(leafIndices)
 }
 
 // GetRoot returns the root value of merkle tree
-func (mtree Tree) GetRoot() uint64 {
+func (mtree Tree) GetRoot() interface{} {
 	if len(mtree.Nodes) == 0 {
 		return 0
 	}

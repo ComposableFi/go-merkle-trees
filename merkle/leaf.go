@@ -5,7 +5,7 @@ import (
 )
 
 // MapIndiceAndLeaves maps the indices and leaves of a tree
-func MapIndiceAndLeaves(indices, leaves []uint64) (result []LeafIndex) {
+func MapIndiceAndLeaves(indices []uint32, leaves []interface{}) (result []LeafIndex) {
 	for i, idx := range indices {
 		leaf := leaves[i]
 		result = append(result, LeafIndex{Index: idx, Leaf: leaf})

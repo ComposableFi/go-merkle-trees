@@ -8,22 +8,22 @@ import (
 )
 
 func TestRebuildProof(t *testing.T) {
-	var leaves = []uint64{3, 5, 7, 11, 13}
+	var leaves = []interface{}{3, 5, 7, 11, 13}
 	mtree := merkle.Tree{
 		Nodes: leaves,
-		Merge: MergeUint64{},
+		Merge: MergeInt32{},
 	}
 	tree := mtree.BuildTree(leaves)
 	root := tree.GetRoot()
 
 	//build proof
-	proof, err := tree.BuildProof([]uint64{0, 3})
+	proof, err := tree.BuildProof([]uint32{0, 3})
 	require.NoError(t, err)
 	lemmas := proof.Lemmas
 	indices := proof.Indices
 
 	// rebuild proof
-	var neededLeaves []uint64
+	var neededLeaves []interface{}
 
 	for _, v := range indices {
 		neededLeaves = append(neededLeaves, tree.Nodes[v])
@@ -32,7 +32,7 @@ func TestRebuildProof(t *testing.T) {
 	rebuildProof := merkle.Proof{
 		Indices: indices,
 		Lemmas:  lemmas,
-		Merge:   MergeUint64{},
+		Merge:   MergeInt32{},
 	}
 
 	isValid, err := rebuildProof.Verify(root, neededLeaves)
@@ -45,46 +45,47 @@ func TestRebuildProof(t *testing.T) {
 }
 
 func TestBuildProof(t *testing.T) {
-	var leaves = []uint64{3, 5, 7, 11, 13, 17}
-	leafIndecies := []uint64{0, 5}
-	var proofLeaves []uint64
+	var leaves = []interface{}{3, 5, 7, 11, 13, 17}
+	leafIndecies := []uint32{0, 5}
+	var proofLeaves []interface{}
 	for _, idx := range leafIndecies {
 		proofLeaves = append(proofLeaves, leaves[idx])
 	}
 	mtree := merkle.Tree{
 		Nodes: leaves,
-		Merge: MergeUint64{},
+		Merge: MergeInt32{},
 	}
 
 	//build proof
 	proof, err := mtree.BuildTreeAndProof(leaves, leafIndecies)
 	require.NoError(t, err)
-	require.Equal(t, []uint64{13, 5, 4}, proof.Lemmas)
+	require.Equal(t, []interface{}{13, 5, 4}, proof.Lemmas)
 	root, err := proof.GetRoot(proofLeaves)
 	require.NoError(t, err)
-	require.Equal(t, uint64(2), root)
+	require.Equal(t, int(2), root)
 
-	leaves = []uint64{2}
+	leaves = []interface{}{2}
 	mtree.Nodes = leaves
-	proof, err = mtree.BuildTreeAndProof(leaves, []uint64{0})
+	proof, err = mtree.BuildTreeAndProof(leaves, []uint32{0})
 	require.NoError(t, err)
 	require.Equal(t, 0, len(proof.Lemmas))
 	root, err = proof.GetRoot(leaves)
 	require.NoError(t, err)
-	require.Equal(t, uint64(2), root)
+	require.Equal(t, int(2), root)
 }
 
 func TestTreeRootIsTheSameAsProofRoot(t *testing.T) {
-	var leaves, leafIndices []uint64
-	var start uint64 = 2
-	var end uint64 = 1000
+	var leaves []interface{}
+	var leafIndices []uint32
+	var start uint32 = 2
+	var end uint32 = 1000
 	for i := start; i < end; i++ {
-		leaves = append(leaves, i)
+		leaves = append(leaves, int(i))
 		leafIndices = append(leafIndices, i-start)
 	}
 	mtree := merkle.Tree{
 		Nodes: leaves,
-		Merge: MergeUint64{},
+		Merge: MergeInt32{},
 	}
 	proof, err := mtree.BuildTreeAndProof(leaves, leafIndices)
 	require.NoError(t, err)

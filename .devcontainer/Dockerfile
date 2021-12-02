@@ -28,7 +28,7 @@ RUN apt-get update \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
 
-# Install 
+# Install
 RUN apt-get update \
     &&  apt-get -y install --no-install-recommends \
     # Clean up
@@ -116,4 +116,3 @@ ENV PATH="${PATH}:$GOPATH/bin"
 
 RUN mkdir -p $GOPATH/src/github.com/ComposableFi/merkle-go
 RUN chown -R vscode $GOPATH
-

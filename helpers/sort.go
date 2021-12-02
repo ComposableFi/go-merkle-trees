@@ -2,12 +2,12 @@ package helpers
 
 import "sort"
 
-// SortUint64Slice sorts slice of uint64 numbers
-func SortUint64Slice(slice []uint64) {
+// SortUint32Slice sorts slice of uint32 numbers
+func SortUint32Slice(slice []uint32) {
 	sort.Slice(slice, func(i, j int) bool { return slice[i] < slice[j] })
 }
 
-// ReverseSortUint64Slice sorts slice of uint64 numbers reversely
-func ReverseSortUint64Slice(slice []uint64) {
+// ReverseSortUint32Slice sorts slice of uint32 numbers reversely
+func ReverseSortUint32Slice(slice []uint32) {
 	sort.Slice(slice, func(i, j int) bool { return slice[i] > slice[j] })
 }

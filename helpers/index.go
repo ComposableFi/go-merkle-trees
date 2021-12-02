@@ -1,7 +1,7 @@
 package helpers
 
 // GetSibling returns index of a sibling element
-func GetSibling(idx uint64) uint64 {
+func GetSibling(idx uint32) uint32 {
 	if idx == 0 {
 		return 0
 	}
@@ -9,7 +9,7 @@ func GetSibling(idx uint64) uint64 {
 }
 
 // GetParent returns index of a parent element
-func GetParent(idx uint64) uint64 {
+func GetParent(idx uint32) uint32 {
 	if idx == 0 {
 		return 0
 	}
@@ -17,6 +17,6 @@ func GetParent(idx uint64) uint64 {
 }
 
 // IsLeft checks if an index is a left index
-func IsLeft(idx uint64) bool {
+func IsLeft(idx uint32) bool {
 	return idx&1 == 1
 }

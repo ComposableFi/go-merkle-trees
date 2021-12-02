@@ -2,24 +2,24 @@ package merkle
 
 // Merge is the interface for merge function of tree
 type Merge interface {
-	Merge(left, right uint64) uint64
+	Merge(left, right interface{}) interface{}
 }
 
 // Tree is representation type for the merkle tree
 type Tree struct {
-	Nodes []uint64
+	Nodes []interface{}
 	Merge Merge
 }
 
 // Proof is the representation of a merkle proof
 type Proof struct {
-	Indices []uint64
-	Lemmas  []uint64
+	Indices []uint32
+	Lemmas  []interface{}
 	Merge   Merge
 }
 
 // LeafIndex is the representation of a leaf index
 type LeafIndex struct {
-	Index uint64
-	Leaf  uint64
+	Index uint32
+	Leaf  interface{}
 }
