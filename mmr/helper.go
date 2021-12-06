@@ -1,8 +1,7 @@
 package mmr
 
 import (
-	"fmt"
-	"strconv"
+	"math/bits"
 )
 
 func getPeakPosByHeight(height uint32) uint64 {
@@ -63,43 +62,22 @@ func getPeaks(mmrSize uint64) (pos_s []uint64) {
 
 func posHeightInTree(pos uint64) uint32 {
 	pos += 1
-	allOnes := func(num uint64) bool { return num != 0 && countZeros(num) == countLeadingZeros(num) }
+	allOnes := func(num uint64) bool { return num != 0 && zerosCount64(num) == bits.LeadingZeros64(num) }
 	jumpLeft := func(pos uint64) uint64 {
-		var bitLength = uint32(64 - countLeadingZeros(pos))
+		var bitLength = uint32(64 - bits.LeadingZeros64(pos))
 		var mostSignificantBits uint64 = 1 << (bitLength - 1)
 		return pos - (mostSignificantBits - 1)
 	}
 
 	for !allOnes(pos) {
-		fmt.Printf("pos %v \n", pos)
 		pos = jumpLeft(pos)
 	}
 
-	return uint32(64 - countLeadingZeros(pos) - 1)
+	return uint32(64 - bits.LeadingZeros64(pos) - 1)
 }
 
-func countLeadingZeros(num uint64) int {
-	str := strconv.FormatInt(int64(num), 2)
-	counter := 0
-	for _, value := range str {
-		if value == '0' {
-			counter++
-		} else {
-			break
-		}
-	}
-	return counter
-}
-
-func countZeros(num uint64) int {
-	str := strconv.FormatInt(int64(num), 2)
-	counter := 0
-	for _, value := range str {
-		if value == '0' {
-			counter++
-		}
-	}
-	return counter
+func zerosCount64(num uint64) int {
+	return 64 - bits.OnesCount64(num)
 }
 
 func pop(ph []interface{}) (interface{}, []interface{}) {
