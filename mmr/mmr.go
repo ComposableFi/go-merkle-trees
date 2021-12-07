@@ -11,7 +11,6 @@ type MMR struct {
 
 func (m *MMR) calculatePeakRoot(leaves []leaf, peakPos uint64, proofs *Iterator) (interface{}, error) {
 	if len(leaves) == 0 {
-		// TODO: clarify on how debug_assert! works
 		panic("can't be empty")
 	}
 
