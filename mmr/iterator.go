@@ -21,8 +21,5 @@ func (i *Iterator) next() interface{} {
 }
 
 func (i *Iterator) isEmpty() bool {
-	if len(i.item) == 0 {
-		return true
-	}
-	return false
+	return len(i.item) == 0
 }

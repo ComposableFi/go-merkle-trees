@@ -1,15 +1,12 @@
 package mmr
 
 import (
+	"fmt"
 	"sort"
 )
 
 type MMR struct {
 	merge func(left, right interface{}) interface{}
-}
-
-func NewMMR(merge func(left, right interface{}) interface{}) *MMR {
-	return &MMR{merge}
 }
 
 func (m *MMR) calculatePeakRoot(leaves []leaf, peakPos uint64, proofs *Iterator) (interface{}, error) {
@@ -37,7 +34,7 @@ func (m *MMR) calculatePeakRoot(leaves []leaf, peakPos uint64, proofs *Iterator)
 		// calculate sibling
 		var nextHeight = posHeightInTree(pos + 1)
 		var sibPos, parentPos = func() (uint64, uint64) {
-			var siblingOffset uint64 = siblingOffset(height)
+			var siblingOffset = siblingOffset(height)
 			if nextHeight > height {
 				// implies pos is right sibling
 				return pos - siblingOffset, pos + 1
@@ -87,6 +84,7 @@ func (m *MMR) baggingPeaksHashes(peaksHashes []interface{}) (interface{}, error)
 	}
 
 	if len(peaksHashes) == 0 {
+		fmt.Printf("length of peaksHashes is 0 \n")
 		return nil, ErrCorruptedProof
 	}
 	return peaksHashes[len(peaksHashes)-1], nil
@@ -107,7 +105,7 @@ func (m *MMR) CalculateRoot(leaves []leaf, mmrSize uint64, proofs *Iterator) (in
 
 func (m *MMR) calculatePeaksHashes(leaves []leaf, mmrSize uint64, proofs *Iterator) ([]interface{}, error) {
 	// special handle the only 1 leaf MMR
-	if mmrSize == 1 && len(leaves) == 1 && leaves[0].hash == 0 {
+	if mmrSize == 1 && len(leaves) == 1 && leaves[0].pos == 0 {
 		var items []interface{}
 		for _, l := range leaves {
 			items = append(items, l.hash)
@@ -121,30 +119,38 @@ func (m *MMR) calculatePeaksHashes(leaves []leaf, mmrSize uint64, proofs *Iterat
 	})
 
 	peaks := getPeaks(mmrSize)
-	peaksHashes := make([]interface{}, 0, len(peaks)+1)
+	// peaksHashes := make([]interface{}, 0, len(peaks)+1)
+	var peaksHashes []interface{}
 	for _, peaksPos := range peaks {
-		var leaves = takeWhileVec(leaves, func(l leaf) bool {
+		var lvs []leaf
+		leaves, lvs = takeWhileVec(leaves, func(l leaf) bool {
 			return l.pos <= peaksPos
 		})
+
 		var peakRoot interface{}
-		if len(leaves) == 1 && leaves[0].pos == peaksPos {
+		if len(lvs) == 1 && lvs[0].pos == peaksPos {
 			// leaf is the peak
-			peakRoot = leaves[0].hash
-		} else if len(leaves) == 0 {
+			peakRoot = lvs[0].hash
+			// remove leaf
+			lvs = append(lvs[:0], lvs[0+1:]...)
+		} else if len(lvs) == 0 {
 			// if empty, means the next proof is a peak root or rhs bagged root
-			if proofs.isEmpty() {
-				peakRoot = proofs.next()
+			if proof := proofs.next(); proof != nil {
+				peakRoot = proof
+				fmt.Printf("peak root from proof %v --- %v\n", proofs.item, peakRoot)
 			} else {
 				// means that either all right peaks are bagged, or proof is corrupted
 				// so we break loop and check no items left
 				break
 			}
 		} else {
-			_, err := m.calculatePeakRoot(leaves, peaksPos, proofs)
+			var err error
+			peakRoot, err = m.calculatePeakRoot(lvs, peaksPos, proofs)
 			if err != nil {
 				return nil, err
 			}
 		}
+		//fmt.Printf("before peaksHashes %v peak root  %x\n",peaksHashes, peakRoot)
 		peaksHashes = append(peaksHashes, peakRoot)
 	}
 
@@ -159,17 +165,19 @@ func (m *MMR) calculatePeaksHashes(leaves []leaf, mmrSize uint64, proofs *Iterat
 	}
 	// ensure nothing left in proof_iter
 	if proofs.next() != nil {
+		fmt.Printf("something is left in proof_iter")
 		return nil, ErrCorruptedProof
 	}
 
+	// fmt.Printf("peak hashes!!! %v \n", peaksHashes)
 	return peaksHashes, nil
 }
 
-func takeWhileVec(v []leaf, p func(leaf) bool) []leaf {
+func takeWhileVec(v []leaf, p func(leaf) bool) (drained, collect []leaf) {
 	for i := 0; i < len(v); i++ {
 		if !p(v[i]) {
-			return v[:i]
+			return v[i:], v[:i]
 		}
 	}
-	return v[:]
+	return v[:0], v[:]
 }
