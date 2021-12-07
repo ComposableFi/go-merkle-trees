@@ -119,7 +119,6 @@ func (m *MMR) calculatePeaksHashes(leaves []leaf, mmrSize uint64, proofs *Iterat
 	})
 
 	peaks := getPeaks(mmrSize)
-	// peaksHashes := make([]interface{}, 0, len(peaks)+1)
 	var peaksHashes []interface{}
 	for _, peaksPos := range peaks {
 		var lvs []leaf
@@ -137,7 +136,6 @@ func (m *MMR) calculatePeaksHashes(leaves []leaf, mmrSize uint64, proofs *Iterat
 			// if empty, means the next proof is a peak root or rhs bagged root
 			if proof := proofs.next(); proof != nil {
 				peakRoot = proof
-				fmt.Printf("peak root from proof %v --- %v\n", proofs.item, peakRoot)
 			} else {
 				// means that either all right peaks are bagged, or proof is corrupted
 				// so we break loop and check no items left
@@ -150,10 +148,8 @@ func (m *MMR) calculatePeaksHashes(leaves []leaf, mmrSize uint64, proofs *Iterat
 				return nil, err
 			}
 		}
-		//fmt.Printf("before peaksHashes %v peak root  %x\n",peaksHashes, peakRoot)
 		peaksHashes = append(peaksHashes, peakRoot)
 	}
-
 	// ensure nothing left in leaves
 	if len(leaves) != 0 {
 		return nil, ErrCorruptedProof
@@ -169,7 +165,6 @@ func (m *MMR) calculatePeaksHashes(leaves []leaf, mmrSize uint64, proofs *Iterat
 		return nil, ErrCorruptedProof
 	}
 
-	// fmt.Printf("peak hashes!!! %v \n", peaksHashes)
 	return peaksHashes, nil
 }
 
