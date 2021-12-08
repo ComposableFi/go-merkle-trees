@@ -2,11 +2,12 @@ package mmr
 
 import (
 	"fmt"
+	"github.com/ComposableFi/merkle-go/merkle"
 	"sort"
 )
 
 type MMR struct {
-	merge func(left, right interface{}) interface{}
+	merge merkle.Merge
 }
 
 func (m *MMR) calculatePeakRoot(leaves []leaf, peakPos uint64, proofs *Iterator) (interface{}, error) {
@@ -54,9 +55,9 @@ func (m *MMR) calculatePeakRoot(leaves []leaf, peakPos uint64, proofs *Iterator)
 
 		var parentItem interface{}
 		if nextHeight > height {
-			parentItem = m.merge(siblingItem, item)
+			parentItem = m.merge.Merge(siblingItem, item)
 		} else {
-			parentItem = m.merge(item, siblingItem)
+			parentItem = m.merge.Merge(item, siblingItem)
 		}
 
 		if parentPos < peakPos {
@@ -79,7 +80,7 @@ func (m *MMR) baggingPeaksHashes(peaksHashes []interface{}) (interface{}, error)
 		if leftPeak, peaksHashes = pop(peaksHashes); leftPeak == nil {
 			panic("pop")
 		}
-		peaksHashes = append(peaksHashes, m.merge(rightPeak, leftPeak))
+		peaksHashes = append(peaksHashes, m.merge.Merge(rightPeak, leftPeak))
 	}
 
 	if len(peaksHashes) == 0 {

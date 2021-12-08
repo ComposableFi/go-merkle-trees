@@ -8,7 +8,9 @@ import (
 	"golang.org/x/crypto/blake2b"
 )
 
-func merge(left, right interface{}) interface{} {
+type testMerge struct {}
+
+func (t *testMerge) Merge(left, right interface{}) interface{} {
 	l := left.([]byte)
 	r := right.([]byte)
 	hash := blake2b.Sum256(append(l, r...))
@@ -175,7 +177,7 @@ func TestCalculateRoot(t *testing.T) {
 	}
 
 	for name, test := range tests {
-		m := MMR{merge: merge}
+		m := MMR{merge: &testMerge{}}
 		got, err := m.CalculateRoot(test.input.leaves, test.input.mmrSize, test.input.proofIter)
 		if err != nil {
 			t.Errorf("%s", err.Error())
