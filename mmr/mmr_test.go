@@ -8,7 +8,7 @@ import (
 	"golang.org/x/crypto/blake2b"
 )
 
-type testMerge struct {}
+type testMerge struct{}
 
 func (t *testMerge) Merge(left, right interface{}) interface{} {
 	l := left.([]byte)

@@ -2,8 +2,9 @@ package mmr
 
 import (
 	"fmt"
-	"github.com/ComposableFi/merkle-go/merkle"
 	"sort"
+
+	"github.com/ComposableFi/merkle-go/merkle"
 )
 
 type MMR struct {
