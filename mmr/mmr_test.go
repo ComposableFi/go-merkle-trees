@@ -27,7 +27,7 @@ func hexDecode(h string) []byte {
 
 func TestCalculateRoot(t *testing.T) {
 	type input struct {
-		leaves    []leaf
+		leaves    []Leaf
 		mmrSize   uint64
 		proofIter *Iterator
 	}
@@ -38,9 +38,9 @@ func TestCalculateRoot(t *testing.T) {
 	}{
 		"3 peaks": {
 			input: input{
-				leaves:  []leaf{{pos: 8, hash: hexDecode("8c35d22f459d77ca4c0b0b5035869766d60d182b9716ab3e8879e066478899a8")}},
+				leaves:  []Leaf{{pos: 8, hash: hexDecode("8c35d22f459d77ca4c0b0b5035869766d60d182b9716ab3e8879e066478899a8")}},
 				mmrSize: 19,
-				proofIter: &Iterator{item: []interface{}{
+				proofIter: &Iterator{Items: []interface{}{
 					hexDecode("26a08e4d0c5190f01871e0569b6290b86760085d99f17eb4e7e6b58feb8d6249"),
 					hexDecode("64fa1a16b569918daf33bf20fc82cab12b506357dbf176a6f6dac3f14108d45c"),
 					hexDecode("f0c1d8dd595c1e705ff3e42cb104b5b558b2fe09577b1ec44c0e0ea67982a884"),
@@ -51,9 +51,9 @@ func TestCalculateRoot(t *testing.T) {
 		},
 		"2 peaks": {
 			input: input{
-				leaves:  []leaf{{pos: 8, hash: hexDecode("8c35d22f459d77ca4c0b0b5035869766d60d182b9716ab3e8879e066478899a8")}},
+				leaves:  []Leaf{{pos: 8, hash: hexDecode("8c35d22f459d77ca4c0b0b5035869766d60d182b9716ab3e8879e066478899a8")}},
 				mmrSize: 18,
-				proofIter: &Iterator{item: []interface{}{
+				proofIter: &Iterator{Items: []interface{}{
 					hexDecode("26a08e4d0c5190f01871e0569b6290b86760085d99f17eb4e7e6b58feb8d6249"),
 					hexDecode("64fa1a16b569918daf33bf20fc82cab12b506357dbf176a6f6dac3f14108d45c"),
 					hexDecode("f0c1d8dd595c1e705ff3e42cb104b5b558b2fe09577b1ec44c0e0ea67982a884"),
@@ -64,9 +64,9 @@ func TestCalculateRoot(t *testing.T) {
 		},
 		"1 peak": {
 			input: input{
-				leaves:  []leaf{{pos: 8, hash: hexDecode("8c35d22f459d77ca4c0b0b5035869766d60d182b9716ab3e8879e066478899a8")}},
+				leaves:  []Leaf{{pos: 8, hash: hexDecode("8c35d22f459d77ca4c0b0b5035869766d60d182b9716ab3e8879e066478899a8")}},
 				mmrSize: 18,
-				proofIter: &Iterator{item: []interface{}{
+				proofIter: &Iterator{Items: []interface{}{
 					hexDecode("26a08e4d0c5190f01871e0569b6290b86760085d99f17eb4e7e6b58feb8d6249"),
 					hexDecode("64fa1a16b569918daf33bf20fc82cab12b506357dbf176a6f6dac3f14108d45c"),
 					hexDecode("f0c1d8dd595c1e705ff3e42cb104b5b558b2fe09577b1ec44c0e0ea67982a884"),
@@ -76,9 +76,9 @@ func TestCalculateRoot(t *testing.T) {
 		},
 		"first element proof": {
 			input: input{
-				leaves:  []leaf{{pos: 0, hash: hexDecode("11da6d1f761ddf9bdb4c9d6e5303ebd41f61858d0a5647a1a7bfe089bf921be9")}},
+				leaves:  []Leaf{{pos: 0, hash: hexDecode("11da6d1f761ddf9bdb4c9d6e5303ebd41f61858d0a5647a1a7bfe089bf921be9")}},
 				mmrSize: 19,
-				proofIter: &Iterator{item: []interface{}{
+				proofIter: &Iterator{Items: []interface{}{
 					hexDecode("e12c22d4f162d9a012c9319233da5d3e923cc5e1029b8f90e47249c9ab256b35"),
 					hexDecode("ea750bdb0a08f96991f00ceaf9c3517805b1844866091df48b3612a24225429a"),
 					hexDecode("405a3e50f8d864f3a15f28b7f290363cf26727760a9144ff364b3aa8ccd2f839"),
@@ -89,9 +89,9 @@ func TestCalculateRoot(t *testing.T) {
 		},
 		"last element proof": {
 			input: input{
-				leaves:  []leaf{{pos: 18, hash: hexDecode("2c088bf3b4e7853c99e49636d9e7c9a351918d70bd6cdf6148b81e68f5706f68")}},
+				leaves:  []Leaf{{pos: 18, hash: hexDecode("2c088bf3b4e7853c99e49636d9e7c9a351918d70bd6cdf6148b81e68f5706f68")}},
 				mmrSize: 19,
-				proofIter: &Iterator{item: []interface{}{
+				proofIter: &Iterator{Items: []interface{}{
 					hexDecode("9a42e0efd142d8dadb23fe5eec4b5078c9ec740d9927109646bcad1c9939be80"),
 					hexDecode("a8682c7cd2e2d29666a2597c25cebc0aa23c8e3e6b3ee3e04f2bc1713da64785"),
 				}},
@@ -100,17 +100,17 @@ func TestCalculateRoot(t *testing.T) {
 		},
 		"1 element": {
 			input: input{
-				leaves:    []leaf{{pos: 0, hash: hexDecode("11da6d1f761ddf9bdb4c9d6e5303ebd41f61858d0a5647a1a7bfe089bf921be9")}},
+				leaves:    []Leaf{{pos: 0, hash: hexDecode("11da6d1f761ddf9bdb4c9d6e5303ebd41f61858d0a5647a1a7bfe089bf921be9")}},
 				mmrSize:   1,
-				proofIter: &Iterator{item: []interface{}{}},
+				proofIter: &Iterator{Items: []interface{}{}},
 			},
 			want: hexDecode("11da6d1f761ddf9bdb4c9d6e5303ebd41f61858d0a5647a1a7bfe089bf921be9"),
 		},
 		"2 elements pos 0": {
 			input: input{
-				leaves:  []leaf{{pos: 0, hash: hexDecode("11da6d1f761ddf9bdb4c9d6e5303ebd41f61858d0a5647a1a7bfe089bf921be9")}},
+				leaves:  []Leaf{{pos: 0, hash: hexDecode("11da6d1f761ddf9bdb4c9d6e5303ebd41f61858d0a5647a1a7bfe089bf921be9")}},
 				mmrSize: 3,
-				proofIter: &Iterator{item: []interface{}{
+				proofIter: &Iterator{Items: []interface{}{
 					hexDecode("e12c22d4f162d9a012c9319233da5d3e923cc5e1029b8f90e47249c9ab256b35"),
 				}},
 			},
@@ -118,9 +118,9 @@ func TestCalculateRoot(t *testing.T) {
 		},
 		"2 elements pos 1": {
 			input: input{
-				leaves:  []leaf{{pos: 1, hash: hexDecode("e12c22d4f162d9a012c9319233da5d3e923cc5e1029b8f90e47249c9ab256b35")}},
+				leaves:  []Leaf{{pos: 1, hash: hexDecode("e12c22d4f162d9a012c9319233da5d3e923cc5e1029b8f90e47249c9ab256b35")}},
 				mmrSize: 3,
-				proofIter: &Iterator{item: []interface{}{
+				proofIter: &Iterator{Items: []interface{}{
 					hexDecode("11da6d1f761ddf9bdb4c9d6e5303ebd41f61858d0a5647a1a7bfe089bf921be9"),
 				}},
 			},
@@ -128,12 +128,12 @@ func TestCalculateRoot(t *testing.T) {
 		},
 		"2 leaves merkle proof": {
 			input: input{
-				leaves: []leaf{
+				leaves: []Leaf{
 					{pos: 4, hash: hexDecode("8c039ff7caa17ccebfcadc44bd9fce6a4b6699c4d03de2e3349aa1dc11193cd7")},
 					{pos: 11, hash: hexDecode("5b8f29db76cf4e676e4fc9b17040312debedafcd5637fb3c7badd2cddce6a445")},
 				},
 				mmrSize: 19,
-				proofIter: &Iterator{item: []interface{}{
+				proofIter: &Iterator{Items: []interface{}{
 					hexDecode("7b0aa1735e5ba58d3236316c671fe4f00ed366ee72417c9ed02a53a8019e85b8"),
 					hexDecode("f4aac2fbe33f03554bfeb559ea2690ed8521caa4be961e61c91ac9a1530dce7a"),
 					hexDecode("dd1445ec419376975790d7d4e487dfa5fca42a75f41e8893bc2d8b02c527f8f4"),
@@ -145,12 +145,12 @@ func TestCalculateRoot(t *testing.T) {
 		},
 		"2 sibling leaves merkle proof": {
 			input: input{
-				leaves: []leaf{
+				leaves: []Leaf{
 					{pos: 7, hash: hexDecode("26a08e4d0c5190f01871e0569b6290b86760085d99f17eb4e7e6b58feb8d6249")},
 					{pos: 8, hash: hexDecode("8c35d22f459d77ca4c0b0b5035869766d60d182b9716ab3e8879e066478899a8")},
 				},
 				mmrSize: 19,
-				proofIter: &Iterator{item: []interface{}{
+				proofIter: &Iterator{Items: []interface{}{
 					hexDecode("64fa1a16b569918daf33bf20fc82cab12b506357dbf176a6f6dac3f14108d45c"),
 					hexDecode("f0c1d8dd595c1e705ff3e42cb104b5b558b2fe09577b1ec44c0e0ea67982a884"),
 					hexDecode("5e7bc66323e34ccbbe88ba9172c6dadbb050f0fb60a04b761e95ab46580ddc5e"),
@@ -160,13 +160,13 @@ func TestCalculateRoot(t *testing.T) {
 		},
 		"3 leaves merkle proof": {
 			input: input{
-				leaves: []leaf{
+				leaves: []Leaf{
 					{pos: 7, hash: hexDecode("26a08e4d0c5190f01871e0569b6290b86760085d99f17eb4e7e6b58feb8d6249")},
 					{pos: 8, hash: hexDecode("8c35d22f459d77ca4c0b0b5035869766d60d182b9716ab3e8879e066478899a8")},
 					{pos: 10, hash: hexDecode("f4aac2fbe33f03554bfeb559ea2690ed8521caa4be961e61c91ac9a1530dce7a")},
 				},
 				mmrSize: 19,
-				proofIter: &Iterator{item: []interface{}{
+				proofIter: &Iterator{Items: []interface{}{
 					hexDecode("5b8f29db76cf4e676e4fc9b17040312debedafcd5637fb3c7badd2cddce6a445"),
 					hexDecode("f0c1d8dd595c1e705ff3e42cb104b5b558b2fe09577b1ec44c0e0ea67982a884"),
 					hexDecode("5e7bc66323e34ccbbe88ba9172c6dadbb050f0fb60a04b761e95ab46580ddc5e"),
@@ -177,7 +177,7 @@ func TestCalculateRoot(t *testing.T) {
 	}
 
 	for name, test := range tests {
-		m := MMR{merge: &testMerge{}}
+		m := MMR{Merge: &testMerge{}}
 		got, err := m.CalculateRoot(test.input.leaves, test.input.mmrSize, test.input.proofIter)
 		if err != nil {
 			t.Errorf("%s", err.Error())

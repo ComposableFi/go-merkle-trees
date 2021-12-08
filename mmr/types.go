@@ -1,6 +1,6 @@
 package mmr
 
-type leaf struct {
+type Leaf struct {
 	pos  uint64
 	hash interface{}
 }

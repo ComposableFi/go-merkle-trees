@@ -7,10 +7,10 @@ import (
 )
 
 type MMR struct {
-	merge merkle.Merge
+	Merge merkle.Merge
 }
 
-func (m *MMR) calculatePeakRoot(leaves []leaf, peakPos uint64, proofs *Iterator) (interface{}, error) {
+func (m *MMR) calculatePeakRoot(leaves []Leaf, peakPos uint64, proofs *Iterator) (interface{}, error) {
 	if len(leaves) == 0 {
 		panic("can't be empty")
 	}
@@ -55,9 +55,9 @@ func (m *MMR) calculatePeakRoot(leaves []leaf, peakPos uint64, proofs *Iterator)
 
 		var parentItem interface{}
 		if nextHeight > height {
-			parentItem = m.merge.Merge(siblingItem, item)
+			parentItem = m.Merge.Merge(siblingItem, item)
 		} else {
-			parentItem = m.merge.Merge(item, siblingItem)
+			parentItem = m.Merge.Merge(item, siblingItem)
 		}
 
 		if parentPos < peakPos {
@@ -80,7 +80,7 @@ func (m *MMR) baggingPeaksHashes(peaksHashes []interface{}) (interface{}, error)
 		if leftPeak, peaksHashes = pop(peaksHashes); leftPeak == nil {
 			panic("pop")
 		}
-		peaksHashes = append(peaksHashes, m.merge.Merge(rightPeak, leftPeak))
+		peaksHashes = append(peaksHashes, m.Merge.Merge(rightPeak, leftPeak))
 	}
 
 	if len(peaksHashes) == 0 {
@@ -94,7 +94,7 @@ func (m *MMR) baggingPeaksHashes(peaksHashes []interface{}) (interface{}, error)
 /// 1. sort items by position
 /// 2. calculate root of each peak
 /// 3. bagging peaks
-func (m *MMR) CalculateRoot(leaves []leaf, mmrSize uint64, proofs *Iterator) (interface{}, error) {
+func (m *MMR) CalculateRoot(leaves []Leaf, mmrSize uint64, proofs *Iterator) (interface{}, error) {
 	var peaksHashes, err = m.calculatePeaksHashes(leaves, mmrSize, proofs)
 	if err != nil {
 		return nil, err
@@ -103,8 +103,8 @@ func (m *MMR) CalculateRoot(leaves []leaf, mmrSize uint64, proofs *Iterator) (in
 	return m.baggingPeaksHashes(peaksHashes)
 }
 
-func (m *MMR) calculatePeaksHashes(leaves []leaf, mmrSize uint64, proofs *Iterator) ([]interface{}, error) {
-	// special handle the only 1 leaf MMR
+func (m *MMR) calculatePeaksHashes(leaves []Leaf, mmrSize uint64, proofs *Iterator) ([]interface{}, error) {
+	// special handle the only 1 Leaf MMR
 	if mmrSize == 1 && len(leaves) == 1 && leaves[0].pos == 0 {
 		var items []interface{}
 		for _, l := range leaves {
@@ -121,16 +121,16 @@ func (m *MMR) calculatePeaksHashes(leaves []leaf, mmrSize uint64, proofs *Iterat
 	peaks := getPeaks(mmrSize)
 	var peaksHashes []interface{}
 	for _, peaksPos := range peaks {
-		var lvs []leaf
-		leaves, lvs = takeWhileVec(leaves, func(l leaf) bool {
+		var lvs []Leaf
+		leaves, lvs = takeWhileVec(leaves, func(l Leaf) bool {
 			return l.pos <= peaksPos
 		})
 
 		var peakRoot interface{}
 		if len(lvs) == 1 && lvs[0].pos == peaksPos {
-			// leaf is the peak
+			// Leaf is the peak
 			peakRoot = lvs[0].hash
-			// remove leaf
+			// remove Leaf
 			lvs = append(lvs[:0], lvs[0+1:]...)
 		} else if len(lvs) == 0 {
 			// if empty, means the next proof is a peak root or rhs bagged root
@@ -168,7 +168,7 @@ func (m *MMR) calculatePeaksHashes(leaves []leaf, mmrSize uint64, proofs *Iterat
 	return peaksHashes, nil
 }
 
-func takeWhileVec(v []leaf, p func(leaf) bool) (drained, collect []leaf) {
+func takeWhileVec(v []Leaf, p func(Leaf) bool) (drained, collect []Leaf) {
 	for i := 0; i < len(v); i++ {
 		if !p(v[i]) {
 			return v[i:], v[:i]

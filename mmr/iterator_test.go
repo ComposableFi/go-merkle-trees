@@ -14,7 +14,7 @@ func TestNext(t *testing.T) {
 	}
 
 	for name, test := range tests {
-		iter := Iterator{item: test.input}
+		iter := Iterator{Items: test.input}
 		got := iter.next()
 		if got != test.want {
 			t.Errorf("%s: expected %v  got %v", name, test.want, got)
@@ -29,7 +29,7 @@ func TestNext(t *testing.T) {
 	}
 
 	for name, test := range tests {
-		iter := Iterator{item: test.input}
+		iter := Iterator{Items: test.input}
 		_ = iter.next()
 		got := iter.next()
 		if got != test.want {
