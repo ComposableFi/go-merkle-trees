@@ -177,7 +177,7 @@ func TestCalculateRoot(t *testing.T) {
 	}
 
 	for name, test := range tests {
-		m := MMR{Merge: &testMerge{}}
+		m := MerkleProof{Merge: &testMerge{}}
 		got, err := m.CalculateRoot(test.input.leaves, test.input.mmrSize, test.input.proofIter)
 		if err != nil {
 			t.Errorf("%s", err.Error())

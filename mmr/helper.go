@@ -80,6 +80,20 @@ func zerosCount64(num uint64) int {
 	return 64 - bits.OnesCount64(num)
 }
 
+func LeafIndexToPos(index uint64) uint64 {
+	// mmr_size - H - 1, H is the height(intervals) of last peak
+	return LeafIndexToMMRSize(index) - uint64(bits.TrailingZeros64(index+1)) - 1
+}
+
+func LeafIndexToMMRSize(index uint64) uint64 {
+	// leaf index start with 0
+	var leavesCount = index + 1
+
+	// the peak count(k) is actually the count of 1 in leaves count's binary representation
+	var peakCount = bits.OnesCount64(leavesCount)
+	return 2*leavesCount - uint64(peakCount)
+}
+
 func pop(ph []interface{}) (interface{}, []interface{}) {
 	if len(ph) == 0 {
 		return nil, ph[:]

@@ -50,3 +50,39 @@ func TestGetPeaks(t *testing.T) {
 		}
 	}
 }
+
+func TestLeafIndexToPos(t *testing.T) {
+	tests := map[string]struct {
+		input uint64
+		want  uint64
+	}{
+		"index 0": {input: 0, want: 0},
+		"index 1": {input: 1, want: 1},
+		"index 2": {input: 2, want: 3},
+	}
+
+	for name, test := range tests {
+		got := LeafIndexToPos(test.input)
+		if got != test.want {
+			t.Errorf("%s: want %v  got %v", name, test.want, got)
+		}
+	}
+}
+
+func TestLeafIndexToMMRSize(t *testing.T) {
+	tests := map[string]struct {
+		input uint64
+		want  uint64
+	}{
+		"index 0": {input: 0, want: 1},
+		"index 1": {input: 1, want: 3},
+		"index 2": {input: 2, want: 4},
+	}
+
+	for name, test := range tests {
+		got := LeafIndexToMMRSize(test.input)
+		if got != test.want {
+			t.Errorf("%s: want %v  got %v", name, test.want, got)
+		}
+	}
+}
