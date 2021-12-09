@@ -27,11 +27,12 @@ func (m *MMR) findElem(pos uint64, hashes []interface{}) (interface{}, error) {
 		return hashes[posOffset], nil
 	}
 
-	elem, err := m.batch.getElem(pos)
-	if err != nil {
+	elem := m.batch.getElem(pos)
+	if elem == nil {
 		// replace with custom error
 		return nil, fmt.Errorf("InconsitentStore")
 	}
+
 	return elem, nil
 }
 
@@ -75,8 +76,8 @@ func (m *MMR) GetRoot() (interface{}, error) {
 		// TODO: replace with custom error ttoe
 		return nil, fmt.Errorf("GetRootOnEmpty")
 	} else if m.size == 1 {
-		e, err := m.batch.getElem(0)
-		if err != nil {
+		e := m.batch.getElem(0)
+		if e == nil {
 			// TODO: replace with custom error ttoe
 			return nil, ErrInconsistentStore
 		}
@@ -85,8 +86,8 @@ func (m *MMR) GetRoot() (interface{}, error) {
 
 	var peaks []interface{}
 	for _, peakPos := range getPeaks(m.size) {
-		elem, err := m.batch.getElem(peakPos)
-		if err != nil {
+		elem := m.batch.getElem(peakPos)
+		if elem == nil {
 			return nil, ErrInconsistentStore
 		}
 		peaks = append(peaks, elem)
@@ -131,8 +132,8 @@ func (m *MMR) genProofForPeak(proof []interface{}, posList []uint64, peakPos uin
 	}
 	// take peak root from store if no positions need to be proof
 	if len(posList) == 0 {
-		elem, err := m.batch.getElem(peakPos)
-		if err != nil {
+		elem := m.batch.getElem(peakPos)
+		if elem == nil {
 			return []interface{}{}, fmt.Errorf("InconsistentStore")
 		}
 		proof = append(proof, elem)
@@ -171,9 +172,8 @@ func (m *MMR) genProofForPeak(proof []interface{}, posList []uint64, peakPos uin
 			// drop sibling
 			queue = queue[1:]
 		} else {
-			// TODO: implement getElem
-			p, err := m.batch.getElem(sibPos)
-			if err != nil {
+			p := m.batch.getElem(sibPos)
+			if p == nil {
 				return nil, ErrCorruptedProof
 			}
 			proof = append(proof, p)

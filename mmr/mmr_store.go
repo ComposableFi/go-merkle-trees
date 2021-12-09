@@ -5,25 +5,41 @@ type Store interface {
 	append(pos uint64, elems []interface{}) interface{}
 }
 
+type BatchElem struct {
+	pos  uint64
+	elem []interface{}
+}
+
 type Batch struct {
-	memoryBatch []Leaf
+	memoryBatch []BatchElem
 	store       Store
 }
 
 func NewBatch(store Store) *Batch {
 	return &Batch{
-		memoryBatch: []Leaf{},
+		memoryBatch: []BatchElem{},
 		store:       store,
 	}
 }
 
 func (b *Batch) append(pos uint64, elems []interface{}) {
-	b.memoryBatch = append(b.memoryBatch, Leaf{pos, elems})
+	b.memoryBatch = append(b.memoryBatch, BatchElem{pos, elems})
 }
 
-func (b *Batch) getElem(pos uint64) (interface{}, error) {
-	// TODO:  only search memoryBatch for elem.
-	return nil, nil
+func (b *Batch) getElem(pos uint64) interface{} {
+	memoryBatch := b.memoryBatch
+	reverse(memoryBatch)
+	for _, mb := range memoryBatch {
+		startPos, elems := mb.pos, mb.elem
+		if pos < startPos {
+			continue
+		} else if pos < startPos+uint64(len(elems)) {
+			return elems[pos-startPos]
+		} else {
+			break
+		}
+	}
+	return b.store.getElement(pos)
 }
 
 func (b *Batch) commit() struct{} {

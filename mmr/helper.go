@@ -2,6 +2,7 @@ package mmr
 
 import (
 	"math/bits"
+	"reflect"
 )
 
 func getPeakPosByHeight(height uint32) uint64 {
@@ -100,4 +101,12 @@ func pop(ph []interface{}) (interface{}, []interface{}) {
 	}
 	// return the last Items in the slice and the rest of the slice excluding the last Items
 	return ph[len(ph)-1], ph[:len(ph)-1]
+}
+
+func reverse(s interface{}) {
+	n := reflect.ValueOf(s).Len()
+	swap := reflect.Swapper(s)
+	for i, j := 0, n-1; i < j; i, j = i+1, j-1 {
+		swap(i, j)
+	}
 }
