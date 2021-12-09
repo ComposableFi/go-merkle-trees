@@ -1,12 +1,21 @@
 package mmr
 
 import (
-	"encoding/binary"
 	"encoding/hex"
-	"golang.org/x/crypto/blake2b"
 	"reflect"
 	"testing"
+
+	"golang.org/x/crypto/blake2b"
 )
+
+type testMerge struct{}
+
+func (t *testMerge) Merge(left, right interface{}) interface{} {
+	l := left.([]byte)
+	r := right.([]byte)
+	hash := blake2b.Sum256(append(l, r...))
+	return hash[:]
+}
 
 func hexDecode(h string) []byte {
 	b, err := hex.DecodeString(h)
@@ -168,7 +177,7 @@ func TestCalculateRoot(t *testing.T) {
 	}
 
 	for name, test := range tests {
-		m := MerkleProof{Merge: &Merge{}}
+		m := MerkleProof{Merge: &testMerge{}}
 		got, err := m.CalculateRoot(test.input.leaves, test.input.mmrSize, test.input.proofIter)
 		if err != nil {
 			t.Errorf("%s", err.Error())
@@ -177,106 +186,5 @@ func TestCalculateRoot(t *testing.T) {
 		if !reflect.DeepEqual(got, test.want) {
 			t.Errorf("%s: want %x  got %x", name, test.want, got)
 		}
-	}
-}
-
-func TestEmptyMMRRoot(t *testing.T) {
-	merge := &Merge{}
-	store := NewMemStore()
-	mmr := NewMMR(0, store, merge)
-	_, err := mmr.GetRoot()
-	if err != ErrGetRootOnEmpty {
-		t.Errorf("%s: want :%v  got %v", "empty mmr root", ErrGetRootOnEmpty, err)
-	}
-}
-
-type NumberHash []byte
-
-func (n NumberHash) From(num uint32) interface{} {
-	b := make([]byte, 4)
-	binary.LittleEndian.PutUint32(b, num)
-	hash := blake2b.Sum256(b)
-	return hash[:]
-}
-
-func TestGenRootFromProof(t *testing.T) {
-	merge := &Merge{}
-	store := NewMemStore()
-	mmr := NewMMR(0, store, merge)
-
-	count := 11
-	var positions []uint64
-	for i := 0; i < 11; i++ {
-		position, err := mmr.Push(NumberHash{}.From(uint32(i)))
-		if err != nil {
-			t.Errorf("%s: %s", "mmr root", err.Error())
-			return
-		}
-		positions = append(positions, position.(uint64))
-	}
-
-	var elem = uint32(count - 1)
-	var pos = positions[uint(elem)]
-	proof, err := mmr.GenProof([]uint64{pos})
-	if err != nil {
-		t.Errorf("%s: %s", "mmr gen proof", err.Error())
-		return
-	}
-
-	newElem := count
-	newPos, err := mmr.Push(NumberHash{}.From(uint32(newElem)))
-	if err != nil {
-		t.Errorf("%s: %s", "mmr gen proof", err.Error())
-		return
-	}
-
-	root, err := mmr.GetRoot()
-	if err != nil {
-		t.Errorf("%s: %s", "mmr root", err.Error())
-		return
-	}
-
-	commit := mmr.Commit()
-	if commit == nil {
-		t.Errorf("%s: %s", "mmr root", "commit changes")
-		return
-	}
-
-	calculatedRoot, err := proof.CalculateRootWithNewLeaf(
-		[]Leaf{{pos, NumberHash{}.From(elem)}},
-		newPos.(uint64),
-		NumberHash{}.From(uint32(newElem)),
-		LeafIndexToMMRSize(uint64(newElem)),
-	)
-	if err != nil {
-		t.Errorf("%s: %s", "mmr root calculateRootWithNewLeaf", err.Error())
-		return
-	}
-
-	if !reflect.DeepEqual(calculatedRoot, root) {
-		t.Errorf("%s: want :%v  got %v", "empty mmr root", root, calculatedRoot)
-	}
-}
-
-func TestMMRRoot(t *testing.T) {
-	merge := &Merge{}
-	store := NewMemStore()
-	mmr := NewMMR(0, store, merge)
-	for i := 0; i < 11; i++ {
-		_, err := mmr.Push(NumberHash{}.From(uint32(i)))
-		if err != nil {
-			t.Errorf("%s: %s", "mmr root", err.Error())
-			return
-		}
-	}
-
-	root, err := mmr.GetRoot()
-	if err != nil {
-		t.Errorf("%s: %s", "mmr root", err.Error())
-	}
-
-	want := "f6794677f37a57df6a5ec36ce61036e43a36c1a009d05c81c9aa685dde1fd6e3"
-	if !reflect.DeepEqual(hex.EncodeToString(root.([]byte)), want) {
-		t.Errorf("%s: want :%v  got %v", "empty mmr root", want, hex.EncodeToString(root.([]byte)))
 	}
 }

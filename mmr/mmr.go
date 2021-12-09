@@ -23,23 +23,15 @@ func NewMMR(mmrSize uint64, s Store, m merkle.Merge) *MMR {
 }
 
 func (m *MMR) findElem(pos uint64, hashes []interface{}) (interface{}, error) {
-	checkSub := func(left, right uint64) (bool, uint64) {
-		if left >= right {
-			return true, left - right
-		}
-		return false, 0
-	}
-
-	notOverflow, posOffset := checkSub(pos, m.size)
-	if notOverflow && uint64(len(hashes)) > posOffset {
+	if posOffset := pos - m.size; posOffset >= 0 && len(hashes) > int(posOffset) {
 		return hashes[posOffset], nil
 	}
 
-	elem := m.batch.getElem(pos)
-	if elem == nil {
-		return nil, ErrInconsistentStore
+	elem, err := m.batch.getElem(pos)
+	if err != nil {
+		// replace with custom error
+		return nil, fmt.Errorf("InconsitentStore")
 	}
-
 	return elem, nil
 }
 
@@ -52,9 +44,9 @@ func (m *MMR) IsEmpty() bool {
 }
 
 // push a element and return position
-func (m *MMR) Push(elem interface{}) (interface{}, error) {
+func (m *MMR) Push(elem interface{}) interface{} {
 	var elems []interface{}
-	// position of new elems
+	// position of new elem
 	elemPos := m.size
 	elems = append(elems, elem)
 
@@ -65,16 +57,8 @@ func (m *MMR) Push(elem interface{}) (interface{}, error) {
 		pos += 1
 		leftPos := pos - parentOffset(height)
 		rightPos := leftPos + siblingOffset(height)
-		leftElem, err := m.findElem(leftPos, elems)
-		if err != nil {
-			return nil, err
-		}
-
-		rightElem, err := m.findElem(rightPos, elems)
-		if err != nil {
-			return nil, err
-		}
-
+		leftElem, _ := m.findElem(leftPos, elems)
+		rightElem, _ := m.findElem(rightPos, elems)
 		parentElem := m.merge.Merge(leftElem, rightElem)
 		elems = append(elems, parentElem)
 		height += 1
@@ -83,15 +67,17 @@ func (m *MMR) Push(elem interface{}) (interface{}, error) {
 	m.batch.append(elemPos, elems)
 	// update mmrSize
 	m.size = pos + 1
-	return elemPos, nil
+	return elemPos
 }
 
 func (m *MMR) GetRoot() (interface{}, error) {
 	if m.size == 0 {
-		return nil, ErrGetRootOnEmpty
+		// TODO: replace with custom error ttoe
+		return nil, fmt.Errorf("GetRootOnEmpty")
 	} else if m.size == 1 {
-		e := m.batch.getElem(0)
-		if e == nil {
+		e, err := m.batch.getElem(0)
+		if err != nil {
+			// TODO: replace with custom error ttoe
 			return nil, ErrInconsistentStore
 		}
 		return e, nil
@@ -99,8 +85,8 @@ func (m *MMR) GetRoot() (interface{}, error) {
 
 	var peaks []interface{}
 	for _, peakPos := range getPeaks(m.size) {
-		elem := m.batch.getElem(peakPos)
-		if elem == nil {
+		elem, err := m.batch.getElem(peakPos)
+		if err != nil {
 			return nil, ErrInconsistentStore
 		}
 		peaks = append(peaks, elem)
@@ -139,18 +125,18 @@ func (m *MMR) bagRHSPeaks(rhsPeaks []interface{}) (interface{}, []interface{}) {
 /// 1. find a lower tree in peak that can generate a complete merkle proof for position
 /// 2. find that tree by compare positions
 /// 3. generate proof for each positions
-func (m *MMR) genProofForPeak(proof *Iterator, posList []uint64, peakPos uint64) error {
+func (m *MMR) genProofForPeak(proof []interface{}, posList []uint64, peakPos uint64) ([]interface{}, error) {
 	if len(posList) == 1 && reflect.DeepEqual(posList, []uint64{peakPos}) {
-		return nil
+		return []interface{}{}, nil
 	}
 	// take peak root from store if no positions need to be proof
 	if len(posList) == 0 {
-		elem := m.batch.getElem(peakPos)
-		if elem == nil {
-			return ErrInconsistentStore
+		elem, err := m.batch.getElem(peakPos)
+		if err != nil {
+			return []interface{}{}, fmt.Errorf("InconsistentStore")
 		}
-		proof.push(elem)
-		return nil
+		proof = append(proof, elem)
+		return proof, nil
 	}
 
 	var queue []peak
@@ -185,42 +171,42 @@ func (m *MMR) genProofForPeak(proof *Iterator, posList []uint64, peakPos uint64)
 			// drop sibling
 			queue = queue[1:]
 		} else {
-			p := m.batch.getElem(sibPos)
-			if p == nil {
-				return ErrCorruptedProof
+			// TODO: implement getElem
+			p, err := m.batch.getElem(sibPos)
+			if err != nil {
+				return nil, ErrCorruptedProof
 			}
-			proof.push(p)
+			proof = append(proof, p)
 		}
 		if parentPos < peakPos {
 			queue = append(queue, peak{height + 1, parentPos})
 		}
 	}
-	return nil
+	return proof, nil
 }
 
 /// Generate merkle proof for positions
 /// 1. sort positions
 /// 2. push merkle proof to proof by peak from left to right
 /// 3. push bagged right hand side root
-func (m *MMR) GenProof(posList []uint64) (*MerkleProof, error) {
+func (m *MMR) GenProof(posList []uint64) ([]uint64, interface{}, error) {
 	if len(posList) == 0 {
-		return nil, ErrGenProofForInvalidLeaves
+		return nil, nil, ErrGenProofForInvalidLeaves
 	}
 	if m.size == 1 && reflect.DeepEqual(posList, []uint64{0}) {
-		fmt.Printf("returning empty proof \n")
-		return newMerkleProof(m.size, NewIterator(), m.merge), nil
+		return posList, newMerkleProof(m.size, make([]interface{}, 0)), nil
 	}
 
 	sort.Slice(posList, func(i, j int) bool {
 		return posList[i] < posList[j]
 	})
 	var peaks = getPeaks(m.size)
-	var proof = NewIterator()
+	var proof = make([]interface{}, 0)
 	// generate merkle proof for each peaks
 	var baggingTrack uint = 0
 	for _, peakPos := range peaks {
 		var pl []uint64
-		pl = takeWhileVecUint64(&posList, func(u uint64) bool {
+		posList, pl = takeWhileVecUint64(posList, func(u uint64) bool {
 			return u <= peakPos
 		})
 		if len(pl) == 0 {
@@ -229,19 +215,20 @@ func (m *MMR) GenProof(posList []uint64) (*MerkleProof, error) {
 			baggingTrack = 0
 		}
 		var err error
-		err = m.genProofForPeak(proof, pl, peakPos)
+		proof, err = m.genProofForPeak(proof, pl, peakPos)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
 	// ensure there are no remaining positions
 	if len(posList) != 0 {
-		return nil, ErrGenProofForInvalidLeaves
+		return nil, nil, ErrGenProofForInvalidLeaves
 	}
 
 	if baggingTrack > 1 {
-		var rhsPeaks = proof.splitOff(proof.length() - int(baggingTrack))
+		var rhsPeaks = proof[len(proof)-int(baggingTrack):]
+		proof = proof[:len(proof)-int(baggingTrack)]
 
 		var p interface{}
 		p, rhsPeaks = m.bagRHSPeaks(rhsPeaks)
@@ -249,10 +236,10 @@ func (m *MMR) GenProof(posList []uint64) (*MerkleProof, error) {
 			// TODO: handle error properly
 			panic("bagging rhs peaks")
 		}
-		proof.push(p)
+		proof = append(proof, p)
 	}
 
-	return newMerkleProof(m.size, proof, m.merge), nil
+	return posList, newMerkleProof(m.size, proof), nil
 }
 
 func (m *MMR) Commit() interface{} {
@@ -261,15 +248,14 @@ func (m *MMR) Commit() interface{} {
 
 type MerkleProof struct {
 	mmrSize uint64
-	proof   *Iterator
+	proof   []interface{}
 	Merge   merkle.Merge
 }
 
-func newMerkleProof(mmrSize uint64, proof *Iterator, m merkle.Merge) *MerkleProof {
+func newMerkleProof(mmrSize uint64, proof []interface{}) *MerkleProof {
 	return &MerkleProof{
 		mmrSize: mmrSize,
 		proof:   proof,
-		Merge:   m,
 	}
 }
 
@@ -278,7 +264,7 @@ func (m *MerkleProof) MMRSize() uint64 {
 }
 
 func (m *MerkleProof) ProofItems() []interface{} {
-	return m.proof.Items
+	return m.proof
 }
 
 func (m *MerkleProof) calculatePeakRoot(leaves []Leaf, peakPos uint64, proofs *Iterator) (interface{}, error) {
@@ -374,37 +360,6 @@ func (m *MerkleProof) CalculateRoot(leaves []Leaf, mmrSize uint64, proofs *Itera
 	return m.baggingPeaksHashes(peaksHashes)
 }
 
-/// from merkle proof of leaf n to calculate merkle root of n + 1 leaves.
-/// by observe the MMR construction graph we know it is possible.
-/// https://github.com/jjyr/merkle-mountain-range#construct
-/// this is kinda tricky, but it works, and useful
-func (m *MerkleProof) CalculateRootWithNewLeaf(leaves []Leaf, newPos uint64, newElem interface{}, newMMRSize uint64) (interface{}, error) {
-	posHeight := posHeightInTree(newPos)
-	nextHeight := posHeightInTree(newPos + 1)
-	if nextHeight > posHeight {
-		peaksHashes, err := m.calculatePeaksHashes(leaves, m.mmrSize, m.proof)
-		if err != nil {
-			return nil, err
-		}
-		peaksPos := getPeaks(newMMRSize)
-		// reverse touched peaks
-		var i uint = 0
-		for peaksPos[i] < newPos {
-			i += 1
-		}
-
-		reversePeakHashes := peaksHashes[i:]
-		reverse(reversePeakHashes)
-		peaksHashes = append(peaksHashes[:i], reversePeakHashes...)
-		iter := NewIterator()
-		iter.Items = peaksHashes
-		return m.CalculateRoot([]Leaf{{newPos, newElem}}, newMMRSize, iter)
-	} else {
-		pushLeaf(&leaves, Leaf{newPos, newElem})
-		return m.CalculateRoot(leaves, newMMRSize, m.proof)
-	}
-}
-
 func (m *MerkleProof) calculatePeaksHashes(leaves []Leaf, mmrSize uint64, proofs *Iterator) ([]interface{}, error) {
 	// special handle the only 1 Leaf MerkleProof
 	if mmrSize == 1 && len(leaves) == 1 && leaves[0].pos == 0 {
@@ -424,7 +379,7 @@ func (m *MerkleProof) calculatePeaksHashes(leaves []Leaf, mmrSize uint64, proofs
 	var peaksHashes []interface{}
 	for _, peaksPos := range peaks {
 		var lvs []Leaf
-		lvs = takeWhileVec(&leaves, func(l Leaf) bool {
+		leaves, lvs = takeWhileVec(leaves, func(l Leaf) bool {
 			return l.pos <= peaksPos
 		})
 
@@ -470,26 +425,20 @@ func (m *MerkleProof) calculatePeaksHashes(leaves []Leaf, mmrSize uint64, proofs
 	return peaksHashes, nil
 }
 
-func takeWhileVec(v *[]Leaf, p func(Leaf) bool) []Leaf {
-	vCopy := *v
-	for i := 0; i < len(vCopy); i++ {
-		if !p(vCopy[i]) {
-			*v = vCopy[i:]
-			return vCopy[:i]
+func takeWhileVec(v []Leaf, p func(Leaf) bool) (drained, collect []Leaf) {
+	for i := 0; i < len(v); i++ {
+		if !p(v[i]) {
+			return v[i:], v[:i]
 		}
 	}
-	*v = vCopy[:0]
-	return vCopy[:]
+	return v[:0], v[:]
 }
 
-func takeWhileVecUint64(v *[]uint64, p func(uint64) bool) []uint64 {
-	vCopy := *v
-	for i := 0; i < len(vCopy); i++ {
-		if !p(vCopy[i]) {
-			*v = vCopy[i:]
-			return vCopy[:i]
+func takeWhileVecUint64(v []uint64, p func(uint64) bool) (drained, collect []uint64) {
+	for i := 0; i < len(v); i++ {
+		if !p(v[i]) {
+			return v[i:], v[:i]
 		}
 	}
-	*v = vCopy[:0]
-	return vCopy[:]
+	return v[:0], v[:]
 }

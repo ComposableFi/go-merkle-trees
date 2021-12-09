@@ -86,21 +86,3 @@ func TestLeafIndexToMMRSize(t *testing.T) {
 		}
 	}
 }
-
-func TestReverse(t *testing.T) {
-	tests := map[string]struct {
-		input []int
-		want  []int
-	}{
-		"3 items": {input: []int{1, 2, 3}, want: []int{3, 2, 1}},
-		"1 item":  {input: []int{0}, want: []int{0}},
-		"no item": {input: []int{}, want: []int{}},
-	}
-
-	for name, test := range tests {
-		reverse(test.input)
-		if !reflect.DeepEqual(test.input, test.want) {
-			t.Errorf("%s: want %v  got %v", name, test.want, test.input)
-		}
-	}
-}
