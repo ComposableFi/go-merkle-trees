@@ -1,9 +1,6 @@
 package mmr
 
-import (
-	"fmt"
-	"golang.org/x/crypto/blake2b"
-)
+import "golang.org/x/crypto/blake2b"
 
 type MemStore map[uint64]interface{}
 
@@ -46,9 +43,8 @@ func (m *MemMMR) GetRoot() (interface{}, error) {
 func (m *MemMMR) Push(elem interface{}) interface{} {
 	merge := &Merge{}
 	mmr := NewMMR(m.mmrSize, m.store, merge)
-	pos, err := mmr.Push(elem)
-	if err != nil {
-		fmt.Printf("err: %v", err.Error())
+	pos := mmr.Push(elem)
+	if pos == nil {
 		return nil
 	}
 	if mmr.Commit() == nil {
