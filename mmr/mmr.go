@@ -189,12 +189,12 @@ func (m *MMR) genProofForPeak(proof []interface{}, posList []uint64, peakPos uin
 /// 1. sort positions
 /// 2. push merkle proof to proof by peak from left to right
 /// 3. push bagged right hand side root
-func (m *MMR) GenProof(posList []uint64) ([]uint64, interface{}, error) {
+func (m *MMR) GenProof(posList []uint64) (*MerkleProof, error) {
 	if len(posList) == 0 {
-		return nil, nil, ErrGenProofForInvalidLeaves
+		return nil, ErrGenProofForInvalidLeaves
 	}
 	if m.size == 1 && reflect.DeepEqual(posList, []uint64{0}) {
-		return posList, newMerkleProof(m.size, make([]interface{}, 0)), nil
+		return newMerkleProof(m.size, make([]interface{}, 0)), nil
 	}
 
 	sort.Slice(posList, func(i, j int) bool {
@@ -206,7 +206,7 @@ func (m *MMR) GenProof(posList []uint64) ([]uint64, interface{}, error) {
 	var baggingTrack uint = 0
 	for _, peakPos := range peaks {
 		var pl []uint64
-		posList, pl = takeWhileVecUint64(posList, func(u uint64) bool {
+		pl = takeWhileVecUint64(&posList, func(u uint64) bool {
 			return u <= peakPos
 		})
 		if len(pl) == 0 {
@@ -217,13 +217,13 @@ func (m *MMR) GenProof(posList []uint64) ([]uint64, interface{}, error) {
 		var err error
 		proof, err = m.genProofForPeak(proof, pl, peakPos)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 	}
 
 	// ensure there are no remaining positions
 	if len(posList) != 0 {
-		return nil, nil, ErrGenProofForInvalidLeaves
+		return nil, ErrGenProofForInvalidLeaves
 	}
 
 	if baggingTrack > 1 {
@@ -239,7 +239,7 @@ func (m *MMR) GenProof(posList []uint64) ([]uint64, interface{}, error) {
 		proof = append(proof, p)
 	}
 
-	return posList, newMerkleProof(m.size, proof), nil
+	return newMerkleProof(m.size, proof), nil
 }
 
 func (m *MMR) Commit() interface{} {
@@ -434,11 +434,23 @@ func takeWhileVec(v []Leaf, p func(Leaf) bool) (drained, collect []Leaf) {
 	return v[:0], v[:]
 }
 
-func takeWhileVecUint64(v []uint64, p func(uint64) bool) (drained, collect []uint64) {
-	for i := 0; i < len(v); i++ {
-		if !p(v[i]) {
-			return v[i:], v[:i]
+func takeWhileVecUint64(v *[]uint64, p func(uint64) bool) []uint64 {
+	vCopy := *v
+	for i := 0; i < len(vCopy); i++ {
+		if !p(vCopy[i]) {
+			*v = vCopy[i:]
+			return vCopy[:i]
 		}
 	}
-	return v[:0], v[:]
+	*v = vCopy[:0]
+	return vCopy[:]
 }
+
+//func takeWhileVecUint64(v []uint64, p func(uint64) bool) (drained, collect []uint64) {
+//	for i := 0; i < len(v); i++ {
+//		if !p(v[i]) {
+//			return v[i:], v[:i]
+//		}
+//	}
+//	return v[:0], v[:]
+//}

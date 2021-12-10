@@ -1,8 +1,8 @@
 package mmr
 
 type Store interface {
-	getElement(pos uint64) interface{}
-	append(pos uint64, elems []interface{}) interface{}
+	getElem(pos uint64) interface{}
+	append(pos uint64, elems []interface{})
 }
 
 type BatchElem struct {
@@ -39,9 +39,10 @@ func (b *Batch) getElem(pos uint64) interface{} {
 			break
 		}
 	}
-	return b.store.getElement(pos)
+	return b.store.getElem(pos)
 }
 
+// TODO: implement batch commit
 func (b *Batch) commit() struct{} {
 	return struct{}{}
 }

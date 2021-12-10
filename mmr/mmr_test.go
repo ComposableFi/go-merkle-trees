@@ -4,18 +4,7 @@ import (
 	"encoding/hex"
 	"reflect"
 	"testing"
-
-	"golang.org/x/crypto/blake2b"
 )
-
-type testMerge struct{}
-
-func (t *testMerge) Merge(left, right interface{}) interface{} {
-	l := left.([]byte)
-	r := right.([]byte)
-	hash := blake2b.Sum256(append(l, r...))
-	return hash[:]
-}
 
 func hexDecode(h string) []byte {
 	b, err := hex.DecodeString(h)
@@ -177,7 +166,7 @@ func TestCalculateRoot(t *testing.T) {
 	}
 
 	for name, test := range tests {
-		m := MerkleProof{Merge: &testMerge{}}
+		m := MerkleProof{Merge: &Merge{}}
 		got, err := m.CalculateRoot(test.input.leaves, test.input.mmrSize, test.input.proofIter)
 		if err != nil {
 			t.Errorf("%s", err.Error())
@@ -187,4 +176,14 @@ func TestCalculateRoot(t *testing.T) {
 			t.Errorf("%s: want %x  got %x", name, test.want, got)
 		}
 	}
+}
+
+type NumberHash []byte
+
+func (n *NumberHash) from() {
+
+}
+
+func testMMr() {
+
 }
