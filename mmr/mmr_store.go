@@ -6,8 +6,8 @@ type Store interface {
 }
 
 type BatchElem struct {
-	pos  uint64
-	elem []interface{}
+	pos   uint64
+	elems []interface{}
 }
 
 type Batch struct {
@@ -27,10 +27,12 @@ func (b *Batch) append(pos uint64, elems []interface{}) {
 }
 
 func (b *Batch) getElem(pos uint64) interface{} {
-	memoryBatch := b.memoryBatch
+	memoryBatch := make([]BatchElem, len(b.memoryBatch))
+	copy(memoryBatch, b.memoryBatch)
 	reverse(memoryBatch)
+
 	for _, mb := range memoryBatch {
-		startPos, elems := mb.pos, mb.elem
+		startPos, elems := mb.pos, mb.elems
 		if pos < startPos {
 			continue
 		} else if pos < startPos+uint64(len(elems)) {
@@ -42,7 +44,9 @@ func (b *Batch) getElem(pos uint64) interface{} {
 	return b.store.getElem(pos)
 }
 
-// TODO: implement batch commit
 func (b *Batch) commit() struct{} {
+	for _, mb := range b.memoryBatch {
+		b.store.append(mb.pos, mb.elems)
+	}
 	return struct{}{}
 }
