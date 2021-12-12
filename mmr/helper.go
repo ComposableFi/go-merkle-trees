@@ -110,3 +110,7 @@ func reverse(s interface{}) {
 		swap(i, j)
 	}
 }
+
+func pushLeaf(leaves *[]Leaf, l Leaf) {
+	*leaves = append(*leaves, l)
+}
