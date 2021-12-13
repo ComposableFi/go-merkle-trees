@@ -23,3 +23,8 @@ type LeafIndex struct {
 	Index uint32
 	Leaf  interface{}
 }
+
+// CBMT is representation type for the complete binary merkle tree
+type CBMT struct {
+	Merge Merge
+}
