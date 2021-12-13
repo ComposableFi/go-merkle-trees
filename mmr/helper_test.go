@@ -50,3 +50,57 @@ func TestGetPeaks(t *testing.T) {
 		}
 	}
 }
+
+func TestLeafIndexToPos(t *testing.T) {
+	tests := map[string]struct {
+		input uint64
+		want  uint64
+	}{
+		"index 0": {input: 0, want: 0},
+		"index 1": {input: 1, want: 1},
+		"index 2": {input: 2, want: 3},
+	}
+
+	for name, test := range tests {
+		got := LeafIndexToPos(test.input)
+		if got != test.want {
+			t.Errorf("%s: want %v  got %v", name, test.want, got)
+		}
+	}
+}
+
+func TestLeafIndexToMMRSize(t *testing.T) {
+	tests := map[string]struct {
+		input uint64
+		want  uint64
+	}{
+		"index 0": {input: 0, want: 1},
+		"index 1": {input: 1, want: 3},
+		"index 2": {input: 2, want: 4},
+	}
+
+	for name, test := range tests {
+		got := LeafIndexToMMRSize(test.input)
+		if got != test.want {
+			t.Errorf("%s: want %v  got %v", name, test.want, got)
+		}
+	}
+}
+
+func TestReverse(t *testing.T) {
+	tests := map[string]struct {
+		input []int
+		want  []int
+	}{
+		"3 items": {input: []int{1, 2, 3}, want: []int{3, 2, 1}},
+		"1 item":  {input: []int{0}, want: []int{0}},
+		"no item": {input: []int{}, want: []int{}},
+	}
+
+	for name, test := range tests {
+		reverse(test.input)
+		if !reflect.DeepEqual(test.input, test.want) {
+			t.Errorf("%s: want %v  got %v", name, test.want, test.input)
+		}
+	}
+}
