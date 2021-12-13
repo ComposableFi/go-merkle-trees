@@ -19,15 +19,14 @@ func main() {
 	for _, l := range leaves {
 		leavesI = append(leavesI, l)
 	}
-	mtree := merkle.Tree{
-		Nodes: leavesI,
+	cbmt := merkle.CBMT{
 		Merge: MergeUint64{},
 	}
-	root := mtree.BuildRoot(leavesI)
+	root := cbmt.BuildMerkleRoot(leavesI)
 	fmt.Printf("Merkle root is %v \n", root)
 
 	// build merkle proof for 42 (its index is 1);
-	proof, err := mtree.BuildTreeAndProof(leavesI, []uint32{1})
+	proof, err := cbmt.BuildMerkleProof(leavesI, []uint32{1})
 	if err != nil {
 		panic(err)
 	}
@@ -41,14 +40,14 @@ func main() {
 	fmt.Printf("merkle proof verify result is %v\n", verifyResult)
 
 	// build merkle proof for 42 and 20191116 (indices are 1 and 4);
-	proof, err = mtree.BuildTreeAndProof(leavesI, []uint32{1, 4})
+	proof, err = cbmt.BuildMerkleProof(leavesI, []uint32{1, 4})
 	if err != nil {
 		panic(err)
 	}
 	fmt.Printf("merkle proof lemmas are %v, indices are %v\n", proof.Lemmas, proof.Indices)
 
 	// retrieve leaves
-	retrievedLeaves, err := proof.RetriveLeaves(leavesI)
+	retrievedLeaves, err := cbmt.RetriveLeaves(proof, leavesI)
 	if err != nil {
 		panic(err)
 	}
