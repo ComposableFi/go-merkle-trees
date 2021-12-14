@@ -35,13 +35,14 @@ func main() {
 	}
 	fmt.Printf("merkle proof indices are %v\n", proof.Indices)
 
-	// TODO: make []byte conversion and compare possible
 	// verify merkle proof
-	// verifyResult, err := proof.Verify(root, []interface{}{"Hi"})
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// fmt.Printf("merkle proof verify result is %v\n", verifyResult)
+	verifyResult, err := proof.Verify(root, []interface{}{[]byte("Dorood")})
+	if err != nil {
+		panic(err)
+	} else if !verifyResult {
+		panic("merkle proof verify result is false")
+	}
+	fmt.Printf("merkle proof verify result is %v\n", verifyResult)
 
 	// build merkle proof for 42 and 20191116 (indices are 1 and 4);
 	proof, err = cbmt.BuildMerkleProof(leavesI, []uint32{1, 4})

@@ -66,7 +66,7 @@ func (p *Proof) Verify(root interface{}, leaves []interface{}) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if root == r {
+	if helpers.AreInterfacesEqual(root, r) {
 		return true, nil
 	}
 	return false, nil
