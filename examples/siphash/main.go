@@ -36,6 +36,8 @@ func main() {
 	verifyResult, err := proof.Verify(root, []interface{}{uint64(42)})
 	if err != nil {
 		panic(err)
+	} else if !verifyResult {
+		panic("merkle proof verify result is false")
 	}
 	fmt.Printf("merkle proof verify result is %v\n", verifyResult)
 
