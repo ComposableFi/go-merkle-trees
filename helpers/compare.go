@@ -8,6 +8,6 @@ func AreInterfacesEqual(first, second interface{}) bool {
 	case []byte:
 		return bytes.Equal(first.([]byte), second.([]byte))
 	default:
-		return true //first == second
+		return first == second
 	}
 }
