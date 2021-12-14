@@ -4,9 +4,10 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"golang.org/x/crypto/blake2b"
 	"reflect"
 	"testing"
+
+	"golang.org/x/crypto/blake2b"
 )
 
 type NumberHash []byte
