@@ -207,8 +207,6 @@ func (m *MMR) GenProof(posList []uint64) (*MerkleProof, error) {
 		return nil, ErrGenProofForInvalidLeaves
 	}
 	if m.size == 1 && reflect.DeepEqual(posList, []uint64{0}) {
-		// TODO: replace with log implementation
-		fmt.Printf("returning empty proof \n")
 		return newMerkleProof(m.size, NewIterator(), m.merge), nil
 	}
 
@@ -245,7 +243,6 @@ func (m *MMR) GenProof(posList []uint64) (*MerkleProof, error) {
 		var p interface{}
 		p, rhsPeaks = m.bagRHSPeaks(rhsPeaks)
 		if p == nil {
-			// TODO: handle error properly
 			panic("bagging rhs peaks")
 		}
 		proof.push(p)
