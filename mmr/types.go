@@ -1,8 +1,8 @@
 package mmr
 
 type Leaf struct {
-	pos  uint64
-	hash interface{}
+	Pos  uint64
+	Hash interface{}
 }
 
 type leafWithHash struct {

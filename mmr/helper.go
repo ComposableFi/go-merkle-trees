@@ -30,9 +30,9 @@ func parentOffset(height uint32) uint64 {
 }
 
 func getRightPeak(height uint32, pos, mmrSize uint64) *peak {
-	// move to right sibling pos
+	// move to right sibling Pos
 	pos += siblingOffset(height)
-	// loop until we find a pos in mmr
+	// loop until we find a Pos in mmr
 	for pos > mmrSize-1 {
 		if height == 0 {
 			return nil
