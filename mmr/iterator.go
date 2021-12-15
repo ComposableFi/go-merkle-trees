@@ -24,7 +24,7 @@ func (i *Iterator) length() int {
 }
 
 func (i *Iterator) splitOff(index int) []interface{} {
-	split := i.Items[i.length()-index:]
+	split := i.Items[index:]
 	i.Items = i.Items[:index]
 	return split
 }

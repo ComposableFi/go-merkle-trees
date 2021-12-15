@@ -162,8 +162,8 @@ func (m *MMR) genProofForPeak(proof *Iterator, posList []uint64, peakPos uint64)
 		pos, height := queue[0].pos, queue[0].height
 		// pop front
 		queue = queue[1:]
-		if pos <= peakPos {
-			panic("pos is less or equal to peak position")
+		if !(pos <= peakPos) {
+			panic("pos is not less than or equal to peak position")
 		}
 
 		if pos == peakPos {
@@ -207,6 +207,7 @@ func (m *MMR) GenProof(posList []uint64) (*MerkleProof, error) {
 		return nil, ErrGenProofForInvalidLeaves
 	}
 	if m.size == 1 && reflect.DeepEqual(posList, []uint64{0}) {
+		// TODO: replace with log implementation
 		fmt.Printf("returning empty proof \n")
 		return newMerkleProof(m.size, NewIterator(), m.merge), nil
 	}
@@ -219,8 +220,7 @@ func (m *MMR) GenProof(posList []uint64) (*MerkleProof, error) {
 	// generate merkle proof for each peaks
 	var baggingTrack uint = 0
 	for _, peakPos := range peaks {
-		var pl []uint64
-		pl = takeWhileVecUint64(&posList, func(u uint64) bool {
+		pl := takeWhileVecUint64(&posList, func(u uint64) bool {
 			return u <= peakPos
 		})
 		if len(pl) == 0 {
@@ -242,10 +242,9 @@ func (m *MMR) GenProof(posList []uint64) (*MerkleProof, error) {
 
 	if baggingTrack > 1 {
 		var rhsPeaks = proof.splitOff(proof.length() - int(baggingTrack))
-
 		var p interface{}
 		p, rhsPeaks = m.bagRHSPeaks(rhsPeaks)
-		if p != nil {
+		if p == nil {
 			// TODO: handle error properly
 			panic("bagging rhs peaks")
 		}
@@ -403,6 +402,16 @@ func (m *MerkleProof) CalculateRootWithNewLeaf(leaves []Leaf, newPos uint64, new
 		pushLeaf(&leaves, Leaf{newPos, newElem})
 		return m.CalculateRoot(leaves, newMMRSize, m.proof)
 	}
+}
+
+func (m *MerkleProof) Verify(root interface{}, leaves []Leaf) bool {
+	calculatedRoot, err := m.CalculateRoot(leaves, m.mmrSize, m.proof)
+	if err != nil {
+		fmt.Printf("root verification: %s \n", err.Error())
+		return false
+	}
+
+	return reflect.DeepEqual(calculatedRoot, root)
 }
 
 func (m *MerkleProof) calculatePeaksHashes(leaves []Leaf, mmrSize uint64, proofs *Iterator) ([]interface{}, error) {

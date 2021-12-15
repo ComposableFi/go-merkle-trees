@@ -2,6 +2,7 @@ package mmr
 
 import (
 	"fmt"
+
 	"golang.org/x/crypto/blake2b"
 )
 
