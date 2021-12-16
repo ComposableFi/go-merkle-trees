@@ -1,8 +1,6 @@
 package mmr
 
 import (
-	"fmt"
-
 	"golang.org/x/crypto/blake2b"
 )
 
@@ -49,7 +47,7 @@ func (m *MemMMR) Push(elem interface{}) interface{} {
 	mmr := NewMMR(m.mmrSize, m.store, merge)
 	pos, err := mmr.Push(elem)
 	if err != nil {
-		fmt.Printf("err: %v", err.Error())
+		log.Error(err.Error())
 		return nil
 	}
 	if mmr.Commit() == nil {

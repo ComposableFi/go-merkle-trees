@@ -1,7 +1,6 @@
 package mmr
 
 import (
-	"fmt"
 	"reflect"
 	"sort"
 
@@ -60,7 +59,7 @@ func (m *MMR) Push(elem interface{}) (interface{}, error) {
 
 	var height uint32 = 0
 	var pos = elemPos
-	// continue to merge tree node if next pos higher than current
+	// continue to merge tree node if next Pos higher than current
 	for posHeightInTree(pos+1) > height {
 		pos += 1
 		leftPos := pos - parentOffset(height)
@@ -163,7 +162,7 @@ func (m *MMR) genProofForPeak(proof *Iterator, posList []uint64, peakPos uint64)
 		// pop front
 		queue = queue[1:]
 		if !(pos <= peakPos) {
-			panic("pos is not less than or equal to peak position")
+			panic("Pos is not less than or equal to peak position")
 		}
 
 		if pos == peakPos {
@@ -207,7 +206,7 @@ func (m *MMR) GenProof(posList []uint64) (*MerkleProof, error) {
 		return nil, ErrGenProofForInvalidLeaves
 	}
 	if m.size == 1 && reflect.DeepEqual(posList, []uint64{0}) {
-		return newMerkleProof(m.size, NewIterator(), m.merge), nil
+		return NewMerkleProof(m.size, NewIterator(), m.merge), nil
 	}
 
 	sort.Slice(posList, func(i, j int) bool {
@@ -248,7 +247,7 @@ func (m *MMR) GenProof(posList []uint64) (*MerkleProof, error) {
 		proof.push(p)
 	}
 
-	return newMerkleProof(m.size, proof, m.merge), nil
+	return NewMerkleProof(m.size, proof, m.merge), nil
 }
 
 func (m *MMR) Commit() interface{} {
@@ -261,7 +260,7 @@ type MerkleProof struct {
 	Merge   merkle.Merge
 }
 
-func newMerkleProof(mmrSize uint64, proof *Iterator, m merkle.Merge) *MerkleProof {
+func NewMerkleProof(mmrSize uint64, proof *Iterator, m merkle.Merge) *MerkleProof {
 	return &MerkleProof{
 		mmrSize: mmrSize,
 		proof:   proof,
@@ -282,10 +281,10 @@ func (m *MerkleProof) calculatePeakRoot(leaves []Leaf, peakPos uint64, proofs *I
 		panic("can't be empty")
 	}
 
-	// (position, hash, height)
+	// (position, Hash, height)
 	var queue []leafWithHash
 	for _, l := range leaves {
-		queue = append(queue, leafWithHash{l.pos, l.hash, 0})
+		queue = append(queue, leafWithHash{l.Pos, l.Hash, 0})
 	}
 
 	// calculate tree root from each items
@@ -303,10 +302,10 @@ func (m *MerkleProof) calculatePeakRoot(leaves []Leaf, peakPos uint64, proofs *I
 		var sibPos, parentPos = func() (uint64, uint64) {
 			var siblingOffset = siblingOffset(height)
 			if nextHeight > height {
-				// implies pos is right sibling
+				// implies Pos is right sibling
 				return pos - siblingOffset, pos + 1
 			} else {
-				// pos is left sibling
+				// Pos is left sibling
 				return pos + siblingOffset, pos + parentOffset(height)
 			}
 		}()
@@ -351,7 +350,6 @@ func (m *MerkleProof) baggingPeaksHashes(peaksHashes []interface{}) (interface{}
 	}
 
 	if len(peaksHashes) == 0 {
-		fmt.Printf("length of peaksHashes is 0 \n")
 		return nil, ErrCorruptedProof
 	}
 	return peaksHashes[len(peaksHashes)-1], nil
@@ -404,7 +402,7 @@ func (m *MerkleProof) CalculateRootWithNewLeaf(leaves []Leaf, newPos uint64, new
 func (m *MerkleProof) Verify(root interface{}, leaves []Leaf) bool {
 	calculatedRoot, err := m.CalculateRoot(leaves, m.mmrSize, m.proof)
 	if err != nil {
-		fmt.Printf("root verification: %s \n", err.Error())
+		log.Errorf("root verification: %s \n", err.Error())
 		return false
 	}
 
@@ -413,17 +411,17 @@ func (m *MerkleProof) Verify(root interface{}, leaves []Leaf) bool {
 
 func (m *MerkleProof) calculatePeaksHashes(leaves []Leaf, mmrSize uint64, proofs *Iterator) ([]interface{}, error) {
 	// special handle the only 1 Leaf MerkleProof
-	if mmrSize == 1 && len(leaves) == 1 && leaves[0].pos == 0 {
+	if mmrSize == 1 && len(leaves) == 1 && leaves[0].Pos == 0 {
 		var items []interface{}
 		for _, l := range leaves {
-			items = append(items, l.hash)
+			items = append(items, l.Hash)
 		}
 		return items, nil
 	}
 
 	// sort items by position
 	sort.SliceStable(leaves, func(i, j int) bool {
-		return leaves[i].pos < leaves[j].pos
+		return leaves[i].Pos < leaves[j].Pos
 	})
 
 	peaks := getPeaks(mmrSize)
@@ -431,13 +429,13 @@ func (m *MerkleProof) calculatePeaksHashes(leaves []Leaf, mmrSize uint64, proofs
 	for _, peaksPos := range peaks {
 		var lvs []Leaf
 		lvs = takeWhileVec(&leaves, func(l Leaf) bool {
-			return l.pos <= peaksPos
+			return l.Pos <= peaksPos
 		})
 
 		var peakRoot interface{}
-		if len(lvs) == 1 && lvs[0].pos == peaksPos {
+		if len(lvs) == 1 && lvs[0].Pos == peaksPos {
 			// Leaf is the peak
-			peakRoot = lvs[0].hash
+			peakRoot = lvs[0].Hash
 			// remove Leaf
 			lvs = append(lvs[:0], lvs[0+1:]...)
 		} else if len(lvs) == 0 {
@@ -469,7 +467,6 @@ func (m *MerkleProof) calculatePeaksHashes(leaves []Leaf, mmrSize uint64, proofs
 	}
 	// ensure nothing left in proof_iter
 	if proofs.next() != nil {
-		fmt.Printf("something is left in proof_iter")
 		return nil, ErrCorruptedProof
 	}
 
