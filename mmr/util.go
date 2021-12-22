@@ -50,9 +50,7 @@ func (m *MemMMR) Push(elem interface{}) interface{} {
 		log.Error(err.Error())
 		return nil
 	}
-	if mmr.Commit() == nil {
-		return nil
-	}
+	mmr.Commit()
 	return pos
 }
 

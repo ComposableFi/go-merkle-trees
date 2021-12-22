@@ -44,9 +44,8 @@ func (b *Batch) getElem(pos uint64) interface{} {
 	return b.store.getElem(pos)
 }
 
-func (b *Batch) commit() struct{} {
+func (b *Batch) commit() {
 	for _, mb := range b.memoryBatch {
 		b.store.append(mb.pos, mb.elems)
 	}
-	return struct{}{}
 }

@@ -51,7 +51,7 @@ func (m *MMR) IsEmpty() bool {
 }
 
 // push a element and return position
-func (m *MMR) Push(elem interface{}) (interface{}, error) {
+func (m *MMR) Push(elem interface{}) (uint64, error) {
 	var elems []interface{}
 	// position of new elems
 	elemPos := m.size
@@ -66,12 +66,12 @@ func (m *MMR) Push(elem interface{}) (interface{}, error) {
 		rightPos := leftPos + siblingOffset(height)
 		leftElem, err := m.findElem(leftPos, elems)
 		if err != nil {
-			return nil, err
+			return 0, err
 		}
 
 		rightElem, err := m.findElem(rightPos, elems)
 		if err != nil {
-			return nil, err
+			return 0, err
 		}
 
 		parentElem := m.merge.Merge(leftElem, rightElem)
@@ -250,8 +250,8 @@ func (m *MMR) GenProof(posList []uint64) (*MerkleProof, error) {
 	return NewMerkleProof(m.size, proof, m.merge), nil
 }
 
-func (m *MMR) Commit() interface{} {
-	return m.batch.commit()
+func (m *MMR) Commit() {
+	m.batch.commit()
 }
 
 type MerkleProof struct {
@@ -281,10 +281,10 @@ func (m *MerkleProof) calculatePeakRoot(leaves []Leaf, peakPos uint64, proofs *I
 		panic("can't be empty")
 	}
 
-	// (position, Hash, height)
+	// (position, Leaf, height)
 	var queue []leafWithHash
 	for _, l := range leaves {
-		queue = append(queue, leafWithHash{l.Pos, l.Hash, 0})
+		queue = append(queue, leafWithHash{l.Pos, l.Leaf, 0})
 	}
 
 	// calculate tree root from each items
@@ -414,7 +414,7 @@ func (m *MerkleProof) calculatePeaksHashes(leaves []Leaf, mmrSize uint64, proofs
 	if mmrSize == 1 && len(leaves) == 1 && leaves[0].Pos == 0 {
 		var items []interface{}
 		for _, l := range leaves {
-			items = append(items, l.Hash)
+			items = append(items, l.Leaf)
 		}
 		return items, nil
 	}
@@ -435,7 +435,7 @@ func (m *MerkleProof) calculatePeaksHashes(leaves []Leaf, mmrSize uint64, proofs
 		var peakRoot interface{}
 		if len(lvs) == 1 && lvs[0].Pos == peaksPos {
 			// Leaf is the peak
-			peakRoot = lvs[0].Hash
+			peakRoot = lvs[0].Leaf
 			// remove Leaf
 			lvs = append(lvs[:0], lvs[0+1:]...)
 		} else if len(lvs) == 0 {
