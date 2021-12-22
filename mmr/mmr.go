@@ -207,7 +207,6 @@ func (m *MMR) GenProof(posList []uint64) (*MerkleProof, error) {
 		return nil, ErrGenProofForInvalidLeaves
 	}
 	if m.size == 1 && reflect.DeepEqual(posList, []uint64{0}) {
-		fmt.Printf("returning empty proof \n")
 		return NewMerkleProof(m.size, NewIterator(), m.merge), nil
 	}
 
