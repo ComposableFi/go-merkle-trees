@@ -1,43 +1,40 @@
 package mmr
 
+// Iterator is a wrapper for a slice of bytes. It exposes helper methods for accessing about the slice and storing data
+// to it
 type Iterator struct {
-	Items []interface{}
+	Items [][]byte
 	index uint64
 }
 
+// NewIterator creates a new object of the Iterator
 func NewIterator() *Iterator {
 	return &Iterator{
-		Items: make([]interface{}, 0),
+		Items: make([][]byte, 0),
 	}
 }
 
-func (i *Iterator) push(item interface{}) {
+func (i *Iterator) push(item []byte) {
 	i.Items = append(i.Items, item)
-}
-
-func (i *Iterator) get(index int) interface{} {
-	return i.Items[index]
 }
 
 func (i *Iterator) length() int {
 	return len(i.Items)
 }
 
-func (i *Iterator) splitOff(index int) []interface{} {
+func (i *Iterator) splitOff(index int) [][]byte {
 	split := i.Items[index:]
 	i.Items = i.Items[:index]
 	return split
 }
 
-func (i *Iterator) next() interface{} {
+// Next returns the next item from the slice of items and increases the index. It returns nil when the last item in
+// the slice has already been returned.
+func (i *Iterator) Next() []byte {
 	if len(i.Items) > int(i.index) {
 		in := i.index
 		i.index++
 		return i.Items[in]
 	}
 	return nil
-}
-
-func (i *Iterator) isEmpty() bool {
-	return len(i.Items) == 0
 }

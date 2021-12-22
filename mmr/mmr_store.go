@@ -1,20 +1,24 @@
 package mmr
 
+// Store defines the required method on any store passed to the Batch struct
 type Store interface {
-	getElem(pos uint64) interface{}
-	append(pos uint64, elems []interface{})
+	getElem(pos uint64) []byte
+	append(pos uint64, elems [][]byte)
 }
 
+// BatchElem holds the fields of data for a Batch Element
 type BatchElem struct {
 	pos   uint64
-	elems []interface{}
+	elems [][]byte
 }
 
+// Batch contains the a slice of Batch elements and a Store
 type Batch struct {
 	memoryBatch []BatchElem
 	store       Store
 }
 
+// NewBatch returns an object of the Batch type
 func NewBatch(store Store) *Batch {
 	return &Batch{
 		memoryBatch: []BatchElem{},
@@ -22,11 +26,11 @@ func NewBatch(store Store) *Batch {
 	}
 }
 
-func (b *Batch) append(pos uint64, elems []interface{}) {
+func (b *Batch) append(pos uint64, elems [][]byte) {
 	b.memoryBatch = append(b.memoryBatch, BatchElem{pos, elems})
 }
 
-func (b *Batch) getElem(pos uint64) interface{} {
+func (b *Batch) getElem(pos uint64) []byte {
 	memoryBatch := make([]BatchElem, len(b.memoryBatch))
 	copy(memoryBatch, b.memoryBatch)
 	reverse(memoryBatch)

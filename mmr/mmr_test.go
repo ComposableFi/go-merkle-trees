@@ -1,4 +1,4 @@
-package mmr
+package mmr_test
 
 import (
 	"encoding/binary"
@@ -7,11 +7,11 @@ import (
 	"testing"
 
 	"golang.org/x/crypto/blake2b"
+
+	merklego_mmr "github.com/ComposableFi/merkle-go/mmr"
 )
 
-type NumberHash []byte
-
-func (n NumberHash) From(num uint32) interface{} {
+func toHash(num uint32) []byte {
 	b := make([]byte, 4)
 	binary.LittleEndian.PutUint32(b, num)
 	hash := blake2b.Sum256(b)
@@ -19,10 +19,10 @@ func (n NumberHash) From(num uint32) interface{} {
 }
 
 func testMMR(count uint32, proofElem []uint32) error {
-	mmr := NewMMR(0, NewMemStore(), &Merge{})
+	mmr := merklego_mmr.NewMMR(0, merklego_mmr.NewMemStore(), &merklego_mmr.Merge{})
 	var positions []uint64
 	for i := uint32(0); i < count; i++ {
-		position, err := mmr.Push(NumberHash{}.From(i))
+		position, err := mmr.Push(toHash(i))
 		if err != nil {
 			return err
 		}
@@ -47,10 +47,10 @@ func testMMR(count uint32, proofElem []uint32) error {
 
 	mmr.Commit()
 
-	result := proof.Verify(root, func() []Leaf {
-		var leaves []Leaf
+	result := proof.Verify(root, func() []merklego_mmr.Leaf {
+		var leaves []merklego_mmr.Leaf
 		for _, e := range proofElem {
-			leaves = append(leaves, Leaf{positions[e], NumberHash{}.From(e)})
+			leaves = append(leaves, merklego_mmr.Leaf{positions[e], toHash(e)})
 		}
 		return leaves
 	}())
@@ -94,14 +94,14 @@ func TestMMR(t *testing.T) {
 }
 
 func TestGenRootFromProof(t *testing.T) {
-	merge := &Merge{}
-	store := NewMemStore()
-	mmr := NewMMR(0, store, merge)
+	merge := &merklego_mmr.Merge{}
+	store := merklego_mmr.NewMemStore()
+	mmr := merklego_mmr.NewMMR(0, store, merge)
 
 	count := 11
 	var positions []uint64
 	for i := 0; i < 11; i++ {
-		position, err := mmr.Push(NumberHash{}.From(uint32(i)))
+		position, err := mmr.Push(toHash(uint32(i)))
 		if err != nil {
 			t.Errorf("%s: %s", "mmr root", err.Error())
 			return
@@ -118,7 +118,7 @@ func TestGenRootFromProof(t *testing.T) {
 	}
 
 	newElem := count
-	newPos, err := mmr.Push(NumberHash{}.From(uint32(newElem)))
+	newPos, err := mmr.Push(toHash(uint32(newElem)))
 	if err != nil {
 		t.Errorf("%s: %s", "mmr gen proof", err.Error())
 		return
@@ -132,10 +132,10 @@ func TestGenRootFromProof(t *testing.T) {
 
 	mmr.Commit()
 	calculatedRoot, err := proof.CalculateRootWithNewLeaf(
-		[]Leaf{{pos, NumberHash{}.From(elem)}},
+		[]merklego_mmr.Leaf{{pos, toHash(elem)}},
 		newPos,
-		NumberHash{}.From(uint32(newElem)),
-		LeafIndexToMMRSize(uint64(newElem)),
+		toHash(uint32(newElem)),
+		merklego_mmr.LeafIndexToMMRSize(uint64(newElem)),
 	)
 	if err != nil {
 		t.Errorf("%s: %s", "mmr root calculateRootWithNewLeaf", err.Error())
@@ -148,21 +148,21 @@ func TestGenRootFromProof(t *testing.T) {
 }
 
 func TestEmptyMMRRoot(t *testing.T) {
-	merge := &Merge{}
-	store := NewMemStore()
-	mmr := NewMMR(0, store, merge)
+	merge := &merklego_mmr.Merge{}
+	store := merklego_mmr.NewMemStore()
+	mmr := merklego_mmr.NewMMR(0, store, merge)
 	_, err := mmr.GetRoot()
-	if err != ErrGetRootOnEmpty {
-		t.Errorf("%s: want :%v  got %v", "empty mmr root", ErrGetRootOnEmpty, err)
+	if err != merklego_mmr.ErrGetRootOnEmpty {
+		t.Errorf("%s: want :%v  got %v", "empty mmr root", merklego_mmr.ErrGetRootOnEmpty, err)
 	}
 }
 
 func TestMMRRoot(t *testing.T) {
-	merge := &Merge{}
-	store := NewMemStore()
-	mmr := NewMMR(0, store, merge)
+	merge := &merklego_mmr.Merge{}
+	store := merklego_mmr.NewMemStore()
+	mmr := merklego_mmr.NewMMR(0, store, merge)
 	for i := 0; i < 11; i++ {
-		_, err := mmr.Push(NumberHash{}.From(uint32(i)))
+		_, err := mmr.Push(toHash(uint32(i)))
 		if err != nil {
 			t.Errorf("%s: %s", "mmr root", err.Error())
 			return
@@ -175,7 +175,7 @@ func TestMMRRoot(t *testing.T) {
 	}
 
 	want := "f6794677f37a57df6a5ec36ce61036e43a36c1a009d05c81c9aa685dde1fd6e3"
-	if !reflect.DeepEqual(hex.EncodeToString(root.([]byte)), want) {
-		t.Errorf("%s: want :%v  got %v", "empty mmr root", want, hex.EncodeToString(root.([]byte)))
+	if !reflect.DeepEqual(hex.EncodeToString(root), want) {
+		t.Errorf("%s: want :%v  got %v", "empty mmr root", want, hex.EncodeToString(root))
 	}
 }
