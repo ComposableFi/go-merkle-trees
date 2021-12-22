@@ -2,7 +2,7 @@ package mmr
 
 type Leaf struct {
 	Pos  uint64
-	Hash interface{}
+	Leaf interface{}
 }
 
 type leafWithHash struct {

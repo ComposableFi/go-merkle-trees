@@ -3,7 +3,6 @@ package mmr
 import (
 	"encoding/binary"
 	"encoding/hex"
-	"fmt"
 	"reflect"
 	"testing"
 
@@ -27,7 +26,7 @@ func testMMR(count uint32, proofElem []uint32) error {
 		if err != nil {
 			return err
 		}
-		positions = append(positions, position.(uint64))
+		positions = append(positions, position)
 	}
 
 	root, err := mmr.GetRoot()
@@ -46,10 +45,7 @@ func testMMR(count uint32, proofElem []uint32) error {
 		return err
 	}
 
-	commit := mmr.Commit()
-	if commit == nil {
-		return fmt.Errorf("%s: %s", "mmr root", "commit changes")
-	}
+	mmr.Commit()
 
 	result := proof.Verify(root, func() []Leaf {
 		var leaves []Leaf
@@ -67,12 +63,6 @@ func testMMR(count uint32, proofElem []uint32) error {
 }
 
 func TestMMR(t *testing.T) {
-	type input struct {
-		leaves    []Leaf
-		mmrSize   uint64
-		proofIter *Iterator
-	}
-
 	tests := map[string]struct {
 		count     uint32
 		proofElem []uint32
@@ -116,7 +106,7 @@ func TestGenRootFromProof(t *testing.T) {
 			t.Errorf("%s: %s", "mmr root", err.Error())
 			return
 		}
-		positions = append(positions, position.(uint64))
+		positions = append(positions, position)
 	}
 
 	var elem = uint32(count - 1)
@@ -140,15 +130,10 @@ func TestGenRootFromProof(t *testing.T) {
 		return
 	}
 
-	commit := mmr.Commit()
-	if commit == nil {
-		t.Errorf("%s: %s", "mmr root", "commit changes")
-		return
-	}
-
+	mmr.Commit()
 	calculatedRoot, err := proof.CalculateRootWithNewLeaf(
 		[]Leaf{{pos, NumberHash{}.From(elem)}},
-		newPos.(uint64),
+		newPos,
 		NumberHash{}.From(uint32(newElem)),
 		LeafIndexToMMRSize(uint64(newElem)),
 	)
