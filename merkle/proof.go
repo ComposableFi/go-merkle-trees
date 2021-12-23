@@ -7,18 +7,17 @@ import (
 )
 
 // GetRoot returns the root value of a merkle proof
-func (p *Proof) GetRoot(leaves []interface{}) (interface{}, error) {
-	if len(leaves) != len(p.Indices) || len(leaves) == 0 {
+func (p *Proof) GetRoot() (interface{}, error) {
+	if len(p.Leaves) == 0 {
 		return 0, errors.New("leaves count should equal to indices and not be empty")
 	}
 
 	// TODO: write function for interace sorting helpers.SortUint32Slice(leaves)
 
-	pre := MapIndiceAndLeaves(p.Indices, leaves)
-	SortIndicesAndLeavesByIndexReversely(pre)
+	SortIndicesAndLeavesByIndexReversely(p.Leaves)
 
-	var queue []LeafIndex
-	queue = append(queue, pre...)
+	var queue []LeafData
+	queue = append(queue, p.Leaves...)
 
 	lemmaIdx := 0
 	for {
@@ -26,7 +25,7 @@ func (p *Proof) GetRoot(leaves []interface{}) (interface{}, error) {
 			break
 		}
 
-		var leafIdx LeafIndex
+		var leafIdx LeafData
 		leafIdx, queue = PopFromLeafIndexQueue(queue)
 
 		if leafIdx.Index == 0 {
@@ -38,7 +37,7 @@ func (p *Proof) GetRoot(leaves []interface{}) (interface{}, error) {
 
 		var sibling interface{}
 		if len(queue) > 0 && queue[0].Index == helpers.GetSibling(leafIdx.Index) {
-			var sibLeaf LeafIndex
+			var sibLeaf LeafData
 			sibLeaf, queue = PopFromLeafIndexQueue(queue)
 			sibling = sibLeaf.Leaf
 		} else {
@@ -52,7 +51,7 @@ func (p *Proof) GetRoot(leaves []interface{}) (interface{}, error) {
 		} else {
 			parentNode = p.Merge.Merge(sibling, leafIdx.Leaf)
 		}
-		queue = append(queue, LeafIndex{
+		queue = append(queue, LeafData{
 			Index: helpers.GetParent(leafIdx.Index),
 			Leaf:  parentNode,
 		})
@@ -61,8 +60,8 @@ func (p *Proof) GetRoot(leaves []interface{}) (interface{}, error) {
 }
 
 // Verify verifies the root value against tree leaves
-func (p *Proof) Verify(root interface{}, leaves []interface{}) (bool, error) {
-	r, err := p.GetRoot(leaves)
+func (p *Proof) Verify(root interface{}) (bool, error) {
+	r, err := p.GetRoot()
 	if err != nil {
 		return false, err
 	}

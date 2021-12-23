@@ -30,7 +30,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("merkle proof lemmas are %v, indices are %v\n", proof.Lemmas, proof.Indices)
+	fmt.Printf("merkle proof lemmas are %v, indices are %v\n", proof.Lemmas, proof.Leaves)
 
 	// verify merkle proof
 	verifyResult, err := proof.Verify(root, []interface{}{uint64(42)})
@@ -46,7 +46,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("merkle proof lemmas are %v, indices are %v\n", proof.Lemmas, proof.Indices)
+	fmt.Printf("merkle proof lemmas are %v, indices are %v\n", proof.Lemmas, proof.Leaves)
 
 	// retrieve leaves
 	retrievedLeaves, err := cbmt.RetriveLeaves(proof, leavesI)

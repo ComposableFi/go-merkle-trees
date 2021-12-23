@@ -66,7 +66,7 @@ func (cbmt CBMT) BuildMerkleProof(leaves []interface{}, leafIndices []uint32) (P
 
 // RetriveLeaves returns the leaves of a merkle proof
 func (cbmt CBMT) RetriveLeaves(p Proof, leaves []interface{}) ([]interface{}, error) {
-	if len(leaves) == 0 || len(p.Indices) == 0 {
+	if len(leaves) == 0 || len(p.Leaves) == 0 {
 		return []interface{}{}, errors.New("leaves or indecies should not be empty")
 	}
 
@@ -78,8 +78,8 @@ func (cbmt CBMT) RetriveLeaves(p Proof, leaves []interface{}) ([]interface{}, er
 
 	var allProofsInRange = true
 
-	for _, v := range p.Indices {
-		if !helpers.Uint32SliceContains(validIndicesRange, v) {
+	for _, v := range p.Leaves {
+		if !helpers.Uint32SliceContains(validIndicesRange, v.Index) {
 			allProofsInRange = false
 			break
 		}
@@ -87,8 +87,8 @@ func (cbmt CBMT) RetriveLeaves(p Proof, leaves []interface{}) ([]interface{}, er
 
 	var res []interface{}
 	if allProofsInRange {
-		for _, v := range p.Indices {
-			res = append(res, leaves[v+1-leavesCount])
+		for _, v := range p.Leaves {
+			res = append(res, leaves[v.Index+1-leavesCount])
 		}
 	}
 

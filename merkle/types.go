@@ -13,13 +13,13 @@ type Tree struct {
 
 // Proof is the representation of a merkle proof
 type Proof struct {
-	Indices []uint32
-	Lemmas  []interface{}
-	Merge   Merge
+	Leaves []LeafData
+	Lemmas []interface{}
+	Merge  Merge
 }
 
-// LeafIndex is the representation of a leaf index
-type LeafIndex struct {
+// LeafData is the representation of a leaf index
+type LeafData struct {
 	Index uint32
 	Leaf  interface{}
 }

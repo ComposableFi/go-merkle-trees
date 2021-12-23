@@ -54,12 +54,13 @@ func (mtree Tree) BuildProof(leafIndices []uint32) (Proof, error) {
 		}
 	}
 
-	helpers.SortUint32Slice(indices)
+	leaves := MapIndiceAndLeaves(indices, mtree.Nodes)
+	SortIndicesAndLeavesByIndex(leaves)
 
 	return Proof{
-		Indices: indices,
-		Lemmas:  lemmas,
-		Merge:   mtree.Merge,
+		Leaves: leaves,
+		Lemmas: lemmas,
+		Merge:  mtree.Merge,
 	}, nil
 
 }

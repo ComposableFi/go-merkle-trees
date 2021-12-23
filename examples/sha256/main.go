@@ -33,7 +33,7 @@ func main() {
 	for _, v := range proof.Lemmas {
 		fmt.Printf(" - %v\n", HashToStr(v))
 	}
-	fmt.Printf("merkle proof indices are %v\n", proof.Indices)
+	fmt.Printf("merkle proof indices are %v\n", proof.Leaves)
 
 	// verify merkle proof
 	verifyResult, err := proof.Verify(root, []interface{}{[]byte("Dorood")})
@@ -54,7 +54,7 @@ func main() {
 	for _, v := range proof.Lemmas {
 		fmt.Printf(" - %v\n", HashToStr(v))
 	}
-	fmt.Printf("merkle proof indices are %v\n", proof.Indices)
+	fmt.Printf("merkle proof indices are %v\n", proof.Leaves)
 
 	// retrieve leaves
 	retrievedLeaves, err := cbmt.RetriveLeaves(proof, leavesI)

@@ -96,22 +96,22 @@ func TestVerifyRetrieveLeaves(t *testing.T) {
 
 	require.Equal(t, []interface{}{2, 7}, retrievedLeaves)
 
-	retreivedRoot, err := proof.GetRoot(retrievedLeaves)
+	retreivedRoot, err := proof.GetRoot()
 	require.NoError(t, err)
 	mroot := cbmt.BuildMerkleRoot(leaves)
 	require.Equal(t, mroot, retreivedRoot)
 
-	proof.Indices = []uint32{}
+	proof.Leaves = []merkle.LeafData{}
 	retrievedLeaves, err = cbmt.RetriveLeaves(proof, leaves)
 	require.Error(t, err)
 	require.Equal(t, []interface{}{}, retrievedLeaves)
 
-	proof.Indices = []uint32{4}
+	proof.Leaves = []merkle.LeafData{merkle.LeafData{Index: 0, Leaf: 4}}
 	retrievedLeaves, err = cbmt.RetriveLeaves(proof, leaves)
 	require.NoError(t, err)
 	require.Nil(t, retrievedLeaves)
 
-	proof.Indices = []uint32{11}
+	proof.Leaves = []merkle.LeafData{merkle.LeafData{Index: 0, Leaf: 11}}
 	retrievedLeaves, err = cbmt.RetriveLeaves(proof, leaves)
 	require.NoError(t, err)
 	require.Nil(t, retrievedLeaves)
@@ -129,26 +129,26 @@ func TestRebuildProof(t *testing.T) {
 	proof, err := tree.BuildProof([]uint32{0, 3})
 	require.NoError(t, err)
 	lemmas := proof.Lemmas
-	indices := proof.Indices
+	leafDataList := proof.Leaves
 
 	// rebuild proof
 	var neededLeaves []interface{}
 
-	for _, v := range indices {
-		neededLeaves = append(neededLeaves, tree.Nodes[v])
+	for _, v := range leafDataList {
+		neededLeaves = append(neededLeaves, tree.Nodes[v.Index])
 	}
 
 	rebuildProof := merkle.Proof{
-		Indices: indices,
-		Lemmas:  lemmas,
-		Merge:   MergeInt32{},
+		Leaves: leafDataList,
+		Lemmas: lemmas,
+		Merge:  MergeInt32{},
 	}
 
-	isValid, err := rebuildProof.Verify(root, neededLeaves)
+	isValid, err := rebuildProof.Verify(root)
 	require.NoError(t, err)
 	require.Equal(t, true, isValid)
 
-	rebuiltRoot, err := rebuildProof.GetRoot(neededLeaves)
+	rebuiltRoot, err := rebuildProof.GetRoot()
 	require.NoError(t, err)
 	require.Equal(t, root, rebuiltRoot)
 }
@@ -168,7 +168,7 @@ func TestBuildProof(t *testing.T) {
 	proof, err := cbmt.BuildMerkleProof(leaves, leafIndecies)
 	require.NoError(t, err)
 	require.Equal(t, []interface{}{13, 5, 4}, proof.Lemmas)
-	root, err := proof.GetRoot(proofLeaves)
+	root, err := proof.GetRoot()
 	require.NoError(t, err)
 	require.Equal(t, int(2), root)
 
@@ -176,7 +176,7 @@ func TestBuildProof(t *testing.T) {
 	proof, err = cbmt.BuildMerkleProof(leaves, []uint32{0})
 	require.NoError(t, err)
 	require.Equal(t, 0, len(proof.Lemmas))
-	root, err = proof.GetRoot(leaves)
+	root, err = proof.GetRoot()
 	require.NoError(t, err)
 	require.Equal(t, int(2), root)
 }
@@ -196,7 +196,7 @@ func TestTreeRootIsTheSameAsProofRoot(t *testing.T) {
 	proof, err := cbmt.BuildMerkleProof(leaves, leafIndices)
 	require.NoError(t, err)
 
-	proofRoot, err := proof.GetRoot(leaves)
+	proofRoot, err := proof.GetRoot()
 	require.NoError(t, err)
 
 	treeRoot := cbmt.BuildMerkleRoot(leaves)
