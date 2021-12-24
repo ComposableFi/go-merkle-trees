@@ -29,7 +29,7 @@ func (p *Proof) CalculateRootHash() ([]byte, error) {
 		leafIdx, queue = PopFromLeafIndexQueue(queue)
 
 		if leafIdx.Index == 0 {
-			if lemmaIdx <= len(p.Lemmas) && len(queue) == 0 {
+			if lemmaIdx <= len(p.Proofs) && len(queue) == 0 {
 				return leafIdx.Leaf, nil
 			}
 			return nil, errors.New("there are more unprocessed queue items")
@@ -41,7 +41,7 @@ func (p *Proof) CalculateRootHash() ([]byte, error) {
 			sibLeaf, queue = PopFromLeafIndexQueue(queue)
 			sibling = sibLeaf.Leaf
 		} else {
-			sibling = p.Lemmas[lemmaIdx]
+			sibling = p.Proofs[lemmaIdx]
 			lemmaIdx++
 		}
 

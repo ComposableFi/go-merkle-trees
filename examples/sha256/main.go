@@ -29,8 +29,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("merkle proof lemmas are:\n")
-	for _, v := range proof.Lemmas {
+	fmt.Printf("merkle proofs are:\n")
+	for _, v := range proof.Proofs {
 		fmt.Printf(" - %v\n", HashToStr(v))
 	}
 	fmt.Printf("merkle proof indices are %v\n", proof.Leaves)
@@ -50,8 +50,8 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf("merkle proof lemmas are:\n")
-	for _, v := range proof.Lemmas {
+	fmt.Printf("merkle proofs are:\n")
+	for _, v := range proof.Proofs {
 		fmt.Printf(" - %v\n", HashToStr(v))
 	}
 	fmt.Printf("merkle proof indices are %v\n", proof.Leaves)

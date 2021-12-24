@@ -14,7 +14,7 @@ type Tree struct {
 // Proof is the representation of a merkle proof
 type Proof struct {
 	Leaves []LeafData
-	Lemmas [][]byte
+	Proofs [][]byte
 	Merge  Merge
 }
 

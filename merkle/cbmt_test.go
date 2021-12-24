@@ -140,12 +140,12 @@ func TestRebuildProof(t *testing.T) {
 	//build proof
 	proof, err := tree.BuildProof([]uint32{0, 3})
 	require.NoError(t, err)
-	lemmas := proof.Lemmas
+	lemmas := proof.Proofs
 	leafDataList := proof.Leaves
 
 	rebuildProof := merkle.Proof{
 		Leaves: leafDataList,
-		Lemmas: lemmas,
+		Proofs: lemmas,
 		Merge:  MergeInt32{},
 	}
 
@@ -168,7 +168,7 @@ func TestBuildProof(t *testing.T) {
 	//build proof
 	proof, err := cbmt.BuildMerkleProof(leaves, leafIndecies)
 	require.NoError(t, err)
-	require.Equal(t, [][]byte{i2b(13), i2b(5), i2b(4)}, proof.Lemmas)
+	require.Equal(t, [][]byte{i2b(13), i2b(5), i2b(4)}, proof.Proofs)
 	root, err := proof.CalculateRootHash()
 	require.NoError(t, err)
 	require.Equal(t, i2b(2), root)
@@ -176,7 +176,7 @@ func TestBuildProof(t *testing.T) {
 	leaves = [][]byte{i2b(2)}
 	proof, err = cbmt.BuildMerkleProof(leaves, []uint32{0})
 	require.NoError(t, err)
-	require.Equal(t, 0, len(proof.Lemmas))
+	require.Equal(t, 0, len(proof.Proofs))
 	root, err = proof.CalculateRootHash()
 	require.NoError(t, err)
 	require.Equal(t, i2b(2), root)
