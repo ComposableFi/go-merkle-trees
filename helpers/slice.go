@@ -8,7 +8,7 @@ func PopFromUint32Queue(slice []uint32) (uint32, []uint32) {
 }
 
 // PopFromInterfaceQueue pops front element of interface slice
-func PopFromInterfaceQueue(slice []interface{}) (interface{}, []interface{}) {
+func PopFromInterfaceQueue(slice [][]byte) ([]byte, [][]byte) {
 	popElem, newSlice := slice[0], slice[1:]
 	return popElem, newSlice
 
@@ -29,7 +29,7 @@ func PopTwoElementsFromEndUint32Queue(slice []uint32) (uint32, uint32, []uint32)
 }
 
 // PopTwoElementsFromEndInterfaceQueue pops last two element of uint32 slice
-func PopTwoElementsFromEndInterfaceQueue(slice []interface{}) (interface{}, interface{}, []interface{}) {
+func PopTwoElementsFromEndInterfaceQueue(slice [][]byte) ([]byte, []byte, [][]byte) {
 	sliceLen := len(slice)
 	lastElem, beforeLastElem, newSlice := slice[sliceLen-1], slice[sliceLen-2], slice[:sliceLen-2]
 	return beforeLastElem, lastElem, newSlice

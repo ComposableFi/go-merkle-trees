@@ -7,14 +7,14 @@ import (
 )
 
 // BuildMerkleRoot builds the merkle root from leaves
-func (cbmt CBMT) BuildMerkleRoot(leaves []interface{}) interface{} {
+func (cbmt CBMT) BuildMerkleRoot(leaves [][]byte) []byte {
 	if len(leaves) == 0 {
-		return 0
+		return nil
 	}
-	var queue []interface{}
+	var queue [][]byte
 
 	for len(leaves) >= 2 {
-		var leaf1, leaf2 interface{}
+		var leaf1, leaf2 []byte
 		leaf1, leaf2, leaves = helpers.PopTwoElementsFromEndInterfaceQueue(leaves)
 
 		m := cbmt.Merge.Merge(leaf1, leaf2)
@@ -22,11 +22,11 @@ func (cbmt CBMT) BuildMerkleRoot(leaves []interface{}) interface{} {
 	}
 	if len(leaves) == 1 {
 		leaf := leaves[0]
-		queue = append([]interface{}{leaf}, queue...)
+		queue = append([][]byte{leaf}, queue...)
 	}
 
 	for len(queue) > 1 {
-		var right, left interface{}
+		var right, left []byte
 		right, queue = helpers.PopFromInterfaceQueue(queue)
 		left, queue = helpers.PopFromInterfaceQueue(queue)
 		queue = append(queue, cbmt.Merge.Merge(left, right))
@@ -37,12 +37,12 @@ func (cbmt CBMT) BuildMerkleRoot(leaves []interface{}) interface{} {
 }
 
 // BuildMerkleTree constructs merkle tree
-func (cbmt CBMT) BuildMerkleTree(leaves []interface{}) Tree {
+func (cbmt CBMT) BuildMerkleTree(leaves [][]byte) Tree {
 	leaveLen := len(leaves)
 
 	if leaveLen > 0 {
 
-		nodes := make([]interface{}, leaveLen-1)
+		nodes := make([][]byte, leaveLen-1)
 		nodes = append(nodes, leaves...)
 
 		for i := leaveLen - 2; 0 <= i; i-- {
@@ -60,14 +60,14 @@ func (cbmt CBMT) BuildMerkleTree(leaves []interface{}) Tree {
 }
 
 // BuildMerkleProof builds merkle proof from the leaves and leaf indices
-func (cbmt CBMT) BuildMerkleProof(leaves []interface{}, leafIndices []uint32) (Proof, error) {
+func (cbmt CBMT) BuildMerkleProof(leaves [][]byte, leafIndices []uint32) (Proof, error) {
 	return cbmt.BuildMerkleTree(leaves).BuildProof(leafIndices)
 }
 
 // RetriveLeaves returns the leaves of a merkle proof
-func (cbmt CBMT) RetriveLeaves(p Proof, leaves []interface{}) ([]interface{}, error) {
+func (cbmt CBMT) RetriveLeaves(p Proof, leaves [][]byte) ([][]byte, error) {
 	if len(leaves) == 0 || len(p.Leaves) == 0 {
-		return []interface{}{}, errors.New("leaves or indecies should not be empty")
+		return [][]byte{}, errors.New("leaves or indecies should not be empty")
 	}
 
 	leavesCount := uint32(len(leaves))
@@ -85,7 +85,7 @@ func (cbmt CBMT) RetriveLeaves(p Proof, leaves []interface{}) ([]interface{}, er
 		}
 	}
 
-	var res []interface{}
+	var res [][]byte
 	if allProofsInRange {
 		for _, v := range p.Leaves {
 			res = append(res, leaves[v.Index+1-leavesCount])

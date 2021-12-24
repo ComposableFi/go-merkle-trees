@@ -2,26 +2,26 @@ package merkle
 
 // Merge is the interface for merge function of tree
 type Merge interface {
-	Merge(left, right interface{}) interface{}
+	Merge(left []byte, right []byte) []byte
 }
 
 // Tree is representation type for the merkle tree
 type Tree struct {
-	Nodes []interface{}
+	Nodes [][]byte
 	Merge Merge
 }
 
 // Proof is the representation of a merkle proof
 type Proof struct {
 	Leaves []LeafData
-	Lemmas []interface{}
+	Lemmas [][]byte
 	Merge  Merge
 }
 
 // LeafData is the representation of a leaf index
 type LeafData struct {
 	Index uint32
-	Leaf  interface{}
+	Leaf  []byte
 }
 
 // CBMT is representation type for the complete binary merkle tree

@@ -23,7 +23,7 @@ func (mtree Tree) BuildProof(leafIndices []uint32) (Proof, error) {
 	if indices[0] >= (leavesCount<<1)-1 {
 		return Proof{Merge: mtree.Merge}, errors.New("first element of indices is not valid")
 	}
-	var lemmas []interface{}
+	var lemmas [][]byte
 	queue := append([]uint32{}, indices...)
 
 	for {

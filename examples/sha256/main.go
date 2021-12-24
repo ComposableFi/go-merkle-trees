@@ -36,7 +36,7 @@ func main() {
 	fmt.Printf("merkle proof indices are %v\n", proof.Leaves)
 
 	// verify merkle proof
-	verifyResult, err := proof.Verify(root, []interface{}{[]byte("Dorood")})
+	verifyResult, err := proof.VerifyRootHash(root, []interface{}{[]byte("Dorood")})
 	if err != nil {
 		panic(err)
 	} else if !verifyResult {
@@ -66,7 +66,7 @@ func main() {
 	for _, v := range retrievedLeaves {
 		fmt.Printf(" - %v\n", HashToStr(v))
 	}
-	root, err = proof.GetRoot(retrievedLeaves)
+	root, err = proof.CalculateRootHash(retrievedLeaves)
 	if err != nil {
 		panic(err)
 	}

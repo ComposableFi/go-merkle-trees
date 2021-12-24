@@ -6,10 +6,10 @@ import (
 	"github.com/ComposableFi/merkle-go/helpers"
 )
 
-// GetRoot returns the root value of a merkle proof
-func (p *Proof) GetRoot() (interface{}, error) {
+// CalculateRootHash returns the root value of a merkle proof
+func (p *Proof) CalculateRootHash() ([]byte, error) {
 	if len(p.Leaves) == 0 {
-		return 0, errors.New("leaves count should equal to indices and not be empty")
+		return nil, errors.New("leaves count should equal to indices and not be empty")
 	}
 
 	// TODO: write function for interace sorting helpers.SortUint32Slice(leaves)
@@ -32,10 +32,10 @@ func (p *Proof) GetRoot() (interface{}, error) {
 			if lemmaIdx <= len(p.Lemmas) && len(queue) == 0 {
 				return leafIdx.Leaf, nil
 			}
-			return 0, errors.New("there are more unprocessed queue items")
+			return nil, errors.New("there are more unprocessed queue items")
 		}
 
-		var sibling interface{}
+		var sibling []byte
 		if len(queue) > 0 && queue[0].Index == helpers.GetSibling(leafIdx.Index) {
 			var sibLeaf LeafData
 			sibLeaf, queue = PopFromLeafIndexQueue(queue)
@@ -45,7 +45,7 @@ func (p *Proof) GetRoot() (interface{}, error) {
 			lemmaIdx++
 		}
 
-		var parentNode interface{}
+		var parentNode []byte
 		if helpers.IsLeft(leafIdx.Index) {
 			parentNode = p.Merge.Merge(leafIdx.Leaf, sibling)
 		} else {
@@ -56,12 +56,12 @@ func (p *Proof) GetRoot() (interface{}, error) {
 			Leaf:  parentNode,
 		})
 	}
-	return 0, errors.New("root not found")
+	return nil, errors.New("root not found")
 }
 
-// Verify verifies the root value against tree leaves
-func (p *Proof) Verify(root interface{}) (bool, error) {
-	r, err := p.GetRoot()
+// VerifyRootHash verifies the root value against tree leaves
+func (p *Proof) VerifyRootHash(root []byte) (bool, error) {
+	r, err := p.CalculateRootHash()
 	if err != nil {
 		return false, err
 	}
