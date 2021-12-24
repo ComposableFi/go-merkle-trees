@@ -6,8 +6,8 @@ import (
 
 // MapIndiceAndLeaves maps the indices and leaves of a tree
 func MapIndiceAndLeaves(indices []uint32, leaves [][]byte) (result []LeafData) {
-	for i, idx := range indices {
-		leaf := leaves[i]
+	for _, idx := range indices {
+		leaf := leaves[idx]
 		result = append(result, LeafData{Index: idx, Leaf: leaf})
 	}
 	return result

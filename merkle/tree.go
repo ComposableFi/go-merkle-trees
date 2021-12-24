@@ -54,8 +54,9 @@ func (mtree Tree) BuildProof(leafIndices []uint32) (Proof, error) {
 		}
 	}
 
+	helpers.SortUint32Slice(indices)
 	leaves := MapIndiceAndLeaves(indices, mtree.Nodes)
-	SortIndicesAndLeavesByIndex(leaves)
+	// SortIndicesAndLeavesByIndex(leaves)
 
 	return Proof{
 		Leaves: leaves,
@@ -66,9 +67,9 @@ func (mtree Tree) BuildProof(leafIndices []uint32) (Proof, error) {
 }
 
 // GetRoot returns the root value of merkle tree
-func (mtree Tree) GetRoot() interface{} {
+func (mtree Tree) GetRoot() []byte {
 	if len(mtree.Nodes) == 0 {
-		return 0
+		return []byte{0}
 	}
 	return mtree.Nodes[0]
 }

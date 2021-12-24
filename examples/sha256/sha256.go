@@ -7,10 +7,10 @@ import (
 
 type MergeByteArray struct{}
 
-func (m MergeByteArray) Merge(left, right interface{}) interface{} {
+func (m MergeByteArray) Merge(left, right []byte) []byte {
 	h, _ := HashNodes(Node{
-		Left:  left.([]byte),
-		Right: right.([]byte),
+		Left:  left,
+		Right: right,
 	})
 	return h
 }

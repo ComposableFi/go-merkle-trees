@@ -15,9 +15,9 @@ func main() {
 		20191116,
 		10289152030157698709,
 	}
-	var leavesI []interface{}
+	var leavesI [][]byte
 	for _, l := range leaves {
-		leavesI = append(leavesI, l)
+		leavesI = append(leavesI, i2b(l))
 	}
 	cbmt := merkle.CBMT{
 		Merge: MergeUint64{},
@@ -33,7 +33,7 @@ func main() {
 	fmt.Printf("merkle proof lemmas are %v, indices are %v\n", proof.Lemmas, proof.Leaves)
 
 	// verify merkle proof
-	verifyResult, err := proof.VerifyRootHash(root, []interface{}{uint64(42)})
+	verifyResult, err := proof.VerifyRootHash(root)
 	if err != nil {
 		panic(err)
 	} else if !verifyResult {
@@ -54,10 +54,5 @@ func main() {
 		panic(err)
 	}
 	fmt.Printf("retrieved leaves are %v\n", retrievedLeaves)
-	root, err = proof.CalculateRootHash(retrievedLeaves)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("calculated root of proof is %v\n", root)
 
 }

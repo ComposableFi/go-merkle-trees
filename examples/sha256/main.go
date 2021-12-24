@@ -14,7 +14,7 @@ func main() {
 		"Hey",
 		"Hola",
 	}
-	var leavesI []interface{}
+	var leavesI [][]byte
 	for _, l := range leaves {
 		leavesI = append(leavesI, []byte(l))
 	}
@@ -36,7 +36,7 @@ func main() {
 	fmt.Printf("merkle proof indices are %v\n", proof.Leaves)
 
 	// verify merkle proof
-	verifyResult, err := proof.VerifyRootHash(root, []interface{}{[]byte("Dorood")})
+	verifyResult, err := proof.VerifyRootHash(root)
 	if err != nil {
 		panic(err)
 	} else if !verifyResult {
@@ -66,10 +66,5 @@ func main() {
 	for _, v := range retrievedLeaves {
 		fmt.Printf(" - %v\n", HashToStr(v))
 	}
-	root, err = proof.CalculateRootHash(retrievedLeaves)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("calculated root of proof is %v\n", HashToStr(root))
 
 }

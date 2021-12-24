@@ -1,6 +1,7 @@
 package merkle_test
 
 import (
+	"encoding/binary"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -10,70 +11,81 @@ import (
 
 type MergeInt32 struct{}
 
-func (m MergeInt32) Merge(left, right interface{}) interface{} {
-	var r, l int
-	r = right.(int)
-	l = left.(int)
+func (m MergeInt32) Merge(left, right []byte) []byte {
+	var r, l int32
+	r = b2i(right)
+	l = b2i(left)
 	merged := r - l
-	return merged
+	return i2b(merged)
+}
+
+func b2i(b []byte) int32 {
+	i := int32(binary.LittleEndian.Uint64(b))
+	return i
+}
+
+func i2b(i int32) []byte {
+	b := make([]byte, 8)
+	binary.LittleEndian.PutUint64(b, uint64(i))
+	return b
 }
 
 func TestBuildEmpty(t *testing.T) {
-	var leaves []interface{}
+	var leaves [][]byte
 
 	cbmt := merkle.CBMT{
 		Merge: MergeInt32{},
 	}
 	tree := cbmt.BuildMerkleTree(leaves)
 	require.Equal(t, int(0), int(len(tree.Nodes)))
-	require.Equal(t, int(0), tree.GetRoot())
+	require.Equal(t, []byte{0}, tree.GetRoot())
 }
 
 func TestBuildOne(t *testing.T) {
-	var leaves = []interface{}{1}
+	var leaves = [][]byte{i2b(1)}
 
 	cbmt := merkle.CBMT{
 		Merge: MergeInt32{},
 	}
 	tree := cbmt.BuildMerkleTree(leaves)
-	require.Equal(t, []interface{}{1}, tree.Nodes)
+	require.Equal(t, [][]byte{i2b(1)}, tree.Nodes)
 }
 
 func TestBuildTwo(t *testing.T) {
-	var leaves = []interface{}{1, 2}
+	var leaves = [][]byte{i2b(1), i2b(2)}
 
 	cbmt := merkle.CBMT{
 		Merge: MergeInt32{},
 	}
 	tree := cbmt.BuildMerkleTree(leaves)
-	require.Equal(t, []interface{}{1, 1, 2}, tree.Nodes)
+	require.Equal(t, [][]byte{i2b(1), i2b(1), i2b(2)}, tree.Nodes)
 }
 
 func TestBuildFive(t *testing.T) {
-	var leaves = []interface{}{3, 5, 7, 11, 13}
+	var leaves = [][]byte{i2b(3), i2b(5), i2b(7), i2b(11), i2b(13)}
 
 	cbmt := merkle.CBMT{
 		Merge: MergeInt32{},
 	}
 	tree := cbmt.BuildMerkleTree(leaves)
-	require.Equal(t, []interface{}{1, 1, 2, 2, 3, 5, 7, 11, 13}, tree.Nodes)
+	require.Equal(t, [][]byte{i2b(1), i2b(1), i2b(2), i2b(2), i2b(3), i2b(5), i2b(7), i2b(11), i2b(13)}, tree.Nodes)
 }
 
 func TestBuildRootDirectly(t *testing.T) {
-	var leaves = []interface{}{3, 5, 7, 11, 13}
+	var leaves = [][]byte{i2b(3), i2b(5), i2b(7), i2b(11), i2b(13)}
 	cbmt := merkle.CBMT{
 		Merge: MergeInt32{},
 	}
 	root := cbmt.BuildMerkleRoot(leaves)
-	require.Equal(t, int(1), root)
+	require.Equal(t, i2b(1), root)
 }
 
 func TestBuiltRootIsSameAsTreeRoot(t *testing.T) {
-	var leaves []interface{}
+	var leaves [][]byte
 	var start int
 	var end = 1000
 	for i := start; i < end; i++ {
-		leaves = append(leaves, i)
+		leaves = append(leaves, i2b(int32(i)))
 	}
 	cbmt := merkle.CBMT{
 		Merge: MergeInt32{},
@@ -84,7 +96,7 @@ func TestBuiltRootIsSameAsTreeRoot(t *testing.T) {
 }
 
 func TestVerifyRetrieveLeaves(t *testing.T) {
-	var leaves = []interface{}{2, 3, 5, 7, 11, 13}
+	var leaves = [][]byte{i2b(2), i2b(3), i2b(5), i2b(7), i2b(11), i2b(13)}
 
 	cbmt := merkle.CBMT{
 		Merge: MergeInt32{},
@@ -94,7 +106,7 @@ func TestVerifyRetrieveLeaves(t *testing.T) {
 	retrievedLeaves, err := cbmt.RetriveLeaves(proof, leaves)
 	require.NoError(t, err)
 
-	require.Equal(t, []interface{}{2, 7}, retrievedLeaves)
+	require.Equal(t, [][]byte{i2b(2), i2b(7)}, retrievedLeaves)
 
 	retreivedRoot, err := proof.CalculateRootHash()
 	require.NoError(t, err)
@@ -104,21 +116,21 @@ func TestVerifyRetrieveLeaves(t *testing.T) {
 	proof.Leaves = []merkle.LeafData{}
 	retrievedLeaves, err = cbmt.RetriveLeaves(proof, leaves)
 	require.Error(t, err)
-	require.Equal(t, []interface{}{}, retrievedLeaves)
+	require.Equal(t, [][]byte{}, retrievedLeaves)
 
-	proof.Leaves = []merkle.LeafData{merkle.LeafData{Index: 0, Leaf: 4}}
+	proof.Leaves = []merkle.LeafData{{Index: 0, Leaf: i2b(4)}}
 	retrievedLeaves, err = cbmt.RetriveLeaves(proof, leaves)
 	require.NoError(t, err)
 	require.Nil(t, retrievedLeaves)
 
-	proof.Leaves = []merkle.LeafData{merkle.LeafData{Index: 0, Leaf: 11}}
+	proof.Leaves = []merkle.LeafData{{Index: 0, Leaf: i2b(11)}}
 	retrievedLeaves, err = cbmt.RetriveLeaves(proof, leaves)
 	require.NoError(t, err)
 	require.Nil(t, retrievedLeaves)
 }
 
 func TestRebuildProof(t *testing.T) {
-	var leaves = []interface{}{3, 5, 7, 11, 13}
+	var leaves = [][]byte{i2b(2), i2b(3), i2b(5), i2b(7), i2b(11)}
 	cbmt := merkle.CBMT{
 		Merge: MergeInt32{},
 	}
@@ -130,13 +142,6 @@ func TestRebuildProof(t *testing.T) {
 	require.NoError(t, err)
 	lemmas := proof.Lemmas
 	leafDataList := proof.Leaves
-
-	// rebuild proof
-	var neededLeaves []interface{}
-
-	for _, v := range leafDataList {
-		neededLeaves = append(neededLeaves, tree.Nodes[v.Index])
-	}
 
 	rebuildProof := merkle.Proof{
 		Leaves: leafDataList,
@@ -154,12 +159,8 @@ func TestRebuildProof(t *testing.T) {
 }
 
 func TestBuildProof(t *testing.T) {
-	var leaves = []interface{}{3, 5, 7, 11, 13, 17}
+	var leaves = [][]byte{i2b(3), i2b(5), i2b(7), i2b(11), i2b(13), i2b(17)}
 	leafIndecies := []uint32{0, 5}
-	var proofLeaves []interface{}
-	for _, idx := range leafIndecies {
-		proofLeaves = append(proofLeaves, leaves[idx])
-	}
 	cbmt := merkle.CBMT{
 		Merge: MergeInt32{},
 	}
@@ -167,27 +168,27 @@ func TestBuildProof(t *testing.T) {
 	//build proof
 	proof, err := cbmt.BuildMerkleProof(leaves, leafIndecies)
 	require.NoError(t, err)
-	require.Equal(t, []interface{}{13, 5, 4}, proof.Lemmas)
+	require.Equal(t, [][]byte{i2b(13), i2b(5), i2b(4)}, proof.Lemmas)
 	root, err := proof.CalculateRootHash()
 	require.NoError(t, err)
-	require.Equal(t, int(2), root)
+	require.Equal(t, i2b(2), root)
 
-	leaves = []interface{}{2}
+	leaves = [][]byte{i2b(2)}
 	proof, err = cbmt.BuildMerkleProof(leaves, []uint32{0})
 	require.NoError(t, err)
 	require.Equal(t, 0, len(proof.Lemmas))
 	root, err = proof.CalculateRootHash()
 	require.NoError(t, err)
-	require.Equal(t, int(2), root)
+	require.Equal(t, i2b(2), root)
 }
 
 func TestTreeRootIsTheSameAsProofRoot(t *testing.T) {
-	var leaves []interface{}
+	var leaves [][]byte
 	var leafIndices []uint32
 	var start uint32 = 2
 	var end uint32 = 1000
 	for i := start; i < end; i++ {
-		leaves = append(leaves, int(i))
+		leaves = append(leaves, i2b(int32(i)))
 		leafIndices = append(leafIndices, i-start)
 	}
 	cbmt := merkle.CBMT{
