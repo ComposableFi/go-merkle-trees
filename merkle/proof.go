@@ -1,6 +1,7 @@
 package merkle
 
 import (
+	"bytes"
 	"errors"
 
 	"github.com/ComposableFi/merkle-go/helpers"
@@ -19,7 +20,7 @@ func (p *Proof) CalculateRootHash() ([]byte, error) {
 	var queue []LeafData
 	queue = append(queue, p.Leaves...)
 
-	lemmaIdx := 0
+	proofIdx := 0
 	for {
 		if len(queue) == 0 {
 			break
@@ -29,7 +30,7 @@ func (p *Proof) CalculateRootHash() ([]byte, error) {
 		leafIdx, queue = PopFromLeafIndexQueue(queue)
 
 		if leafIdx.Index == 0 {
-			if lemmaIdx <= len(p.Proofs) && len(queue) == 0 {
+			if proofIdx <= len(p.Proofs) && len(queue) == 0 {
 				return leafIdx.Leaf, nil
 			}
 			return nil, errors.New("there are more unprocessed queue items")
@@ -41,8 +42,8 @@ func (p *Proof) CalculateRootHash() ([]byte, error) {
 			sibLeaf, queue = PopFromLeafIndexQueue(queue)
 			sibling = sibLeaf.Leaf
 		} else {
-			sibling = p.Proofs[lemmaIdx]
-			lemmaIdx++
+			sibling = p.Proofs[proofIdx]
+			proofIdx++
 		}
 
 		var parentNode []byte
@@ -65,7 +66,7 @@ func (p *Proof) VerifyRootHash(root []byte) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if helpers.AreInterfacesEqual(root, r) {
+	if bytes.Equal(root, r) {
 		return true, nil
 	}
 	return false, nil

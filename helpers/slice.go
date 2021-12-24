@@ -14,20 +14,6 @@ func PopFromInterfaceQueue(slice [][]byte) ([]byte, [][]byte) {
 
 }
 
-// PopFromEndUint32Queue pops last element of uint32 slice
-func PopFromEndUint32Queue(slice []uint32) (uint32, []uint32) {
-	sliceLen := len(slice)
-	popElem, newSlice := slice[sliceLen-1], slice[:sliceLen-1]
-	return popElem, newSlice
-}
-
-// PopTwoElementsFromEndUint32Queue pops last two element of uint32 slice
-func PopTwoElementsFromEndUint32Queue(slice []uint32) (uint32, uint32, []uint32) {
-	sliceLen := len(slice)
-	lastElem, beforeLastElem, newSlice := slice[sliceLen-1], slice[sliceLen-2], slice[:sliceLen-2]
-	return beforeLastElem, lastElem, newSlice
-}
-
 // PopTwoElementsFromEndInterfaceQueue pops last two element of uint32 slice
 func PopTwoElementsFromEndInterfaceQueue(slice [][]byte) ([]byte, []byte, [][]byte) {
 	sliceLen := len(slice)
