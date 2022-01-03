@@ -56,7 +56,7 @@ func (mtree Tree) BuildProof(leafIndices []uint32) (Proof, error) {
 
 	helpers.SortUint32Slice(indices)
 	leaves := MapIndiceAndLeaves(indices, mtree.Nodes)
-	// SortIndicesAndLeavesByIndex(leaves)
+	SortIndicesAndLeavesByLeafData(leaves)
 
 	return Proof{
 		Leaves: leaves,

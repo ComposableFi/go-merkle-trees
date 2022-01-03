@@ -1,6 +1,8 @@
 package merkle
 
 import (
+	"bytes"
+	"log"
 	"sort"
 )
 
@@ -13,9 +15,18 @@ func MapIndiceAndLeaves(indices []uint32, leaves [][]byte) (result []LeafData) {
 	return result
 }
 
-// SortIndicesAndLeavesByIndex sorts the leaf index slice reversely by index
-func SortIndicesAndLeavesByIndex(li []LeafData) {
-	sort.Slice(li, func(i, j int) bool { return li[i].Index < li[j].Index })
+func SortIndicesAndLeavesByLeafData(li []LeafData) {
+	sort.Slice(li, func(i, j int) bool {
+		switch bytes.Compare(li[i].Leaf, li[j].Leaf) {
+		case -1:
+			return true
+		case 0, 1:
+			return false
+		default:
+			log.Panic("not fail-able with `bytes.Comparable` bounded [-1, 1].")
+			return false
+		}
+	})
 }
 
 // SortIndicesAndLeavesByIndexReversely sorts the leaf index slice reversely by index

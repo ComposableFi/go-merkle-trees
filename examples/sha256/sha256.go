@@ -21,16 +21,7 @@ type Node struct {
 }
 
 func HashNodes(node Node) ([]byte, error) {
-	var l, r []byte
-	l, err := CalculateHash(node.Left)
-	if err != nil {
-		panic(err)
-	}
-	r, err = CalculateHash(node.Right)
-	if err != nil {
-		panic(err)
-	}
-	return CalculateHash(append(l[:], r[:]...))
+	return CalculateHash(append(node.Left[:], node.Right[:]...))
 }
 
 func CalculateHash(b []byte) ([]byte, error) {
