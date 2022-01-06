@@ -1,30 +1,41 @@
 package merkle
 
-// Merge is the interface for merge function of tree
-type Merge interface {
-	Merge(left []byte, right []byte) []byte
-}
+type Hash []byte
 
-// Tree is representation type for the merkle tree
 type Tree struct {
-	Nodes [][]byte
-	Merge Merge
+	currentWorkingTree PartialTree
+	history            []PartialTree
+	UncommittedLeaves  []Hash
+	hasher             hasher
 }
 
-// Proof is the representation of a merkle proof
-type Proof struct {
-	Leaves []LeafData
-	Proofs [][]byte
-	Merge  Merge
+func NewTree(hasher hasher) Tree {
+	return Tree{
+		currentWorkingTree: NewPartialTree(hasher),
+		history:            []PartialTree{},
+		UncommittedLeaves:  []Hash{},
+		hasher:             hasher,
+	}
 }
 
-// LeafData is the representation of a leaf index
-type LeafData struct {
-	Index uint32
-	Leaf  []byte
+type PartialTree struct {
+	layers [][]leafIndexAndHash
+	hasher hasher
 }
 
-// CBMT is representation type for the complete binary merkle tree
-type CBMT struct {
-	Merge Merge
+func NewPartialTree(hasher hasher) PartialTree {
+	return PartialTree{
+		layers: [][]leafIndexAndHash{},
+		hasher: hasher,
+	}
+}
+
+type hasher interface {
+	Hash(data []byte) (Hash, error)
+	ConcatAndHash(left, right []byte) (Hash, error)
+}
+
+type leafIndexAndHash struct {
+	index uint32
+	hash  Hash
 }

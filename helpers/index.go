@@ -1,22 +1,41 @@
 package helpers
 
-// GetSibling returns index of a sibling element
-func GetSibling(idx uint32) uint32 {
-	if idx == 0 {
-		return 0
+// GetSiblingIndex returns index of a sibling element
+func GetSiblingIndex(idx uint32) uint32 {
+	if isLeftIndex(idx) {
+		// Right sibling index
+		return idx + 1
 	}
-	return ((idx + 1) ^ 1) - 1
+	// Left sibling index
+	return idx - 1
 }
 
-// GetParent returns index of a parent element
-func GetParent(idx uint32) uint32 {
-	if idx == 0 {
-		return 0
-	}
-	return (idx - 1) >> 1
+func isLeftIndex(idx uint32) bool {
+	return idx%2 == 0
 }
 
-// IsLeft checks if an index is a left index
-func IsLeft(idx uint32) bool {
-	return idx&1 == 1
+// GetSiblingIndecies returns indecirs of sibling elements
+func GetSiblingIndecies(idxs []uint32) []uint32 {
+	var siblings []uint32
+	for _, i := range idxs {
+		siblings = append(siblings, GetSiblingIndex(i))
+	}
+	return siblings
+}
+
+// GetParentIndex returns index of a parent element
+func GetParentIndex(idx uint32) uint32 {
+	if isLeftIndex(idx) {
+		return idx / 2
+	}
+	return GetSiblingIndex(idx) / 2
+}
+
+// GetParentIndecies returns indecirs of parent elements
+func GetParentIndecies(idxs []uint32) []uint32 {
+	var parents []uint32
+	for _, i := range idxs {
+		parents = append(parents, GetParentIndex(i))
+	}
+	return parents
 }
