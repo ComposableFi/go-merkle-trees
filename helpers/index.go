@@ -37,5 +37,18 @@ func GetParentIndecies(idxs []uint32) []uint32 {
 	for _, i := range idxs {
 		parents = append(parents, GetParentIndex(i))
 	}
+	parents = removeDuplicateIndex(parents)
 	return parents
+}
+
+func removeDuplicateIndex(strSlice []uint32) []uint32 {
+	allKeys := make(map[uint32]bool)
+	list := []uint32{}
+	for _, item := range strSlice {
+		if _, value := allKeys[item]; !value {
+			allKeys[item] = true
+			list = append(list, item)
+		}
+	}
+	return list
 }

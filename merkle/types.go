@@ -6,10 +6,10 @@ type Tree struct {
 	currentWorkingTree PartialTree
 	history            []PartialTree
 	UncommittedLeaves  []Hash
-	hasher             hasher
+	hasher             Hasher
 }
 
-func NewTree(hasher hasher) Tree {
+func NewTree(hasher Hasher) Tree {
 	return Tree{
 		currentWorkingTree: NewPartialTree(hasher),
 		history:            []PartialTree{},
@@ -19,23 +19,47 @@ func NewTree(hasher hasher) Tree {
 }
 
 type PartialTree struct {
-	layers [][]leafIndexAndHash
-	hasher hasher
+	layers [][]Leaf
+	hasher Hasher
 }
 
-func NewPartialTree(hasher hasher) PartialTree {
+func NewPartialTree(hasher Hasher) PartialTree {
 	return PartialTree{
-		layers: [][]leafIndexAndHash{},
+		layers: [][]Leaf{},
 		hasher: hasher,
 	}
 }
 
-type hasher interface {
-	Hash(data []byte) (Hash, error)
-	ConcatAndHash(left, right []byte) (Hash, error)
+type Proof struct {
+	proofHashes []Hash
+	// leaves           []Leaf
+	// totalLeavesCount uint32
+	hasher Hasher
 }
 
-type leafIndexAndHash struct {
-	index uint32
-	hash  Hash
+// merkle.NewProof(authorityLeaves, proofHashes, totalLeavesCount, Keccak256{})
+
+func NewProof(proofHashes []Hash, hasher Hasher) Proof {
+	return Proof{
+		// leaves:           leaves,
+		proofHashes: proofHashes,
+		// totalLeavesCount: totalLeavesCount,
+		hasher: hasher,
+	}
+}
+
+type Hasher interface {
+	Hash(data []byte) (Hash, error)
+}
+
+func ConcatAndHash(hasher Hasher, left []byte, right []byte) (Hash, error) {
+	if right == nil {
+		return left, nil
+	}
+	return hasher.Hash(append(left[:], right[:]...))
+}
+
+type Leaf struct {
+	Index uint32
+	Hash  Hash
 }

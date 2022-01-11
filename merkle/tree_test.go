@@ -37,6 +37,30 @@ func TestFromLeaves(t *testing.T) {
 
 	leaves := []merkle.Hash{aHash, bHash, cHash}
 	mtree := merkle.NewTree(Sha256Hasher{})
-	mtree = mtree.FromLeaves(leaves)
+	mtree, err = mtree.FromLeaves(leaves)
+	require.NoError(t, err)
 	require.Equal(t, []merkle.Hash{}, mtree.UncommittedLeaves)
+}
+
+func TestRoot(t *testing.T) {
+	aHash, err := Sha256Hasher{}.Hash([]byte("a"))
+	require.NoError(t, err)
+	bHash, err := Sha256Hasher{}.Hash([]byte("b"))
+	require.NoError(t, err)
+	cHash, err := Sha256Hasher{}.Hash([]byte("c"))
+	require.NoError(t, err)
+
+	leaves := []merkle.Hash{aHash, bHash, cHash}
+	mtree := merkle.NewTree(Sha256Hasher{})
+	mtree, err = mtree.FromLeaves(leaves)
+	require.NoError(t, err)
+
+	indicesToProve := []uint32{0, 1}
+	leavesToProve := leaves[0:2]
+	proof := mtree.Proof(indicesToProve)
+	root := mtree.GetRoot()
+
+	// TODO: fix verify
+	// leafTuples := merkle.MapIndiceAndLeaves(indicesToProve, leavesToProve)
+	// require.True(t, proof.Verify(root, leafTuples, len(leaves)))
 }

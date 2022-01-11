@@ -9,58 +9,72 @@ import (
 	"github.com/ComposableFi/merkle-go/helpers"
 )
 
-func (t Tree) FromLeaves(leaves []Hash) Tree {
+func (t Tree) FromLeaves(leaves []Hash) (Tree, error) {
 	t.append(leaves)
-	t.commit()
-	return t
+	err := t.commit()
+	if err != nil {
+		return Tree{}, err
+	}
+	return t, nil
 }
 
-func (t Tree) getRoot() Hash {
+func (t *Tree) GetRoot() Hash {
 	layers := t.layerTuples()
 	lastLayer := layers[len(layers)-1]
 	firstItem := lastLayer[0]
-	return firstItem.hash
+	return firstItem.Hash
 }
 
-func (t Tree) getRootHex() string {
-	root := t.getRoot()
+func (t *Tree) GetRootHex() string {
+	root := t.GetRoot()
 	return hex.EncodeToString([]byte(root))
 }
-func (t Tree) HelperNodes(leafIndices []uint32) []Hash {
+
+func (t *Tree) HelperNodes(leafIndices []uint32) []Hash {
 	var helperNodes []Hash
 	for _, layer := range t.HelperNodeTuples(leafIndices) {
 		for _, li := range layer {
-			helperNodes = append(helperNodes, li.hash)
+			helperNodes = append(helperNodes, li.Hash)
 		}
 	}
 	return helperNodes
 }
-func (t Tree) HelperNodeTuples(leafIndeceis []uint32) [][]leafIndexAndHash {
-	var helpersLayer []leafIndexAndHash
-	var helperNodes [][]leafIndexAndHash
+func (t *Tree) HelperNodeTuples(leafIndeceis []uint32) [][]Leaf {
+	var helperNodes [][]Leaf
 	for _, treeLayer := range t.layerTuples() {
 		siblings := helpers.GetSiblingIndecies(leafIndeceis)
 		helperIndices := helpers.Difference(siblings, leafIndeceis)
 
+		var helpersLayer []Leaf
 		for _, idx := range helperIndices {
-			i, _ := getLeafAndHashAtIndex(treeLayer, idx)
-			helpersLayer[idx] = i
+			leaf, found := getLeafAtIndex(treeLayer, idx)
+			if found {
+				helpersLayer = append(helpersLayer, leaf)
+			}
 		}
-		helperNodes = append(helperNodes, helpersLayer)
+
+		if helpersLayer != nil {
+			helperNodes = append(helperNodes, helpersLayer)
+		}
+
 		leafIndeceis = helpers.GetParentIndecies(leafIndeceis)
 	}
 	return helperNodes
 }
 
-func (t Tree) insert(leaf Hash) {
+func (t *Tree) Proof(leafIndices []uint32) Proof {
+	return NewProof(t.HelperNodes(leafIndices), t.hasher)
+}
+
+func (t *Tree) insert(leaf Hash) {
 	t.UncommittedLeaves = append(t.UncommittedLeaves, leaf)
 }
 
-func (t Tree) append(leaves []Hash) {
+func (t *Tree) append(leaves []Hash) {
 	t.UncommittedLeaves = append(t.UncommittedLeaves, leaves...)
 }
 
-func (t Tree) commit() error {
+func (t *Tree) commit() error {
 	diff, err := t.uncommittedDiff()
 	if err != nil {
 		return err
@@ -71,15 +85,15 @@ func (t Tree) commit() error {
 	return nil
 }
 
-func (t Tree) uncommittedRoot() (Hash, error) {
+func (t *Tree) uncommittedRoot() (Hash, error) {
 	shadowTree, err := t.uncommittedDiff()
 	if err != nil {
 		return Hash{}, err
 	}
-	return shadowTree.getRoot(), nil
+	return shadowTree.GetRoot(), nil
 }
 
-func (t Tree) uncommittedRootHex() (string, error) {
+func (t *Tree) uncommittedRootHex() (string, error) {
 	root, err := t.uncommittedRoot()
 	if err != nil {
 		return "", err
@@ -87,15 +101,15 @@ func (t Tree) uncommittedRootHex() (string, error) {
 	return hex.EncodeToString(root), err
 }
 
-func (t Tree) abortCommitted() {
+func (t *Tree) abortCommitted() {
 	t.UncommittedLeaves = make([]Hash, 0)
 }
 
-func (t Tree) depth() int {
+func (t *Tree) depth() int {
 	return len(t.layerTuples()) - 1
 }
 
-func (t Tree) leaves() []Hash {
+func (t *Tree) leaves() []Hash {
 	layers := t.layers()
 	if len(layers) > 0 {
 		return []Hash{}
@@ -103,24 +117,27 @@ func (t Tree) leaves() []Hash {
 	return layers[0]
 }
 
-func (t Tree) leavesLen() int {
+func (t *Tree) leavesLen() int {
 	leaves := t.leavesTuples()
 	return len(leaves)
 }
 
-func (t Tree) leavesTuples() []leafIndexAndHash {
-	return t.layerTuples()[0]
+func (t *Tree) leavesTuples() []Leaf {
+	if len(t.layerTuples()) > 0 {
+		return t.layerTuples()[0]
+	}
+	return []Leaf{}
 }
 
-func (t Tree) layers() [][]Hash {
+func (t *Tree) layers() [][]Hash {
 	return t.currentWorkingTree.layerNodes()
 }
 
-func (t Tree) layerTuples() [][]leafIndexAndHash {
+func (t *Tree) layerTuples() [][]Leaf {
 	return t.currentWorkingTree.layers
 }
 
-func (t Tree) uncommittedDiff() (PartialTree, error) {
+func (t *Tree) uncommittedDiff() (PartialTree, error) {
 	if len(t.UncommittedLeaves) == 0 {
 		return PartialTree{}, errors.New("leaves can not be empty!")
 	}
@@ -129,9 +146,9 @@ func (t Tree) uncommittedDiff() (PartialTree, error) {
 	for i, _ := range t.UncommittedLeaves {
 		shadowIndecies = append(shadowIndecies, uint32(commitedLeavesCount+i))
 	}
-	var shadowNodeTuples []leafIndexAndHash
+	var shadowNodeTuples []Leaf
 	for _, idx := range shadowIndecies {
-		x := leafIndexAndHash{index: idx, hash: t.UncommittedLeaves[idx]}
+		x := Leaf{Index: idx, Hash: t.UncommittedLeaves[idx]}
 		shadowNodeTuples = append(shadowNodeTuples, x)
 	}
 	partialTreeTuples := t.HelperNodeTuples(shadowIndecies)
@@ -142,29 +159,30 @@ func (t Tree) uncommittedDiff() (PartialTree, error) {
 	} else {
 		firstLayer := partialTreeTuples[0]
 		firstLayer = append(firstLayer, shadowNodeTuples...)
-		sortLeafAndHashByIndex(firstLayer)
+		sortLeavesByIndex(firstLayer)
 	}
-	return NewPartialTree(t.hasher).build(partialTreeTuples, uncommittedTreeDepth)
+	tree := NewPartialTree(t.hasher)
+	return tree.build(partialTreeTuples, uncommittedTreeDepth)
 }
 
-func getLeafAndHashAtIndex(leavesAndHash []leafIndexAndHash, index uint32) (leafIndexAndHash, error) {
+func getLeafAtIndex(leavesAndHash []Leaf, index uint32) (Leaf, bool) {
 	for _, l := range leavesAndHash {
-		if l.index == index {
-			return l, nil
+		if l.Index == index {
+			return l, true
 		}
 	}
-	return leafIndexAndHash{}, errors.New("leaf not found")
+	return Leaf{}, false
 }
 
-func getLayerAtIndex(layers [][]leafIndexAndHash, index uint32) ([]leafIndexAndHash, bool) {
+func getLayerAtIndex(layers [][]Leaf, index uint32) ([]Leaf, bool) {
 	if len(layers) > int(index) {
 		return layers[index], true
 	}
-	return []leafIndexAndHash{}, false
+	return []Leaf{}, false
 }
 
-func sortLeafAndHashByIndex(li []leafIndexAndHash) {
-	sort.Slice(li, func(i, j int) bool { return li[i].index < li[j].index })
+func sortLeavesByIndex(li []Leaf) {
+	sort.Slice(li, func(i, j int) bool { return li[i].Index < li[j].Index })
 
 }
 func getTreeDepth(leaves_count int) int {
