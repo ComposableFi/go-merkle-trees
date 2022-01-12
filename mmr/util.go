@@ -27,6 +27,7 @@ func (m MemStore) getElem(pos uint64) []byte {
 type MemMMR struct {
 	store   MemStore
 	mmrSize uint64
+	leaves  []Leaf
 }
 
 // NewMemMMR returns an object of the MemMMR type. It takes in the mmrSize and Memory Store (MemStore) as arguments.
@@ -45,14 +46,14 @@ func (m *MemMMR) Store() MemStore {
 // GetRoot returns the root of the MMR tree
 func (m *MemMMR) GetRoot() (interface{}, error) {
 	merge := &Merge{}
-	mmr := NewMMR(m.mmrSize, m.store, merge)
+	mmr := NewMMR(m.mmrSize, m.store, m.leaves, merge)
 	return mmr.GetRoot()
 }
 
 // Push adds an element to the store and returns the position of the element
 func (m *MemMMR) Push(elem []byte) uint64 {
 	merge := &Merge{}
-	mmr := NewMMR(m.mmrSize, m.store, merge)
+	mmr := NewMMR(m.mmrSize, m.store, m.leaves, merge)
 	pos, err := mmr.Push(elem)
 	if err != nil {
 		log.Error(err.Error())
@@ -63,9 +64,9 @@ func (m *MemMMR) Push(elem []byte) uint64 {
 }
 
 // GenProof generates proofs for validating an MMR leaf
-func (m *MemMMR) GenProof(posList []uint64) (*MerkleProof, error) {
+func (m *MemMMR) GenProof(posList []uint64) (*Proof, error) {
 	merge := &Merge{}
-	mmr := NewMMR(m.mmrSize, m.store, merge)
+	mmr := NewMMR(m.mmrSize, m.store, m.leaves, merge)
 	return mmr.GenProof(posList)
 }
 

@@ -13,16 +13,18 @@ type MMR struct {
 	size  uint64
 	batch *Batch
 	// merge accepts any type that satisfies the Merge interface
-	merge merkle.Merge
+	merge  merkle.Merge
+	leaves []Leaf
 }
 
 // NewMMR returns a new MMR type. It takes three arguments. It takes the mmrSize, Store and Merge interfaces. It accepts
 // any type that satisfies both the Store and Merge interfaces.
-func NewMMR(mmrSize uint64, s Store, m merkle.Merge) *MMR {
+func NewMMR(mmrSize uint64, s Store, leaves []Leaf, m merkle.Merge) *MMR {
 	return &MMR{
-		size:  mmrSize,
-		batch: NewBatch(s),
-		merge: m,
+		size:   mmrSize,
+		batch:  NewBatch(s),
+		merge:  m,
+		leaves: leaves,
 	}
 }
 
@@ -206,12 +208,12 @@ func (m *MMR) genProofForPeak(proof *Iterator, posList []uint64, peakPos uint64)
 
 // GenProof generates merkle proof for positions. It sorts positions, pushes merkle proof to proof by peak from left to
 // right. It then pushes bagged right hand side root
-func (m *MMR) GenProof(posList []uint64) (*MerkleProof, error) {
+func (m *MMR) GenProof(posList []uint64) (*Proof, error) {
 	if len(posList) == 0 {
 		return nil, ErrGenProofForInvalidLeaves
 	}
 	if m.size == 1 && reflect.DeepEqual(posList, []uint64{0}) {
-		return NewMerkleProof(m.size, NewIterator(), m.merge), nil
+		return NewProof(m.size, [][]byte{}, m.leaves, m.merge), nil
 	}
 
 	sort.Slice(posList, func(i, j int) bool {
@@ -252,7 +254,7 @@ func (m *MMR) GenProof(posList []uint64) (*MerkleProof, error) {
 		proof.push(p)
 	}
 
-	return NewMerkleProof(m.size, proof, m.merge), nil
+	return NewProof(m.size, proof.Items, m.leaves, m.merge), nil
 }
 
 // Commit calls the commit method on the batch property. It adds a batch element to the store
@@ -260,42 +262,44 @@ func (m *MMR) Commit() {
 	m.batch.commit()
 }
 
-// MerkleProof is the mmr proof. It is constructed to verify an MMR leaf.
-type MerkleProof struct {
+// Proof is the mmr proof. It is constructed to verify an MMR leaf.
+type Proof struct {
 	mmrSize uint64
 	proof   *Iterator
 	Merge   merkle.Merge
+	Leaves  []Leaf
 }
 
-// NewMerkleProof creates and returns new MerkleProof. It takes the mmrSize, proof which is of type *Iterator and any type
+// NewProof creates and returns new Proof. It takes the mmrSize, proof which is of type *Iterator and any type
 // that satisfies the Merge interface.
-func NewMerkleProof(mmrSize uint64, proof *Iterator, m merkle.Merge) *MerkleProof {
-	return &MerkleProof{
+func NewProof(mmrSize uint64, proofItems [][]byte, mmrLeaves []Leaf, m merkle.Merge) *Proof {
+	return &Proof{
 		mmrSize: mmrSize,
-		proof:   proof,
+		proof:   &Iterator{Items: proofItems},
 		Merge:   m,
+		Leaves:  mmrLeaves,
 	}
 }
 
 // MMRSize returns the mmr size
-func (m *MerkleProof) MMRSize() uint64 {
+func (m *Proof) MMRSize() uint64 {
 	return m.mmrSize
 }
 
 // ProofItems returns all the proof items from the Iterator.
-func (m *MerkleProof) ProofItems() [][]byte {
+func (m *Proof) ProofItems() [][]byte {
 	return m.proof.Items
 }
 
-func (m *MerkleProof) calculatePeakRoot(leaves []Leaf, peakPos uint64, proofs *Iterator) ([]byte, error) {
+func (m *Proof) calculatePeakRoot(leaves []Leaf, peakPos uint64, proofs *Iterator) ([]byte, error) {
 	if len(leaves) == 0 {
 		panic("can't be empty")
 	}
 
-	// (position, Leaf, height)
+	// (position, Hash, height)
 	var queue []leafWithHash
 	for _, l := range leaves {
-		queue = append(queue, leafWithHash{l.Pos, l.Leaf, 0})
+		queue = append(queue, leafWithHash{LeafIndexToPos(l.Index), l.Hash, 0})
 	}
 
 	// calculate tree root from each items
@@ -346,7 +350,7 @@ func (m *MerkleProof) calculatePeakRoot(leaves []Leaf, peakPos uint64, proofs *I
 	return nil, ErrCorruptedProof
 }
 
-func (m *MerkleProof) baggingPeaksHashes(peaksHashes [][]byte) ([]byte, error) {
+func (m *Proof) baggingPeaksHashes(peaksHashes [][]byte) ([]byte, error) {
 	var rightPeak, leftPeak []byte
 	for len(peaksHashes) > 1 {
 		if rightPeak, peaksHashes = pop(peaksHashes); rightPeak == nil {
@@ -367,7 +371,7 @@ func (m *MerkleProof) baggingPeaksHashes(peaksHashes [][]byte) ([]byte, error) {
 
 // CalculateRoot calculates and returns the root of the MMR tree using the leaves, mmrSize and proofs. It sorts the leaves
 // by position, calculates the root of each peak and bags the peaks
-func (m *MerkleProof) CalculateRoot(leaves []Leaf, mmrSize uint64, proofs *Iterator) ([]byte, error) {
+func (m *Proof) CalculateRoot(leaves []Leaf, mmrSize uint64, proofs *Iterator) ([]byte, error) {
 	var peaksHashes, err = m.calculatePeaksHashes(leaves, mmrSize, proofs)
 	if err != nil {
 		return nil, err
@@ -379,7 +383,8 @@ func (m *MerkleProof) CalculateRoot(leaves []Leaf, mmrSize uint64, proofs *Itera
 // CalculateRootWithNewLeaf calculates and returns a new root provided a new leaf element, new position and new MMRsize.
 // from merkle proof of leaf n to calculate merkle root of n + 1 leaves. By observing the MMR construction graph we know
 // it is possible. https://github.com/jjyr/merkle-mountain-range#construct this is kinda tricky, but it works, and useful
-func (m *MerkleProof) CalculateRootWithNewLeaf(leaves []Leaf, newPos uint64, newElem []byte, newMMRSize uint64) ([]byte, error) {
+func (m *Proof) CalculateRootWithNewLeaf(leaves []Leaf, newIndex uint64, newElem []byte, newMMRSize uint64) ([]byte, error) {
+	newPos := LeafIndexToPos(newIndex)
 	posHeight := posHeightInTree(newPos)
 	nextHeight := posHeightInTree(newPos + 1)
 	if nextHeight > posHeight {
@@ -399,16 +404,16 @@ func (m *MerkleProof) CalculateRootWithNewLeaf(leaves []Leaf, newPos uint64, new
 		peaksHashes = append(peaksHashes[:i], reversePeakHashes...)
 		iter := NewIterator()
 		iter.Items = peaksHashes
-		return m.CalculateRoot([]Leaf{{newPos, newElem}}, newMMRSize, iter)
+		return m.CalculateRoot([]Leaf{{Index: newIndex, Hash: newElem}}, newMMRSize, iter)
 	}
-	pushLeaf(&leaves, Leaf{newPos, newElem})
+	pushLeaf(&leaves, Leaf{Index: newIndex, Hash: newElem})
 	return m.CalculateRoot(leaves, newMMRSize, m.proof)
 }
 
 // Verify takes a root and leaves as arguments. It calculates a root from the leaves using the CalculateRoot method and
 // compares it with the supplied root. It returns tree if the roots are equal and false if they are not.
-func (m *MerkleProof) Verify(root []byte, leaves []Leaf) bool {
-	calculatedRoot, err := m.CalculateRoot(leaves, m.mmrSize, m.proof)
+func (m *Proof) Verify(root []byte) bool {
+	calculatedRoot, err := m.CalculateRoot(m.Leaves, m.mmrSize, m.proof)
 	if err != nil {
 		log.Errorf("root verification: %s \n", err.Error())
 		return false
@@ -417,32 +422,32 @@ func (m *MerkleProof) Verify(root []byte, leaves []Leaf) bool {
 	return reflect.DeepEqual(calculatedRoot, root)
 }
 
-func (m *MerkleProof) calculatePeaksHashes(leaves []Leaf, mmrSize uint64, proofs *Iterator) ([][]byte, error) {
-	// special handle the only 1 Leaf MerkleProof
-	if mmrSize == 1 && len(leaves) == 1 && leaves[0].Pos == 0 {
+func (m *Proof) calculatePeaksHashes(leaves []Leaf, mmrSize uint64, proofs *Iterator) ([][]byte, error) {
+	// special handle the only 1 Hash Proof
+	if mmrSize == 1 && len(leaves) == 1 && LeafIndexToPos(leaves[0].Index) == 0 {
 		var items [][]byte
 		for _, l := range leaves {
-			items = append(items, l.Leaf)
+			items = append(items, l.Hash)
 		}
 		return items, nil
 	}
 
 	// sort items by position
 	sort.SliceStable(leaves, func(i, j int) bool {
-		return leaves[i].Pos < leaves[j].Pos
+		return LeafIndexToPos(leaves[i].Index) < LeafIndexToPos(leaves[j].Index)
 	})
 
 	peaks := getPeaks(mmrSize)
 	var peaksHashes [][]byte
 	for _, peaksPos := range peaks {
 		lvs := takeWhileVec(&leaves, func(l Leaf) bool {
-			return l.Pos <= peaksPos
+			return LeafIndexToPos(l.Index) <= peaksPos
 		})
 
 		var peakRoot []byte
-		if len(lvs) == 1 && lvs[0].Pos == peaksPos {
-			// Leaf is the peak
-			peakRoot = lvs[0].Leaf
+		if len(lvs) == 1 && LeafIndexToPos(lvs[0].Index) == peaksPos {
+			// Hash is the peak
+			peakRoot = lvs[0].Hash
 		} else if len(lvs) == 0 {
 			// if empty, means the next proof is a peak root or rhs bagged root
 			if proof := proofs.Next(); proof != nil {
