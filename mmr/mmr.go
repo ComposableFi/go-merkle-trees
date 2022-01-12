@@ -371,8 +371,8 @@ func (m *Proof) baggingPeaksHashes(peaksHashes [][]byte) ([]byte, error) {
 
 // CalculateRoot calculates and returns the root of the MMR tree using the leaves, mmrSize and proofs. It sorts the leaves
 // by position, calculates the root of each peak and bags the peaks
-func (m *Proof) CalculateRoot(leaves []Leaf, mmrSize uint64, proofs *Iterator) ([]byte, error) {
-	var peaksHashes, err = m.calculatePeaksHashes(leaves, mmrSize, proofs)
+func (m *Proof) CalculateRoot() ([]byte, error) {
+	var peaksHashes, err = m.calculatePeaksHashes(m.Leaves, m.mmrSize, m.proof)
 	if err != nil {
 		return nil, err
 	}
@@ -404,16 +404,21 @@ func (m *Proof) CalculateRootWithNewLeaf(leaves []Leaf, newIndex uint64, newElem
 		peaksHashes = append(peaksHashes[:i], reversePeakHashes...)
 		iter := NewIterator()
 		iter.Items = peaksHashes
-		return m.CalculateRoot([]Leaf{{Index: newIndex, Hash: newElem}}, newMMRSize, iter)
+		m.proof = iter
+		m.Leaves = []Leaf{{Index: newIndex, Hash: newElem}}
+		m.mmrSize = newMMRSize
+		return m.CalculateRoot()
 	}
 	pushLeaf(&leaves, Leaf{Index: newIndex, Hash: newElem})
-	return m.CalculateRoot(leaves, newMMRSize, m.proof)
+	m.Leaves = leaves
+	m.mmrSize = newMMRSize
+	return m.CalculateRoot()
 }
 
 // Verify takes a root and leaves as arguments. It calculates a root from the leaves using the CalculateRoot method and
 // compares it with the supplied root. It returns tree if the roots are equal and false if they are not.
 func (m *Proof) Verify(root []byte) bool {
-	calculatedRoot, err := m.CalculateRoot(m.Leaves, m.mmrSize, m.proof)
+	calculatedRoot, err := m.CalculateRoot()
 	if err != nil {
 		log.Errorf("root verification: %s \n", err.Error())
 		return false
