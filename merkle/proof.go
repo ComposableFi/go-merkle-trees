@@ -16,12 +16,15 @@ import (
 // 	return p.serializer.Deserialize(bytes)
 // }
 
-func (p Proof) Verify(root Hash, leafTuples []Leaf, totalLeavesCount int) bool {
-	extractedRoot := p.GetRoot(leafTuples, int(totalLeavesCount))
-	return bytes.Equal(extractedRoot, root)
+func (p Proof) Verify(root Hash, leafTuples []Leaf, totalLeavesCount int) (bool, error) {
+	extractedRoot, err := p.GetRoot(leafTuples, int(totalLeavesCount))
+	if err != nil {
+		return false, err
+	}
+	return bytes.Equal(extractedRoot, root), nil
 }
 
-func (p Proof) GetRoot(leafTuples []Leaf, totalLeavesCount int) Hash {
+func (p Proof) GetRoot(leafTuples []Leaf, totalLeavesCount int) (Hash, error) {
 	treeDepth := getTreeDepth(totalLeavesCount)
 	sortLeavesByIndex(leafTuples)
 	var leafIndices []uint32
@@ -30,10 +33,13 @@ func (p Proof) GetRoot(leafTuples []Leaf, totalLeavesCount int) Hash {
 	}
 	proofIndicesLayers := proofIndeciesByLayers(leafIndices, totalLeavesCount)
 	var proofLayers [][]Leaf
+	proofCopy := make([]Hash, len(p.proofHashes))
+	copy(proofCopy, p.proofHashes)
 	for _, proofIndices := range proofIndicesLayers {
 		var proofHashes []Hash
 		for i := 0; i < len(proofIndices); i++ {
-			proofHashes = append(proofHashes, p.proofHashes[i])
+			proofHashes = append(proofHashes, proofCopy[0])
+			proofCopy = proofCopy[1:]
 		}
 		m := MapIndiceAndLeaves(proofIndices, proofHashes)
 		proofLayers = append(proofLayers, m)
@@ -51,13 +57,17 @@ func (p Proof) GetRoot(leafTuples []Leaf, totalLeavesCount int) Hash {
 	partialTree := NewPartialTree(p.hasher)
 	PartialTree, err := partialTree.build(proofLayers, treeDepth)
 	if err != nil {
-		return Hash{}
+		return Hash{}, err
 	}
-	return PartialTree.GetRoot()
+	return PartialTree.GetRoot(), err
 }
 
-func (p Proof) GetRootHex(leafTuples []Leaf, totalLeavesCount int) string {
-	return hex.EncodeToString(p.GetRoot(leafTuples, totalLeavesCount))
+func (p Proof) GetRootHex(leafTuples []Leaf, totalLeavesCount int) (string, error) {
+	root, err := p.GetRoot(leafTuples, totalLeavesCount)
+	if err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(root), nil
 }
 
 func (p Proof) ProofHashes() []Hash {

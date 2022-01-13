@@ -44,10 +44,10 @@ func (pt *PartialTree) buildTree(partialLayers [][]Leaf, fullTreeDepth int) ([][
 		partialTree = append(partialTree, currentLayer)
 
 		var indices []uint32
-		var nodes []Leaf
+		var nodes []Hash
 		for i := 0; i < len(currentLayer); i++ {
 			indices = append(indices, currentLayer[i].Index)
-			nodes = append(nodes, Leaf{Index: uint32(i), Hash: currentLayer[i].Hash})
+			nodes = append(nodes, currentLayer[i].Hash)
 		}
 		// freeup for next round
 		currentLayer = make([]Leaf, 0)
@@ -56,16 +56,19 @@ func (pt *PartialTree) buildTree(partialLayers [][]Leaf, fullTreeDepth int) ([][
 
 		for i := 0; i < len(parentLayerIndices); i++ {
 			parnetNodeIndex := parentLayerIndices[i]
-			if leftNode, found := getLeafAtIndex(nodes, uint32(i*2)); found {
-				rightNode, found := getLeafAtIndex(nodes, uint32(i*2+1))
+			leftIndex := i * 2
+			if len(nodes) > leftIndex {
+				leftHash := nodes[leftIndex]
+				rightIndex := i*2 + 1
+
 				var hash, rightHash Hash
-				if !found {
-					rightHash = nil
+				if len(nodes) > rightIndex {
+					rightHash = nodes[rightIndex]
 				} else {
-					rightHash = rightNode.Hash
+					rightHash = nil
 				}
 				var err error
-				hash, err = ConcatAndHash(pt.hasher, leftNode.Hash, rightHash)
+				hash, err = ConcatAndHash(pt.hasher, leftHash, rightHash)
 				if err != nil {
 					return [][]Leaf{}, err
 				}

@@ -2,7 +2,7 @@ package helpers
 
 // PopFromUint32Queue pops front element of uint32 slice
 func PopFromUint32Queue(slice []uint32) (uint32, []uint32) {
-	popElem, newSlice := slice[0], slice[1:]
+	popElem, newSlice := slice[len(slice)-1], slice[:len(slice)-1]
 	return popElem, newSlice
 
 }

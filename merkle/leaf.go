@@ -2,7 +2,7 @@ package merkle
 
 // PopFromLeafQueue pops first front element in a leaf hash slice
 func PopFromLeafQueue(slice [][]Leaf) ([]Leaf, [][]Leaf) {
-	popElem, newSlice := slice[0], slice[1:]
+	popElem, newSlice := slice[len(slice)-1], slice[0:len(slice)-1]
 	return popElem, newSlice
 }
 

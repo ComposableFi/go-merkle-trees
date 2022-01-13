@@ -60,7 +60,30 @@ func TestRoot(t *testing.T) {
 	proof := mtree.Proof(indicesToProve)
 	root := mtree.GetRoot()
 
-	// TODO: fix verify
-	// leafTuples := merkle.MapIndiceAndLeaves(indicesToProve, leavesToProve)
-	// require.True(t, proof.Verify(root, leafTuples, len(leaves)))
+	leafTuples := merkle.MapIndiceAndLeaves(indicesToProve, leavesToProve)
+	verified, err := proof.Verify(root, leafTuples, len(leaves))
+	require.NoError(t, err)
+	require.True(t, verified)
+}
+
+func TestProof(t *testing.T) {
+	values := []string{"a", "b", "c", "d", "e", "f"}
+	var leaves []merkle.Hash
+	for i := 0; i < len(values); i++ {
+		h, _ := Sha256Hasher{}.Hash([]byte(values[i]))
+		leaves = append(leaves, h)
+	}
+	mtree := merkle.NewTree(Sha256Hasher{})
+	mtree, err := mtree.FromLeaves(leaves)
+	require.NoError(t, err)
+
+	indicesToProve := []uint32{3, 4}
+	leavesToProve := leaves[3:5]
+	proof := mtree.Proof(indicesToProve)
+	root := mtree.GetRoot()
+
+	leafTuples := merkle.MapIndiceAndLeaves(indicesToProve, leavesToProve)
+	verified, err := proof.Verify(root, leafTuples, len(leaves))
+	require.NoError(t, err)
+	require.True(t, verified)
 }
