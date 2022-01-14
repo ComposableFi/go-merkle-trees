@@ -74,6 +74,15 @@ func (p Proof) ProofHashes() []Hash {
 	return p.proofHashes
 }
 
+func (p Proof) ProofHashesHex() []string {
+	var hexList []string
+	for _, p := range p.proofHashes {
+		hex := hex.EncodeToString(p)
+		hexList = append(hexList, hex)
+	}
+	return hexList
+}
+
 func proofIndeciesByLayers(sortedLeafIndices []uint32, leavsCount int) [][]uint32 {
 	depth := getTreeDepth(leavsCount)
 	unevenLayers := unevenLayers(leavsCount)

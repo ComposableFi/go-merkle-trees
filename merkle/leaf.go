@@ -1,7 +1,13 @@
 package merkle
 
-// PopFromLeafQueue pops first front element in a leaf hash slice
+// PopFromLeafQueue pops last element in a leaf hash slice
 func PopFromLeafQueue(slice [][]Leaf) ([]Leaf, [][]Leaf) {
+	popElem, newSlice := slice[len(slice)-1], slice[0:len(slice)-1]
+	return popElem, newSlice
+}
+
+// PopFromPartialtree pops last element in a partial tree slice
+func PopFromPartialtree(slice []PartialTree) (PartialTree, []PartialTree) {
 	popElem, newSlice := slice[len(slice)-1], slice[0:len(slice)-1]
 	return popElem, newSlice
 }

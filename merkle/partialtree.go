@@ -83,7 +83,9 @@ func (pt *PartialTree) buildTree(partialLayers [][]Leaf, fullTreeDepth int) ([][
 		}
 
 	}
-	partialTree = append(partialTree, currentLayer)
+	if len(currentLayer) > 0 {
+		partialTree = append(partialTree, currentLayer)
+	}
 	return partialTree, nil
 }
 
@@ -92,9 +94,12 @@ func (pt *PartialTree) depth() int {
 }
 
 func (pt *PartialTree) GetRoot() Hash {
-	lastLayer := pt.layers[len(pt.layers)-1]
-	firstItem := lastLayer[0]
-	return firstItem.Hash
+	if len(pt.layers) > 0 {
+		lastLayer := pt.layers[len(pt.layers)-1]
+		firstItem := lastLayer[0]
+		return firstItem.Hash
+	}
+	return nil
 }
 
 func (pt *PartialTree) contains(layerIndex, nodeIndex uint32) bool {

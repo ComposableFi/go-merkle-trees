@@ -2,7 +2,6 @@ package merkle
 
 import (
 	"encoding/hex"
-	"errors"
 	"math"
 	"sort"
 
@@ -10,8 +9,8 @@ import (
 )
 
 func (t Tree) FromLeaves(leaves []Hash) (Tree, error) {
-	t.append(leaves)
-	err := t.commit()
+	t.Append(leaves)
+	err := t.Commit()
 	if err != nil {
 		return Tree{}, err
 	}
@@ -20,9 +19,12 @@ func (t Tree) FromLeaves(leaves []Hash) (Tree, error) {
 
 func (t *Tree) GetRoot() Hash {
 	layers := t.layerTuples()
-	lastLayer := layers[len(layers)-1]
-	firstItem := lastLayer[0]
-	return firstItem.Hash
+	if len(layers) > 0 {
+		lastLayer := layers[len(layers)-1]
+		firstItem := lastLayer[0]
+		return firstItem.Hash
+	}
+	return Hash{}
 }
 
 func (t *Tree) GetRootHex() string {
@@ -53,9 +55,7 @@ func (t *Tree) HelperNodeTuples(leafIndeceis []uint32) [][]Leaf {
 			}
 		}
 
-		if helpersLayer != nil {
-			helperNodes = append(helperNodes, helpersLayer)
-		}
+		helperNodes = append(helperNodes, helpersLayer)
 
 		leafIndeceis = helpers.GetParentIndecies(leafIndeceis)
 	}
@@ -66,23 +66,33 @@ func (t *Tree) Proof(leafIndices []uint32) Proof {
 	return NewProof(t.HelperNodes(leafIndices), t.hasher)
 }
 
-func (t *Tree) insert(leaf Hash) {
+func (t *Tree) Insert(leaf Hash) {
 	t.UncommittedLeaves = append(t.UncommittedLeaves, leaf)
 }
 
-func (t *Tree) append(leaves []Hash) {
+func (t *Tree) Append(leaves []Hash) {
 	t.UncommittedLeaves = append(t.UncommittedLeaves, leaves...)
 }
 
-func (t *Tree) commit() error {
+func (t *Tree) Commit() error {
 	diff, err := t.uncommittedDiff()
 	if err != nil {
 		return err
 	}
-	t.history = append(t.history, diff)
-	t.currentWorkingTree.mergeUnverified(diff)
-	t.UncommittedLeaves = []Hash{}
+	if len(diff.layers) > 0 {
+		t.history = append(t.history, diff)
+		t.currentWorkingTree.mergeUnverified(diff)
+		t.UncommittedLeaves = []Hash{}
+	}
 	return nil
+}
+
+func (t *Tree) Rollback() {
+	_, t.history = PopFromPartialtree(t.history)
+	t.currentWorkingTree = PartialTree{}
+	for _, commit := range t.history {
+		t.currentWorkingTree.mergeUnverified(commit)
+	}
 }
 
 func (t *Tree) uncommittedRoot() (Hash, error) {
@@ -93,23 +103,23 @@ func (t *Tree) uncommittedRoot() (Hash, error) {
 	return shadowTree.GetRoot(), nil
 }
 
-func (t *Tree) uncommittedRootHex() (string, error) {
+func (t *Tree) UncommittedRootHex() (string, error) {
 	root, err := t.uncommittedRoot()
 	if err != nil {
 		return "", err
 	}
-	return hex.EncodeToString(root), err
+	return hex.EncodeToString(root), nil
 }
 
 func (t *Tree) abortCommitted() {
 	t.UncommittedLeaves = make([]Hash, 0)
 }
 
-func (t *Tree) depth() int {
+func (t *Tree) GetDepth() int {
 	return len(t.layerTuples()) - 1
 }
 
-func (t *Tree) leaves() []Hash {
+func (t *Tree) GetLeaves() []Hash {
 	layers := t.layers()
 	if len(layers) > 0 {
 		return []Hash{}
@@ -117,7 +127,7 @@ func (t *Tree) leaves() []Hash {
 	return layers[0]
 }
 
-func (t *Tree) leavesLen() int {
+func (t *Tree) GetLeavesLen() int {
 	leaves := t.leavesTuples()
 	return len(leaves)
 }
@@ -139,20 +149,20 @@ func (t *Tree) layerTuples() [][]Leaf {
 
 func (t *Tree) uncommittedDiff() (PartialTree, error) {
 	if len(t.UncommittedLeaves) == 0 {
-		return PartialTree{}, errors.New("leaves can not be empty!")
+		return PartialTree{}, nil
 	}
-	commitedLeavesCount := t.leavesLen()
+	commitedLeavesCount := t.GetLeavesLen()
 	var shadowIndecies []uint32
 	for i, _ := range t.UncommittedLeaves {
 		shadowIndecies = append(shadowIndecies, uint32(commitedLeavesCount+i))
 	}
 	var shadowNodeTuples []Leaf
-	for _, idx := range shadowIndecies {
-		x := Leaf{Index: idx, Hash: t.UncommittedLeaves[idx]}
+	for i := 0; i < len(shadowIndecies); i++ {
+		x := Leaf{Index: shadowIndecies[i], Hash: t.UncommittedLeaves[i]}
 		shadowNodeTuples = append(shadowNodeTuples, x)
 	}
 	partialTreeTuples := t.HelperNodeTuples(shadowIndecies)
-	leavesInNewTree := t.leavesLen() + len(t.UncommittedLeaves)
+	leavesInNewTree := t.GetLeavesLen() + len(t.UncommittedLeaves)
 	uncommittedTreeDepth := getTreeDepth(leavesInNewTree)
 	if len(partialTreeTuples) == 0 {
 		partialTreeTuples = append(partialTreeTuples, shadowNodeTuples)
@@ -160,6 +170,7 @@ func (t *Tree) uncommittedDiff() (PartialTree, error) {
 		firstLayer := partialTreeTuples[0]
 		firstLayer = append(firstLayer, shadowNodeTuples...)
 		sortLeavesByIndex(firstLayer)
+		partialTreeTuples[0] = firstLayer
 	}
 	tree := NewPartialTree(t.hasher)
 	return tree.build(partialTreeTuples, uncommittedTreeDepth)
