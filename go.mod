@@ -7,10 +7,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 )
 
-require (
-	github.com/ComposableFi/go-merkle-trees v0.0.0-20220112125710-2145f588000c
-	golang.org/x/crypto v0.0.0-20211202192323-5770296d904e
-)
+require golang.org/x/crypto v0.0.0-20211202192323-5770296d904e
 
 require (
 	github.com/davecgh/go-spew v1.1.0 // indirect
