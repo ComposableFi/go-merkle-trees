@@ -144,7 +144,7 @@ func TestGenRootFromProof(t *testing.T) {
 		leaves,
 		uint64(newElem),
 		toHash(uint32(newElem)),
-		mmr.LeafIndexToMMRSize(uint64(newElem)),
+		merkleMmr.LeafIndexToMMRSize(uint64(newElem)),
 		//merkleMmr.LeafIndexToMMRSize(uint64(newElem)),
 	)
 	if err != nil {
@@ -162,8 +162,8 @@ func TestEmptyMMRRoot(t *testing.T) {
 	store := merkleMmr.NewMemStore()
 	mmr := merkleMmr.NewMMR(0, store, []merkleMmr.Leaf{}, merge)
 	_, err := mmr.GetRoot()
-	if err != mmr.ErrGetRootOnEmpty {
-		t.Errorf("%s: want :%v  got %v", "empty merkleMmr root", mmr.ErrGetRootOnEmpty, err)
+	if err != merkleMmr.ErrGetRootOnEmpty {
+		t.Errorf("%s: want :%v  got %v", "empty merkleMmr root", merkleMmr.ErrGetRootOnEmpty, err)
 	}
 }
 
