@@ -3,7 +3,7 @@ package merkle
 import (
 	"errors"
 
-	"github.com/ComposableFi/merkle-go/helpers"
+	"github.com/ComposableFi/go-merkle-trees/helpers"
 )
 
 // BuildMerkleRoot builds the merkle root from leaves

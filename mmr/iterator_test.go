@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	merklego_mmr "github.com/ComposableFi/merkle-go/mmr"
+	merklego_mmr "github.com/ComposableFi/go-merkle-trees/mmr"
 )
 
 func TestNext(t *testing.T) {
