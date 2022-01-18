@@ -17,10 +17,6 @@ func (hr Sha256Hasher) Hash(b []byte) (merkle.Hash, error) {
 	return h.Sum(nil), nil
 }
 
-func (hr Sha256Hasher) ConcatAndHash(left, right []byte) (merkle.Hash, error) {
-	return hr.Hash(append(left[:], right[:]...))
-}
-
 type TestData struct {
 	leafValues      []string
 	expectedRootHex string

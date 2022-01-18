@@ -63,7 +63,19 @@ func (t *Tree) HelperNodeTuples(leafIndeceis []uint32) [][]Leaf {
 }
 
 func (t *Tree) Proof(leafIndices []uint32) Proof {
-	return NewProof(t.HelperNodes(leafIndices), t.hasher)
+	leavesLen := t.GetLeavesLen()
+	leaves := t.leavesTuples()
+	var proofLeaves []Leaf
+
+	for _, index := range leafIndices {
+		for _, leaf := range leaves {
+			if leaf.Index == index {
+				proofLeaves = append(proofLeaves, leaf)
+				break
+			}
+		}
+	}
+	return NewProof(proofLeaves, t.HelperNodes(leafIndices), leavesLen, t.hasher)
 }
 
 func (t *Tree) Insert(leaf Hash) {
@@ -127,9 +139,9 @@ func (t *Tree) GetLeaves() []Hash {
 	return layers[0]
 }
 
-func (t *Tree) GetLeavesLen() int {
+func (t *Tree) GetLeavesLen() uint32 {
 	leaves := t.leavesTuples()
-	return len(leaves)
+	return uint32(len(leaves))
 }
 
 func (t *Tree) leavesTuples() []Leaf {
@@ -154,7 +166,7 @@ func (t *Tree) uncommittedDiff() (PartialTree, error) {
 	commitedLeavesCount := t.GetLeavesLen()
 	var shadowIndecies []uint32
 	for i, _ := range t.UncommittedLeaves {
-		shadowIndecies = append(shadowIndecies, uint32(commitedLeavesCount+i))
+		shadowIndecies = append(shadowIndecies, commitedLeavesCount+uint32(i))
 	}
 	var shadowNodeTuples []Leaf
 	for i := 0; i < len(shadowIndecies); i++ {
@@ -162,7 +174,7 @@ func (t *Tree) uncommittedDiff() (PartialTree, error) {
 		shadowNodeTuples = append(shadowNodeTuples, x)
 	}
 	partialTreeTuples := t.HelperNodeTuples(shadowIndecies)
-	leavesInNewTree := t.GetLeavesLen() + len(t.UncommittedLeaves)
+	leavesInNewTree := t.GetLeavesLen() + uint32(len(t.UncommittedLeaves))
 	uncommittedTreeDepth := getTreeDepth(leavesInNewTree)
 	if len(partialTreeTuples) == 0 {
 		partialTreeTuples = append(partialTreeTuples, shadowNodeTuples)
@@ -196,10 +208,10 @@ func sortLeavesByIndex(li []Leaf) {
 	sort.Slice(li, func(i, j int) bool { return li[i].Index < li[j].Index })
 
 }
-func getTreeDepth(leaves_count int) int {
+func getTreeDepth(leaves_count uint32) uint32 {
 	if leaves_count == 1 {
 		return 1
 	} else {
-		return int(math.Ceil(math.Log2(float64(leaves_count))))
+		return uint32(math.Ceil(math.Log2(float64(leaves_count))))
 	}
 }

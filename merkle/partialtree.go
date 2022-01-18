@@ -16,10 +16,10 @@ func (pt *PartialTree) fromLeaves(leaves []Hash) (PartialTree, error) {
 			},
 		})
 	}
-	return pt.build(leafTuples, getTreeDepth(len(leaves)))
+	return pt.build(leafTuples, getTreeDepth(uint32(len(leaves))))
 }
 
-func (pt *PartialTree) build(partialLayers [][]Leaf, depth int) (PartialTree, error) {
+func (pt *PartialTree) build(partialLayers [][]Leaf, depth uint32) (PartialTree, error) {
 	layers, err := pt.buildTree(partialLayers, depth)
 	if err != nil {
 		return PartialTree{}, err
@@ -27,11 +27,11 @@ func (pt *PartialTree) build(partialLayers [][]Leaf, depth int) (PartialTree, er
 	return PartialTree{layers: layers}, nil
 }
 
-func (pt *PartialTree) buildTree(partialLayers [][]Leaf, fullTreeDepth int) ([][]Leaf, error) {
+func (pt *PartialTree) buildTree(partialLayers [][]Leaf, fullTreeDepth uint32) ([][]Leaf, error) {
 	reversedLayers := reverseLayers(partialLayers)
 	var currentLayer []Leaf
 	var partialTree [][]Leaf
-	for i := 0; i < fullTreeDepth; i++ {
+	for i := uint32(0); i < fullTreeDepth; i++ {
 
 		if len(reversedLayers) > 0 {
 			var nodes []Leaf

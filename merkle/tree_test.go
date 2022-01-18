@@ -40,12 +40,10 @@ func TestRoot(t *testing.T) {
 	require.NoError(t, err)
 
 	indicesToProve := []uint32{0, 1}
-	leavesToProve := leaves[0:2]
 	proof := mtree.Proof(indicesToProve)
 	root := mtree.GetRoot()
 
-	leafTuples := merkle.MapIndiceAndLeaves(indicesToProve, leavesToProve)
-	verified, err := proof.Verify(root, leafTuples, len(leaves))
+	verified, err := proof.Verify(root)
 	require.NoError(t, err)
 	require.True(t, verified)
 }
@@ -62,12 +60,10 @@ func TestProof(t *testing.T) {
 	require.NoError(t, err)
 
 	indicesToProve := []uint32{3, 4}
-	leavesToProve := leaves[3:5]
 	proof := mtree.Proof(indicesToProve)
 	root := mtree.GetRoot()
 
-	leafTuples := merkle.MapIndiceAndLeaves(indicesToProve, leavesToProve)
-	verified, err := proof.Verify(root, leafTuples, len(leaves))
+	verified, err := proof.Verify(root)
 	require.NoError(t, err)
 	require.True(t, verified)
 }

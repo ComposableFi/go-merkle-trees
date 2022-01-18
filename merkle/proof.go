@@ -8,30 +8,22 @@ import (
 	"github.com/ComposableFi/merkle-go/helpers"
 )
 
-// func (p Proof) fromBytes(bytes []byte) (PartialTree, error) {
-// 	return p.deserialize(bytes)
-// }
-
-// func (p Proof) deserialize(bytes []byte) (PartialTree, error) {
-// 	return p.serializer.Deserialize(bytes)
-// }
-
-func (p Proof) Verify(root Hash, leafTuples []Leaf, totalLeavesCount int) (bool, error) {
-	extractedRoot, err := p.GetRoot(leafTuples, int(totalLeavesCount))
+func (p Proof) Verify(root Hash) (bool, error) {
+	extractedRoot, err := p.GetRoot()
 	if err != nil {
 		return false, err
 	}
 	return bytes.Equal(extractedRoot, root), nil
 }
 
-func (p Proof) GetRoot(leafTuples []Leaf, totalLeavesCount int) (Hash, error) {
-	treeDepth := getTreeDepth(totalLeavesCount)
-	sortLeavesByIndex(leafTuples)
+func (p Proof) GetRoot() (Hash, error) {
+	treeDepth := getTreeDepth(p.totalLeavesCount)
+	sortLeavesByIndex(p.leaves)
 	var leafIndices []uint32
-	for _, l := range leafTuples {
+	for _, l := range p.leaves {
 		leafIndices = append(leafIndices, l.Index)
 	}
-	proofIndicesLayers := proofIndeciesByLayers(leafIndices, totalLeavesCount)
+	proofIndicesLayers := proofIndeciesByLayers(leafIndices, p.totalLeavesCount)
 	var proofLayers [][]Leaf
 	proofCopy := make([]Hash, len(p.proofHashes))
 	copy(proofCopy, p.proofHashes)
@@ -47,12 +39,12 @@ func (p Proof) GetRoot(leafTuples []Leaf, totalLeavesCount int) (Hash, error) {
 
 	if len(proofLayers) > 0 {
 		firstLayer := proofLayers[0]
-		firstLayer = append(firstLayer, leafTuples...)
+		firstLayer = append(firstLayer, p.leaves...)
 		sortLeavesByIndex(firstLayer)
 		proofLayers[0] = firstLayer
 
 	} else {
-		proofLayers = append(proofLayers, leafTuples)
+		proofLayers = append(proofLayers, p.leaves)
 	}
 	partialTree := NewPartialTree(p.hasher)
 	PartialTree, err := partialTree.build(proofLayers, treeDepth)
@@ -62,8 +54,8 @@ func (p Proof) GetRoot(leafTuples []Leaf, totalLeavesCount int) (Hash, error) {
 	return PartialTree.GetRoot(), err
 }
 
-func (p Proof) GetRootHex(leafTuples []Leaf, totalLeavesCount int) (string, error) {
-	root, err := p.GetRoot(leafTuples, totalLeavesCount)
+func (p Proof) GetRootHex() (string, error) {
+	root, err := p.GetRoot()
 	if err != nil {
 		return "", err
 	}
@@ -83,11 +75,11 @@ func (p Proof) ProofHashesHex() []string {
 	return hexList
 }
 
-func proofIndeciesByLayers(sortedLeafIndices []uint32, leavsCount int) [][]uint32 {
+func proofIndeciesByLayers(sortedLeafIndices []uint32, leavsCount uint32) [][]uint32 {
 	depth := getTreeDepth(leavsCount)
 	unevenLayers := unevenLayers(leavsCount)
 	var proofIndices [][]uint32
-	for layerIndex := 0; layerIndex < depth; layerIndex++ {
+	for layerIndex := uint32(0); layerIndex < depth; layerIndex++ {
 		siblingIndices := helpers.GetSiblingIndecies(sortedLeafIndices)
 		leavesCount := unevenLayers[layerIndex]
 		layerLastNodeIndex := sortedLeafIndices[len(sortedLeafIndices)-1]
@@ -103,15 +95,15 @@ func proofIndeciesByLayers(sortedLeafIndices []uint32, leavsCount int) [][]uint3
 
 }
 
-func unevenLayers(treeLeavesCount int) map[int]int {
+func unevenLayers(treeLeavesCount uint32) map[uint32]uint32 {
 	depth := getTreeDepth(treeLeavesCount)
-	unevenLayers := make(map[int]int)
-	for i := 0; i < depth; i++ {
+	unevenLayers := make(map[uint32]uint32)
+	for i := uint32(0); i < depth; i++ {
 		unevenLayer := treeLeavesCount%2 != 0
 		if unevenLayer {
 			unevenLayers[i] = treeLeavesCount
 		}
-		treeLeavesCount = int(math.Ceil(float64(treeLeavesCount) / 2))
+		treeLeavesCount = uint32(math.Ceil(float64(treeLeavesCount) / 2))
 	}
 	return unevenLayers
 }

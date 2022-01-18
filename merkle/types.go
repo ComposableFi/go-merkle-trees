@@ -31,20 +31,18 @@ func NewPartialTree(hasher Hasher) PartialTree {
 }
 
 type Proof struct {
-	proofHashes []Hash
-	// leaves           []Leaf
-	// totalLeavesCount uint32
-	hasher Hasher
+	proofHashes      []Hash
+	leaves           []Leaf
+	totalLeavesCount uint32
+	hasher           Hasher
 }
 
-// merkle.NewProof(authorityLeaves, proofHashes, totalLeavesCount, Keccak256{})
-
-func NewProof(proofHashes []Hash, hasher Hasher) Proof {
+func NewProof(leaves []Leaf, proofHashes []Hash, totalLeavesCount uint32, hasher Hasher) Proof {
 	return Proof{
-		// leaves:           leaves,
-		proofHashes: proofHashes,
-		// totalLeavesCount: totalLeavesCount,
-		hasher: hasher,
+		leaves:           leaves,
+		proofHashes:      proofHashes,
+		totalLeavesCount: totalLeavesCount,
+		hasher:           hasher,
 	}
 }
 
