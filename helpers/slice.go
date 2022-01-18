@@ -31,6 +31,7 @@ func Uint32SliceContains(slice []uint32, num uint32) bool {
 	return false
 }
 
+// Difference finds the elements of first slice that are not present in the second slice
 func Difference(slice1 []uint32, slice2 []uint32) []uint32 {
 	var diff []uint32
 

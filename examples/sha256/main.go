@@ -26,8 +26,8 @@ func main() {
 		panic(err)
 	}
 
-	root := merkleTree.GetRoot()
-	fmt.Printf("Merkle root is %v \n", merkleTree.GetRootHex())
+	root := merkleTree.Root()
+	fmt.Printf("Merkle root is %v \n", merkleTree.RootHex())
 
 	// build merkle proof for 42 (its index is 1);
 	proof := merkleTree.Proof([]uint32{1})

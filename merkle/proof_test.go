@@ -8,7 +8,7 @@ import (
 )
 
 func TestCorrectProofs(t *testing.T) {
-	testData := setup()
+	testData := setupTestData()
 	expectedRoot := testData.expectedRootHex
 	indicesToProve := []uint32{3, 4}
 
@@ -17,7 +17,7 @@ func TestCorrectProofs(t *testing.T) {
 
 	proof := merkleTree.Proof(indicesToProve)
 
-	extractedRoot, err := proof.GetRootHex()
+	extractedRoot, err := proof.RootHex()
 	require.NoError(t, err)
 
 	require.Equal(t, expectedRoot, extractedRoot)
@@ -27,13 +27,13 @@ func TestCorrectProofs(t *testing.T) {
 	for k, testCase := range testCases {
 		t.Logf("Proof Case: %v", k)
 		merkleTree := testCase.merkleTree
-		root := merkleTree.GetRoot()
+		root := merkleTree.Root()
 		for k2, c := range testCase.cases {
 			t.Logf("Test Case: %v", k2)
 			t.Logf("Indices: %v", c.LeafIndicesToProve)
-			t.Logf("leafTuples: %v", c.LeafTuples)
+			t.Logf("Leaves: %v", c.Leaves)
 			proof := merkleTree.Proof(c.LeafIndicesToProve)
-			extractedRoot, err := proof.GetRoot()
+			extractedRoot, err := proof.Root()
 			require.NoError(t, err)
 			require.Equal(t, root, extractedRoot)
 		}

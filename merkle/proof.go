@@ -8,16 +8,20 @@ import (
 	"github.com/ComposableFi/merkle-go/helpers"
 )
 
+// Verify uses proof to verify that a given set of elements is contained in the original data
+// set the proof was made for.
 func (p Proof) Verify(root Hash) (bool, error) {
-	extractedRoot, err := p.GetRoot()
+	extractedRoot, err := p.Root()
 	if err != nil {
 		return false, err
 	}
 	return bytes.Equal(extractedRoot, root), nil
 }
 
-func (p Proof) GetRoot() (Hash, error) {
-	treeDepth := getTreeDepth(p.totalLeavesCount)
+// Root calculates Merkle root based on provided leaves and proof hashes. Used inside the
+// Verify method, but sometimes can be used on its own.
+func (p Proof) Root() (Hash, error) {
+	treeDepth := treeDepth(p.totalLeavesCount)
 	sortLeavesByIndex(p.leaves)
 	var leafIndices []uint32
 	for _, l := range p.leaves {
@@ -51,21 +55,26 @@ func (p Proof) GetRoot() (Hash, error) {
 	if err != nil {
 		return Hash{}, err
 	}
-	return PartialTree.GetRoot(), err
+	return PartialTree.Root(), err
 }
 
-func (p Proof) GetRootHex() (string, error) {
-	root, err := p.GetRoot()
+// RootHex calculates the root and serializes it into a hex string.
+func (p Proof) RootHex() (string, error) {
+	root, err := p.Root()
 	if err != nil {
 		return "", err
 	}
 	return hex.EncodeToString(root), nil
 }
 
+// ProofHashes returns all hashes from the proof, sorted from the left to right,
+// bottom to top.
 func (p Proof) ProofHashes() []Hash {
 	return p.proofHashes
 }
 
+// ProofHashesHex returns all hashes from the proof, sorted from the left to right,
+// bottom to top, as a vector of lower hex strings.
 func (p Proof) ProofHashesHex() []string {
 	var hexList []string
 	for _, p := range p.proofHashes {
@@ -75,12 +84,13 @@ func (p Proof) ProofHashesHex() []string {
 	return hexList
 }
 
+// proofIndeciesByLayers returns the proof indices by layers
 func proofIndeciesByLayers(sortedLeafIndices []uint32, leavsCount uint32) [][]uint32 {
-	depth := getTreeDepth(leavsCount)
+	depth := treeDepth(leavsCount)
 	unevenLayers := unevenLayers(leavsCount)
 	var proofIndices [][]uint32
 	for layerIndex := uint32(0); layerIndex < depth; layerIndex++ {
-		siblingIndices := helpers.GetSiblingIndecies(sortedLeafIndices)
+		siblingIndices := helpers.SiblingIndecies(sortedLeafIndices)
 		leavesCount := unevenLayers[layerIndex]
 		layerLastNodeIndex := sortedLeafIndices[len(sortedLeafIndices)-1]
 		if layerLastNodeIndex == uint32(leavesCount)-1 {
@@ -89,14 +99,15 @@ func proofIndeciesByLayers(sortedLeafIndices []uint32, leavsCount uint32) [][]ui
 
 		proofNodesIndices := helpers.Difference(siblingIndices, sortedLeafIndices)
 		proofIndices = append(proofIndices, proofNodesIndices)
-		sortedLeafIndices = helpers.GetParentIndecies(sortedLeafIndices)
+		sortedLeafIndices = helpers.ParentIndecies(sortedLeafIndices)
 	}
 	return proofIndices
 
 }
 
+// unevenLayers returns map of indices that are not even
 func unevenLayers(treeLeavesCount uint32) map[uint32]uint32 {
-	depth := getTreeDepth(treeLeavesCount)
+	depth := treeDepth(treeLeavesCount)
 	unevenLayers := make(map[uint32]uint32)
 	for i := uint32(0); i < depth; i++ {
 		unevenLayer := treeLeavesCount%2 != 0

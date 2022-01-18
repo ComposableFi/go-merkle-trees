@@ -41,7 +41,7 @@ func TestRoot(t *testing.T) {
 
 	indicesToProve := []uint32{0, 1}
 	proof := mtree.Proof(indicesToProve)
-	root := mtree.GetRoot()
+	root := mtree.Root()
 
 	verified, err := proof.Verify(root)
 	require.NoError(t, err)
@@ -61,7 +61,7 @@ func TestProof(t *testing.T) {
 
 	indicesToProve := []uint32{3, 4}
 	proof := mtree.Proof(indicesToProve)
-	root := mtree.GetRoot()
+	root := mtree.Root()
 
 	verified, err := proof.Verify(root)
 	require.NoError(t, err)
@@ -69,25 +69,25 @@ func TestProof(t *testing.T) {
 }
 
 func TestCorrectTreeRoot(t *testing.T) {
-	testData := setup()
+	testData := setupTestData()
 
 	merkleTree, err := merkle.NewTree(Sha256Hasher{}).FromLeaves(testData.leafHashes)
 	require.NoError(t, err)
-	rootHex := merkleTree.GetRootHex()
+	rootHex := merkleTree.RootHex()
 	require.Equal(t, testData.expectedRootHex, rootHex)
 }
 
 func TestCorrectTreeDepth(t *testing.T) {
-	testData := setup()
+	testData := setupTestData()
 
 	merkleTree, err := merkle.NewTree(Sha256Hasher{}).FromLeaves(testData.leafHashes)
 	require.NoError(t, err)
-	depth := merkleTree.GetDepth()
+	depth := merkleTree.Depth()
 	require.Equal(t, 3, depth)
 }
 
 func TestCorrectProofRoot(t *testing.T) {
-	testData := setup()
+	testData := setupTestData()
 	indicesToProve := []uint32{3, 4}
 	expectedProofHashes := []string{
 		"2e7d2c03a9507ae265ecf5b5356885a53393a2029d241394997265a1a25aefc6",
@@ -101,7 +101,7 @@ func TestCorrectProofRoot(t *testing.T) {
 }
 
 func TestGetCorrectRootAfterCommit(t *testing.T) {
-	testData := setup()
+	testData := setupTestData()
 	expectedRoot := testData.expectedRootHex
 	leafHashes := testData.leafHashes
 
@@ -115,7 +115,7 @@ func TestGetCorrectRootAfterCommit(t *testing.T) {
 	root, err := merkleTree.UncommittedRootHex()
 	require.NoError(t, err)
 
-	require.Equal(t, expectedRoot, merkleTree2.GetRootHex())
+	require.Equal(t, expectedRoot, merkleTree2.RootHex())
 	require.Equal(t, expectedRoot, root)
 
 	expectedRoot = "e2a80e0e872a6c6eaed37b4c1f220e1935004805585b5f99617e48e9c8fe4034"
@@ -127,7 +127,7 @@ func TestGetCorrectRootAfterCommit(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, expectedRoot, uncommittedRoot)
 
-	require.Equal(t, merkle.Hash{}, merkleTree.GetRoot())
+	require.Equal(t, merkle.Hash{}, merkleTree.Root())
 
 	merkleTree.Commit()
 
@@ -137,17 +137,17 @@ func TestGetCorrectRootAfterCommit(t *testing.T) {
 
 	merkleTree.Append(newLeaves)
 
-	require.Equal(t, "e2a80e0e872a6c6eaed37b4c1f220e1935004805585b5f99617e48e9c8fe4034", merkleTree.GetRootHex())
+	require.Equal(t, "e2a80e0e872a6c6eaed37b4c1f220e1935004805585b5f99617e48e9c8fe4034", merkleTree.RootHex())
 	uncommittedRootHex, err := merkleTree.UncommittedRootHex()
 	require.NoError(t, err)
 	require.Equal(t, "09b6890b23e32e607f0e5f670ab224e36af8f6599cbe88b468f4b0f761802dd6", uncommittedRootHex)
 
 	merkleTree.Commit()
 
-	leaves := merkleTree.GetLeaves()
+	leaves := merkleTree.BaseLeaves()
 	reconstructedTree, err := merkleTree.FromLeaves(leaves)
 	require.NoError(t, err)
-	require.Equal(t, "09b6890b23e32e607f0e5f670ab224e36af8f6599cbe88b468f4b0f761802dd6", reconstructedTree.GetRootHex())
+	require.Equal(t, "09b6890b23e32e607f0e5f670ab224e36af8f6599cbe88b468f4b0f761802dd6", reconstructedTree.RootHex())
 
 }
 
@@ -164,7 +164,7 @@ func TestChangeTheResultWenCalledTwice(t *testing.T) {
 	// Appending leaves to the tree without committing
 	merkleTree.Append(leaves)
 
-	require.Equal(t, merkle.Hash{}, merkleTree.GetRoot())
+	require.Equal(t, merkle.Hash{}, merkleTree.Root())
 
 	uncommittedRootHex, err := merkleTree.UncommittedRootHex()
 	require.NoError(t, err)
@@ -172,7 +172,7 @@ func TestChangeTheResultWenCalledTwice(t *testing.T) {
 
 	merkleTree.Commit()
 
-	require.Equal(t, "1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2", merkleTree.GetRootHex())
+	require.Equal(t, "1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2", merkleTree.RootHex())
 
 	uncommittedRootHex, err = merkleTree.UncommittedRootHex()
 	require.NoError(t, err)
@@ -187,7 +187,7 @@ func TestChangeTheResultWenCalledTwice(t *testing.T) {
 
 	merkleTree.Commit()
 
-	require.Equal(t, "e2a80e0e872a6c6eaed37b4c1f220e1935004805585b5f99617e48e9c8fe4034", merkleTree.GetRootHex())
+	require.Equal(t, "e2a80e0e872a6c6eaed37b4c1f220e1935004805585b5f99617e48e9c8fe4034", merkleTree.RootHex())
 
 	hHash, _ := Sha256Hasher{}.Hash([]byte("h"))
 	kHash, _ := Sha256Hasher{}.Hash([]byte("k"))
@@ -196,13 +196,13 @@ func TestChangeTheResultWenCalledTwice(t *testing.T) {
 	merkleTree.Commit()
 	merkleTree.Commit()
 
-	require.Equal(t, "09b6890b23e32e607f0e5f670ab224e36af8f6599cbe88b468f4b0f761802dd6", merkleTree.GetRootHex())
+	require.Equal(t, "09b6890b23e32e607f0e5f670ab224e36af8f6599cbe88b468f4b0f761802dd6", merkleTree.RootHex())
 
 	merkleTree.Rollback()
-	require.Equal(t, "e2a80e0e872a6c6eaed37b4c1f220e1935004805585b5f99617e48e9c8fe4034", merkleTree.GetRootHex())
+	require.Equal(t, "e2a80e0e872a6c6eaed37b4c1f220e1935004805585b5f99617e48e9c8fe4034", merkleTree.RootHex())
 
 	merkleTree.Rollback()
-	require.Equal(t, "1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2", merkleTree.GetRootHex())
+	require.Equal(t, "1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2", merkleTree.RootHex())
 }
 
 func TestRollbackPreviousCommit(t *testing.T) {
@@ -216,11 +216,11 @@ func TestRollbackPreviousCommit(t *testing.T) {
 	merkleTree := merkle.NewTree(Sha256Hasher{})
 	merkleTree.Append(leaves)
 
-	require.Equal(t, merkle.Hash{}, merkleTree.GetRoot())
+	require.Equal(t, merkle.Hash{}, merkleTree.Root())
 
 	merkleTree.Commit()
 
-	require.Equal(t, "1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2", merkleTree.GetRootHex())
+	require.Equal(t, "1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2", merkleTree.RootHex())
 
 	gHash, _ := Sha256Hasher{}.Hash([]byte("g"))
 	merkleTree.Insert(gHash)
@@ -232,7 +232,7 @@ func TestRollbackPreviousCommit(t *testing.T) {
 
 	merkleTree.Commit()
 
-	require.Equal(t, "e2a80e0e872a6c6eaed37b4c1f220e1935004805585b5f99617e48e9c8fe4034", merkleTree.GetRootHex())
+	require.Equal(t, "e2a80e0e872a6c6eaed37b4c1f220e1935004805585b5f99617e48e9c8fe4034", merkleTree.RootHex())
 
 	hHash, _ := Sha256Hasher{}.Hash([]byte("h"))
 	kHash, _ := Sha256Hasher{}.Hash([]byte("k"))
@@ -242,15 +242,15 @@ func TestRollbackPreviousCommit(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "09b6890b23e32e607f0e5f670ab224e36af8f6599cbe88b468f4b0f761802dd6", uncommittedRootHex)
 
-	require.Equal(t, "e2a80e0e872a6c6eaed37b4c1f220e1935004805585b5f99617e48e9c8fe4034", merkleTree.GetRootHex())
+	require.Equal(t, "e2a80e0e872a6c6eaed37b4c1f220e1935004805585b5f99617e48e9c8fe4034", merkleTree.RootHex())
 
 	merkleTree.Commit()
 
-	require.Equal(t, "09b6890b23e32e607f0e5f670ab224e36af8f6599cbe88b468f4b0f761802dd6", merkleTree.GetRootHex())
+	require.Equal(t, "09b6890b23e32e607f0e5f670ab224e36af8f6599cbe88b468f4b0f761802dd6", merkleTree.RootHex())
 
 	merkleTree.Rollback()
-	require.Equal(t, "e2a80e0e872a6c6eaed37b4c1f220e1935004805585b5f99617e48e9c8fe4034", merkleTree.GetRootHex())
+	require.Equal(t, "e2a80e0e872a6c6eaed37b4c1f220e1935004805585b5f99617e48e9c8fe4034", merkleTree.RootHex())
 
 	merkleTree.Rollback()
-	require.Equal(t, "1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2", merkleTree.GetRootHex())
+	require.Equal(t, "1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2", merkleTree.RootHex())
 }

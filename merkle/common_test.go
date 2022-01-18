@@ -28,10 +28,10 @@ type ProofTestCases struct {
 }
 type MerkleProofTestCase struct {
 	LeafIndicesToProve []uint32
-	LeafTuples         []merkle.Leaf
+	Leaves             []merkle.Leaf
 }
 
-func setup() TestData {
+func setupTestData() TestData {
 	leafValues := []string{"a", "b", "c", "d", "e", "f"}
 	expectedRootHex := "1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2"
 	var leafHashes []merkle.Hash
@@ -52,14 +52,14 @@ func setupProofTestCases() ([]ProofTestCases, error) {
 	}
 	var merkleProofCases []ProofTestCases
 	for i := 0; i < len(maxCase); i++ {
-		var leaves []merkle.Hash
-		var tuples []merkle.Leaf
+		var leavesHashes []merkle.Hash
+		var Leaves []merkle.Leaf
 		for j := 0; j < i+1; j++ {
 			h, _ := Sha256Hasher{}.Hash([]byte(maxCase[j]))
-			leaves = append(leaves, h)
-			tuples = append(tuples, merkle.Leaf{Index: uint32(j), Hash: h})
+			leavesHashes = append(leavesHashes, h)
+			Leaves = append(Leaves, merkle.Leaf{Index: uint32(j), Hash: h})
 		}
-		possibleProofElementCombinations := combinations(tuples)
+		possibleProofElementCombinations := combinations(Leaves)
 
 		var cases []MerkleProofTestCase
 		for _, proofElements := range possibleProofElementCombinations {
@@ -70,9 +70,9 @@ func setupProofTestCases() ([]ProofTestCases, error) {
 				// leaves2 = append(leaves2, proofElement.Hash)
 
 			}
-			cases = append(cases, MerkleProofTestCase{LeafIndicesToProve: indices, LeafTuples: proofElements})
+			cases = append(cases, MerkleProofTestCase{LeafIndicesToProve: indices, Leaves: proofElements})
 		}
-		merkleTree, err := merkle.NewTree(Sha256Hasher{}).FromLeaves(leaves)
+		merkleTree, err := merkle.NewTree(Sha256Hasher{}).FromLeaves(leavesHashes)
 		if err != nil {
 			return []ProofTestCases{}, err
 		}
