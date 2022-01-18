@@ -3,7 +3,7 @@ package merkle
 import (
 	"errors"
 
-	"github.com/ComposableFi/merkle-go/helpers"
+	"github.com/ComposableFi/go-merkle-trees/helpers"
 )
 
 // GetRoot returns the root value of a merkle proof

@@ -76,6 +76,6 @@
   ],
   "postCreateCommand": "export PATH=\"$PATH:$GOPATH/bin\"",
   "remoteUser": "vscode",
-  "workspaceMount": "source=${localWorkspaceFolder},target=/home/vscode/go/src/github.com/ComposableFi/merkle-go,type=bind,consistency=delegated",
-  "workspaceFolder": "/home/vscode/go/src/github.com/ComposableFi/merkle-go"
+  "workspaceMount": "source=${localWorkspaceFolder},target=/home/vscode/go/src/github.com/ComposableFi/go-merkle-trees,type=bind,consistency=delegated",
+  "workspaceFolder": "/home/vscode/go/src/github.com/ComposableFi/go-merkle-trees"
 }

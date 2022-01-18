@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ComposableFi/merkle-go/merkle"
+	"github.com/ComposableFi/go-merkle-trees/merkle"
 )
 
 type MergeInt32 struct{}

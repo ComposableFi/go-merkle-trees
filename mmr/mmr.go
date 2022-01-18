@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"sort"
 
-	"github.com/ComposableFi/merkle-go/merkle"
+	"github.com/ComposableFi/go-merkle-trees/merkle"
 )
 
 // MMR contains fields for computing the MMR tree.

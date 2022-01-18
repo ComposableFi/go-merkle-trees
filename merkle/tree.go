@@ -3,7 +3,7 @@ package merkle
 import (
 	"errors"
 
-	"github.com/ComposableFi/merkle-go/helpers"
+	"github.com/ComposableFi/go-merkle-trees/helpers"
 )
 
 // BuildProof builds the merkle proof by leaf index slice
