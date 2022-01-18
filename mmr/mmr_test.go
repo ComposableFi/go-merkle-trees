@@ -10,7 +10,7 @@ import (
 	"golang.org/x/crypto/blake2b"
 	"golang.org/x/crypto/sha3"
 
-	mmr "github.com/ComposableFi/go-merkle-trees/mmr"
+	merkleMmr "github.com/ComposableFi/go-merkle-trees/mmr"
 )
 
 func toHash(num uint32) []byte {
@@ -21,30 +21,30 @@ func toHash(num uint32) []byte {
 }
 
 func testMMR(count uint32, proofElem []uint32) error {
-	leaves := func() []mmr.Leaf {
-		var leaves []mmr.Leaf
+	leaves := func() []merkleMmr.Leaf {
+		var leaves []merkleMmr.Leaf
 		for _, e := range proofElem {
-			leaves = append(leaves, mmr.Leaf{Index: uint64(e), Hash: toHash(e)})
+			leaves = append(leaves, merkleMmr.Leaf{Index: uint64(e), Hash: toHash(e)})
 		}
 		return leaves
 	}()
 
-	mmr := mmr.NewMMR(0, mmr.NewMemStore(), leaves, &mmr.Merge{})
+	mmrTree := merkleMmr.NewMMR(0, merkleMmr.NewMemStore(), leaves, &merkleMmr.Merge{})
 	var positions []uint64
 	for i := uint32(0); i < count; i++ {
-		position, err := mmr.Push(toHash(i))
+		position, err := mmrTree.Push(toHash(i))
 		if err != nil {
 			return err
 		}
 		positions = append(positions, position)
 	}
 
-	root, err := mmr.GetRoot()
+	root, err := mmrTree.GetRoot()
 	if err != nil {
 		return err
 	}
 
-	proof, err := mmr.GenProof(func() []uint64 {
+	proof, err := mmrTree.GenProof(func() []uint64 {
 		var elem []uint64
 		for _, p := range proofElem {
 			elem = append(elem, positions[uint(p)])
@@ -55,7 +55,7 @@ func testMMR(count uint32, proofElem []uint32) error {
 		return err
 	}
 
-	mmr.Commit()
+	mmrTree.Commit()
 
 	result := proof.Verify(root)
 
@@ -101,19 +101,19 @@ func TestMMR(t *testing.T) {
 }
 
 func TestGenRootFromProof(t *testing.T) {
-	merge := &mmr.Merge{}
-	store := mmr.NewMemStore()
+	merge := &merkleMmr.Merge{}
+	store := merkleMmr.NewMemStore()
 
 	count := 11
 	elem := uint32(count - 1)
-	leaves := []mmr.Leaf{{Index: uint64(elem), Hash: toHash(elem)}}
-	mmr := mmr.NewMMR(0, store, leaves, merge)
+	leaves := []merkleMmr.Leaf{{Index: uint64(elem), Hash: toHash(elem)}}
+	mmr := merkleMmr.NewMMR(0, store, leaves, merge)
 
 	var positions []uint64
 	for i := 0; i < 11; i++ {
 		position, err := mmr.Push(toHash(uint32(i)))
 		if err != nil {
-			t.Errorf("%s: %s", "mmr root", err.Error())
+			t.Errorf("%s: %s", "merkleMmr root", err.Error())
 			return
 		}
 		positions = append(positions, position)
@@ -122,20 +122,20 @@ func TestGenRootFromProof(t *testing.T) {
 	var pos = positions[uint(elem)]
 	proof, err := mmr.GenProof([]uint64{pos})
 	if err != nil {
-		t.Errorf("%s: %s", "mmr gen proof", err.Error())
+		t.Errorf("%s: %s", "merkleMmr gen proof", err.Error())
 		return
 	}
 
 	newElem := count
 	_, err = mmr.Push(toHash(uint32(newElem)))
 	if err != nil {
-		t.Errorf("%s: %s", "mmr gen proof", err.Error())
+		t.Errorf("%s: %s", "merkleMmr gen proof", err.Error())
 		return
 	}
 
 	root, err := mmr.GetRoot()
 	if err != nil {
-		t.Errorf("%s: %s", "mmr root", err.Error())
+		t.Errorf("%s: %s", "merkleMmr root", err.Error())
 		return
 	}
 
@@ -145,47 +145,48 @@ func TestGenRootFromProof(t *testing.T) {
 		uint64(newElem),
 		toHash(uint32(newElem)),
 		mmr.LeafIndexToMMRSize(uint64(newElem)),
+		//merkleMmr.LeafIndexToMMRSize(uint64(newElem)),
 	)
 	if err != nil {
-		t.Errorf("%s: %s", "mmr root calculateRootWithNewLeaf", err.Error())
+		t.Errorf("%s: %s", "merkleMmr root calculateRootWithNewLeaf", err.Error())
 		return
 	}
 
 	if !reflect.DeepEqual(calculatedRoot, root) {
-		t.Errorf("%s: want :%v  got %v", "empty mmr root", root, calculatedRoot)
+		t.Errorf("%s: want :%v  got %v", "empty merkleMmr root", root, calculatedRoot)
 	}
 }
 
 func TestEmptyMMRRoot(t *testing.T) {
-	merge := &mmr.Merge{}
-	store := mmr.NewMemStore()
-	mmr := mmr.NewMMR(0, store, []mmr.Leaf{}, merge)
+	merge := &merkleMmr.Merge{}
+	store := merkleMmr.NewMemStore()
+	mmr := merkleMmr.NewMMR(0, store, []merkleMmr.Leaf{}, merge)
 	_, err := mmr.GetRoot()
 	if err != mmr.ErrGetRootOnEmpty {
-		t.Errorf("%s: want :%v  got %v", "empty mmr root", mmr.ErrGetRootOnEmpty, err)
+		t.Errorf("%s: want :%v  got %v", "empty merkleMmr root", mmr.ErrGetRootOnEmpty, err)
 	}
 }
 
 func TestMMRRoot(t *testing.T) {
-	merge := &mmr.Merge{}
-	store := mmr.NewMemStore()
-	mmr := mmr.NewMMR(0, store, []mmr.Leaf{}, merge)
+	merge := &merkleMmr.Merge{}
+	store := merkleMmr.NewMemStore()
+	mmr := merkleMmr.NewMMR(0, store, []merkleMmr.Leaf{}, merge)
 	for i := 0; i < 11; i++ {
 		_, err := mmr.Push(toHash(uint32(i)))
 		if err != nil {
-			t.Errorf("%s: %s", "mmr root", err.Error())
+			t.Errorf("%s: %s", "merkleMmr root", err.Error())
 			return
 		}
 	}
 
 	root, err := mmr.GetRoot()
 	if err != nil {
-		t.Errorf("%s: %s", "mmr root", err.Error())
+		t.Errorf("%s: %s", "merkleMmr root", err.Error())
 	}
 
 	want := "f6794677f37a57df6a5ec36ce61036e43a36c1a009d05c81c9aa685dde1fd6e3"
 	if !reflect.DeepEqual(hex.EncodeToString(root), want) {
-		t.Errorf("%s: want :%v  got %v", "empty mmr root", want, hex.EncodeToString(root))
+		t.Errorf("%s: want :%v  got %v", "empty merkleMmr root", want, hex.EncodeToString(root))
 	}
 }
 
@@ -295,8 +296,8 @@ func Test7LeafVerify(t *testing.T) {
 
 	root := hexToByte("fc4f9042bd2f73feb26f3fc42db834c5f1943fa20070ddf106c486a478a0d561")
 	for desc, test := range tests {
-		leaves := []mmr.Leaf{{Index: test.leafIndex, Hash: test.leaf}}
-		proof := mmr.NewProof(mmr.LeafIndexToMMRSize(test.leafCount-1), test.proofs, leaves, keccak256{})
+		leaves := []merkleMmr.Leaf{{Index: test.leafIndex, Hash: test.leaf}}
+		proof := merkleMmr.NewProof(merkleMmr.LeafIndexToMMRSize(test.leafCount-1), test.proofs, leaves, keccak256{})
 		if !proof.Verify(root) {
 			t.Errorf("%s: failed to verify leaf inclusion", desc)
 		}
@@ -318,8 +319,8 @@ func Test7LeafVerify(t *testing.T) {
 	}
 
 	for desc, test := range tests {
-		leaves := []mmr.Leaf{{Index: test.leafIndex, Hash: test.leaf}}
-		proof := mmr.NewProof(mmr.LeafIndexToMMRSize(test.leafCount-1), test.proofs, leaves, keccak256{})
+		leaves := []merkleMmr.Leaf{{Index: test.leafIndex, Hash: test.leaf}}
+		proof := merkleMmr.NewProof(merkleMmr.LeafIndexToMMRSize(test.leafCount-1), test.proofs, leaves, keccak256{})
 		if proof.Verify(root) {
 			t.Errorf("%s: verified a leaf inclusion with invalid proofs", desc)
 		}
@@ -458,8 +459,8 @@ func Test15LeafVerify(t *testing.T) {
 
 	root := hexToByte("197fbc87461398680c858f1daf61e719a1865edd96db34cca3b48c4b43d82e74")
 	for desc, test := range tests {
-		leaves := []mmr.Leaf{{Index: test.leafIndex, Hash: test.leaf}}
-		proof := mmr.NewProof(mmr.LeafIndexToMMRSize(test.leafCount-1), test.proofs, leaves, keccak256{})
+		leaves := []merkleMmr.Leaf{{Index: test.leafIndex, Hash: test.leaf}}
+		proof := merkleMmr.NewProof(merkleMmr.LeafIndexToMMRSize(test.leafCount-1), test.proofs, leaves, keccak256{})
 		if !proof.Verify(root) {
 			t.Errorf("%s: failed to verify leaf inclusion", desc)
 		}
@@ -481,8 +482,8 @@ func Test15LeafVerify(t *testing.T) {
 	}
 
 	for desc, test := range tests {
-		leaves := []mmr.Leaf{{Index: test.leafIndex, Hash: test.leaf}}
-		proof := mmr.NewProof(mmr.LeafIndexToMMRSize(test.leafCount-1), test.proofs, leaves, keccak256{})
+		leaves := []merkleMmr.Leaf{{Index: test.leafIndex, Hash: test.leaf}}
+		proof := merkleMmr.NewProof(merkleMmr.LeafIndexToMMRSize(test.leafCount-1), test.proofs, leaves, keccak256{})
 		if proof.Verify(root) {
 			t.Errorf("%s: verified a leaf inclusion with invalid proofs", desc)
 		}
@@ -516,8 +517,8 @@ func Test1LeafVerify(t *testing.T) {
 
 	root := hexToByte("da5e6d0616e05c6a6348605a37ca33493fc1a15ad1e6a405ee05c17843fdafed")
 	for desc, test := range tests {
-		leaves := []mmr.Leaf{{Index: test.leafIndex, Hash: test.leaf}}
-		proof := mmr.NewProof(mmr.LeafIndexToMMRSize(test.leafCount-1), test.proofs, leaves, keccak256{})
+		leaves := []merkleMmr.Leaf{{Index: test.leafIndex, Hash: test.leaf}}
+		proof := merkleMmr.NewProof(merkleMmr.LeafIndexToMMRSize(test.leafCount-1), test.proofs, leaves, keccak256{})
 		if !proof.Verify(root) {
 			t.Errorf("%s: failed to verify leaf inclusion", desc)
 		}
@@ -606,9 +607,9 @@ func TestFixture7Leaves(t *testing.T) {
 	}
 
 	for i, p := range fixture7Leaves.proofs {
-		leaves := []mmr.Leaf{{Index: p.leafIndex, Hash: fixture7Leaves.leaves[i]}}
-		merkleProof := mmr.NewProof(
-			mmr.LeafIndexToMMRSize(p.leafCount-1),
+		leaves := []merkleMmr.Leaf{{Index: p.leafIndex, Hash: fixture7Leaves.leaves[i]}}
+		merkleProof := merkleMmr.NewProof(
+			merkleMmr.LeafIndexToMMRSize(p.leafCount-1),
 			p.items,
 			leaves,
 			keccak256{},
@@ -788,9 +789,9 @@ func TestFixture15Leaves(t *testing.T) {
 	}
 
 	for i, p := range fixture15Leaves.proofs {
-		leaves := []mmr.Leaf{{Index: p.leafIndex, Hash: fixture15Leaves.leaves[i]}}
-		merkleProof := mmr.NewProof(
-			mmr.LeafIndexToMMRSize(p.leafCount-1),
+		leaves := []merkleMmr.Leaf{{Index: p.leafIndex, Hash: fixture15Leaves.leaves[i]}}
+		merkleProof := merkleMmr.NewProof(
+			merkleMmr.LeafIndexToMMRSize(p.leafCount-1),
 			p.items,
 			leaves,
 			keccak256{},
