@@ -44,7 +44,7 @@ func TestCorrectProofs(t *testing.T) {
 }
 
 func TestVerifyProof(t *testing.T) {
-	var leaves []merkle.Hash
+	var leaves [][]byte
 	for _, v := range testAddresses {
 		b := common.FromHex(v)
 		h := crypto.Keccak256Hash(b).Bytes()

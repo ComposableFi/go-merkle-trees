@@ -1,8 +1,5 @@
 package merkle
 
-// Hash is the representation of hash bytes
-type Hash []byte
-
 // Tree is a Merkle Tree that is well suited for both basic and advanced usage.
 //
 // Basic features include the creation and verification of Merkle proofs from a set of leaves.
@@ -14,7 +11,7 @@ type Hash []byte
 type Tree struct {
 	currentWorkingTree PartialTree
 	history            []PartialTree
-	UncommittedLeaves  []Hash
+	UncommittedLeaves  [][]byte
 	hasher             Hasher
 }
 
@@ -23,7 +20,7 @@ func NewTree(hasher Hasher) Tree {
 	return Tree{
 		currentWorkingTree: NewPartialTree(hasher),
 		history:            []PartialTree{},
-		UncommittedLeaves:  []Hash{},
+		UncommittedLeaves:  [][]byte{},
 		hasher:             hasher,
 	}
 }
@@ -51,14 +48,14 @@ func NewPartialTree(hasher Hasher) PartialTree {
 // The hashing algorithm is set through the Hasher interface, which is supplied as a generic
 // parameter to the Proof.
 type Proof struct {
-	proofHashes      []Hash
+	proofHashes      [][]byte
 	leaves           []Leaf
 	totalLeavesCount uint32
 	hasher           Hasher
 }
 
 // NewProof create new instance of merkle proof
-func NewProof(leaves []Leaf, proofHashes []Hash, totalLeavesCount uint32, hasher Hasher) Proof {
+func NewProof(leaves []Leaf, proofHashes [][]byte, totalLeavesCount uint32, hasher Hasher) Proof {
 	return Proof{
 		leaves:           leaves,
 		proofHashes:      proofHashes,
@@ -69,11 +66,11 @@ func NewProof(leaves []Leaf, proofHashes []Hash, totalLeavesCount uint32, hasher
 
 // Hasher is an interface used to provide a hashing algorithm for the library.
 type Hasher interface {
-	Hash(data []byte) (Hash, error)
+	Hash(data []byte) ([]byte, error)
 }
 
 // Leaf is a represention of leaf index and its hash
 type Leaf struct {
 	Index uint32
-	Hash  Hash
+	Hash  []byte
 }

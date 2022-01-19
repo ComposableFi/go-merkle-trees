@@ -10,7 +10,7 @@ import (
 
 // Verify uses proof to verify that a given set of elements is contained in the original data
 // set the proof was made for.
-func (p Proof) Verify(root Hash) (bool, error) {
+func (p Proof) Verify(root []byte) (bool, error) {
 	extractedRoot, err := p.Root()
 	if err != nil {
 		return false, err
@@ -20,7 +20,7 @@ func (p Proof) Verify(root Hash) (bool, error) {
 
 // Root calculates Merkle root based on provided leaves and proof hashes. Used inside the
 // Verify method, but sometimes can be used on its own.
-func (p Proof) Root() (Hash, error) {
+func (p Proof) Root() ([]byte, error) {
 	treeDepth := treeDepth(p.totalLeavesCount)
 	sortLeavesByIndex(p.leaves)
 	var leafIndices []uint32
@@ -29,10 +29,10 @@ func (p Proof) Root() (Hash, error) {
 	}
 	proofIndicesLayers := proofIndeciesByLayers(leafIndices, p.totalLeavesCount)
 	var proofLayers [][]Leaf
-	proofCopy := make([]Hash, len(p.proofHashes))
+	proofCopy := make([][]byte, len(p.proofHashes))
 	copy(proofCopy, p.proofHashes)
 	for _, proofIndices := range proofIndicesLayers {
-		var proofHashes []Hash
+		var proofHashes [][]byte
 		for i := 0; i < len(proofIndices); i++ {
 			proofHashes = append(proofHashes, proofCopy[0])
 			proofCopy = proofCopy[1:]
@@ -53,7 +53,7 @@ func (p Proof) Root() (Hash, error) {
 	partialTree := NewPartialTree(p.hasher)
 	PartialTree, err := partialTree.build(proofLayers, treeDepth)
 	if err != nil {
-		return Hash{}, err
+		return []byte{}, err
 	}
 	return PartialTree.Root(), err
 }
@@ -69,7 +69,7 @@ func (p Proof) RootHex() (string, error) {
 
 // ProofHashes returns all hashes from the proof, sorted from the left to right,
 // bottom to top.
-func (p Proof) ProofHashes() []Hash {
+func (p Proof) ProofHashes() [][]byte {
 	return p.proofHashes
 }
 

@@ -35,7 +35,7 @@ func (pt *PartialTree) buildTree(partialLayers [][]Leaf, fullTreeDepth uint32) (
 		partialTree = append(partialTree, currentLayer)
 
 		var indices []uint32
-		var nodes []Hash
+		var nodes [][]byte
 		for i := 0; i < len(currentLayer); i++ {
 			indices = append(indices, currentLayer[i].Index)
 			nodes = append(nodes, currentLayer[i].Hash)
@@ -52,7 +52,7 @@ func (pt *PartialTree) buildTree(partialLayers [][]Leaf, fullTreeDepth uint32) (
 				leftHash := nodes[leftIndex]
 				rightIndex := i*2 + 1
 
-				var hash, rightHash Hash
+				var hash, rightHash []byte
 				if len(nodes) > rightIndex {
 					rightHash = nodes[rightIndex]
 				} else {
@@ -81,7 +81,7 @@ func (pt *PartialTree) buildTree(partialLayers [][]Leaf, fullTreeDepth uint32) (
 }
 
 // Root returns the root of the tree
-func (pt *PartialTree) Root() Hash {
+func (pt *PartialTree) Root() []byte {
 	if len(pt.layers) > 0 {
 		lastLayer := pt.layers[len(pt.layers)-1]
 		firstItem := lastLayer[0]
@@ -156,10 +156,10 @@ func (pt *PartialTree) upsertLayer(layerIndex uint32, newLayer []Leaf) {
 }
 
 // layerNodes returns all hashes of all layers
-func (pt *PartialTree) layerNodes() [][]Hash {
-	var allHashes [][]Hash
+func (pt *PartialTree) layerNodes() [][][]byte {
+	var allHashes [][][]byte
 	for _, l := range pt.getLayers() {
-		var layerHashes []Hash
+		var layerHashes [][]byte
 		for _, h := range l {
 			layerHashes = append(layerHashes, h.Hash)
 		}
