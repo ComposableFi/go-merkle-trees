@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"math"
 
-	"github.com/ComposableFi/merkle-go/helpers"
+	"github.com/ComposableFi/go-merkle-trees/helpers"
 )
 
 // Verify uses proof to verify that a given set of elements is contained in the original data

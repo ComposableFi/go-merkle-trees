@@ -9,7 +9,7 @@ services:
     # expose:
     #   - "8080"
     volumes:
-      - "..:/home/vscode/go/src/github.com/ComposableFi/merkle-go:rw"
+      - "..:/home/vscode/go/src/github.com/ComposableFi/go-merkle-trees:rw"
       # Docker socket to access Docker server
       # - /var/run/docker.sock:/var/run/docker.sock
       # SSH directory

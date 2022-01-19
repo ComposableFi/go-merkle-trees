@@ -1,13 +1,15 @@
 package mmr
 
+// Leaf is an mmr leaf. It also holds the field Leaf which is a byte representation of the leaf and Pos, the leaf
+// position.
 type Leaf struct {
-	pos  uint64
-	hash interface{}
+	Index uint64
+	Hash  []byte
 }
 
 type leafWithHash struct {
 	pos    uint64
-	hash   interface{}
+	hash   []byte
 	height uint32
 }
 

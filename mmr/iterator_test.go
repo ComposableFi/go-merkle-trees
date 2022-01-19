@@ -1,38 +1,41 @@
-package mmr
+package mmr_test
 
 import (
+	"reflect"
 	"testing"
+
+	merklego_mmr "github.com/ComposableFi/go-merkle-trees/mmr"
 )
 
 func TestNext(t *testing.T) {
 	tests := map[string]struct {
-		input []interface{}
-		want  int
+		input [][]byte
+		want  []byte
 	}{
-		"length of one": {input: []interface{}{1}, want: 1},
-		"length of two": {input: []interface{}{1, 2}, want: 1},
+		"length of one": {input: [][]byte{toHash(1)}, want: toHash(1)},
+		"length of two": {input: [][]byte{toHash(1), toHash(2)}, want: toHash(1)},
 	}
 
 	for name, test := range tests {
-		iter := Iterator{Items: test.input}
-		got := iter.next()
-		if got != test.want {
+		iter := merklego_mmr.Iterator{Items: test.input}
+		got := iter.Next()
+		if !reflect.DeepEqual(got, test.want) {
 			t.Errorf("%s: expected %v  got %v", name, test.want, got)
 		}
 	}
 
 	tests = map[string]struct {
-		input []interface{}
-		want  int
+		input [][]byte
+		want  []byte
 	}{
-		"call next twice": {input: []interface{}{1, 2}, want: 2},
+		"length of two": {input: [][]byte{toHash(1), toHash(2)}, want: toHash(2)},
 	}
 
 	for name, test := range tests {
-		iter := Iterator{Items: test.input}
-		_ = iter.next()
-		got := iter.next()
-		if got != test.want {
+		iter := merklego_mmr.Iterator{Items: test.input}
+		_ = iter.Next()
+		got := iter.Next()
+		if !reflect.DeepEqual(got, test.want) {
 			t.Errorf("%s: expected %v  got %v", name, test.want, got)
 		}
 	}

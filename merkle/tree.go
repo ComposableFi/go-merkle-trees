@@ -5,7 +5,7 @@ import (
 	"math"
 	"sort"
 
-	"github.com/ComposableFi/merkle-go/helpers"
+	"github.com/ComposableFi/go-merkle-trees/helpers"
 )
 
 /// FromLeaves clones the leaves and builds the tree from them

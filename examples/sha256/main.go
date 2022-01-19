@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/ComposableFi/merkle-go/merkle"
+	"github.com/ComposableFi/go-merkle-trees/merkle"
 )
 
 func main() {

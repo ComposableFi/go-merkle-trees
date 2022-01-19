@@ -114,5 +114,5 @@ ENV PATH="${PATH}:$GOPATH/bin"
 # COPY install_dependencies.sh /tmp
 # RUN cd /tmp && ./install_dependencies.sh
 
-RUN mkdir -p $GOPATH/src/github.com/ComposableFi/merkle-go
+RUN mkdir -p $GOPATH/src/github.com/ComposableFi/go-merkle-trees
 RUN chown -R vscode $GOPATH

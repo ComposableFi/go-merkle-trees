@@ -10,11 +10,11 @@ func getPeakPosByHeight(height uint32) uint64 {
 }
 
 func leftPeakHeightPos(mmrSize uint64) (uint32, uint64) {
+	var prevPos uint64
 	var height uint32 = 1
-	var prevPos uint64 = 0
 	var pos = getPeakPosByHeight(height)
 	for pos < mmrSize {
-		height += 1
+		height++
 		prevPos = pos
 		pos = getPeakPosByHeight(height)
 	}
@@ -30,23 +30,23 @@ func parentOffset(height uint32) uint64 {
 }
 
 func getRightPeak(height uint32, pos, mmrSize uint64) *peak {
-	// move to right sibling pos
+	// move to right sibling Pos
 	pos += siblingOffset(height)
-	// loop until we find a pos in mmr
+	// loop until we find a Pos in mmr
 	for pos > mmrSize-1 {
 		if height == 0 {
 			return nil
 		}
 		// move to left child
 		pos -= parentOffset(height - 1)
-		height -= 1
+		height--
 	}
 	return &peak{height, pos}
 }
 
-func getPeaks(mmrSize uint64) (pos_s []uint64) {
+func getPeaks(mmrSize uint64) (positions []uint64) {
 	var height, pos = leftPeakHeightPos(mmrSize)
-	pos_s = append(pos_s, pos)
+	positions = append(positions, pos)
 
 	for height > 0 {
 		p := getRightPeak(height, pos, mmrSize)
@@ -55,14 +55,14 @@ func getPeaks(mmrSize uint64) (pos_s []uint64) {
 		}
 		height = p.height
 		pos = p.pos
-		pos_s = append(pos_s, pos)
+		positions = append(positions, pos)
 	}
 
-	return pos_s
+	return positions
 }
 
 func posHeightInTree(pos uint64) uint32 {
-	pos += 1
+	pos++
 	allOnes := func(num uint64) bool { return num != 0 && zerosCount64(num) == bits.LeadingZeros64(num) }
 	jumpLeft := func(pos uint64) uint64 {
 		var bitLength = uint32(64 - bits.LeadingZeros64(pos))
@@ -81,11 +81,14 @@ func zerosCount64(num uint64) int {
 	return 64 - bits.OnesCount64(num)
 }
 
+// LeafIndexToPos returns the position of a leaf from its index.
 func LeafIndexToPos(index uint64) uint64 {
 	// mmr_size - H - 1, H is the height(intervals) of last peak
 	return LeafIndexToMMRSize(index) - uint64(bits.TrailingZeros64(index+1)) - 1
 }
 
+// LeafIndexToMMRSize returns the mmr size of an mmr tree provided the leaf index passed as an argument is the last leaf in
+// the tree.
 func LeafIndexToMMRSize(index uint64) uint64 {
 	// leaf index start with 0
 	var leavesCount = index + 1
@@ -95,7 +98,7 @@ func LeafIndexToMMRSize(index uint64) uint64 {
 	return 2*leavesCount - uint64(peakCount)
 }
 
-func pop(ph []interface{}) (interface{}, []interface{}) {
+func pop(ph [][]byte) ([]byte, [][]byte) {
 	if len(ph) == 0 {
 		return nil, ph[:]
 	}
