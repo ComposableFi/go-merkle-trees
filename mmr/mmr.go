@@ -3,8 +3,6 @@ package mmr
 import (
 	"reflect"
 	"sort"
-
-	"github.com/ComposableFi/go-merkle-trees/merkle"
 )
 
 // MMR contains fields for computing the MMR tree.
@@ -13,13 +11,13 @@ type MMR struct {
 	size  uint64
 	batch *Batch
 	// merge accepts any type that satisfies the Merge interface
-	merge  merkle.Merge
+	merge  MergeI
 	leaves []Leaf
 }
 
 // NewMMR returns a new MMR type. It takes three arguments. It takes the mmrSize, Store and Merge interfaces. It accepts
 // any type that satisfies both the Store and Merge interfaces.
-func NewMMR(mmrSize uint64, s Store, leaves []Leaf, m merkle.Merge) *MMR {
+func NewMMR(mmrSize uint64, s Store, leaves []Leaf, m MergeI) *MMR {
 	return &MMR{
 		size:   mmrSize,
 		batch:  NewBatch(s),
@@ -266,13 +264,13 @@ func (m *MMR) Commit() {
 type Proof struct {
 	mmrSize uint64
 	proof   *Iterator
-	Merge   merkle.Merge
+	Merge   MergeI
 	Leaves  []Leaf
 }
 
 // NewProof creates and returns new Proof. It takes the mmrSize, proof which is of type *Iterator and any type
 // that satisfies the Merge interface.
-func NewProof(mmrSize uint64, proofItems [][]byte, mmrLeaves []Leaf, m merkle.Merge) *Proof {
+func NewProof(mmrSize uint64, proofItems [][]byte, mmrLeaves []Leaf, m MergeI) *Proof {
 	return &Proof{
 		mmrSize: mmrSize,
 		proof:   &Iterator{Items: proofItems},
