@@ -3,7 +3,7 @@ package merkle
 import (
 	"errors"
 
-	"github.com/ComposableFi/merkle-go/helpers"
+	"github.com/ComposableFi/go-merkle-trees/helpers"
 )
 
 // build is a wrapper for buildTree

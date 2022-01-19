@@ -3,7 +3,7 @@ package merkle_test
 import (
 	"testing"
 
-	"github.com/ComposableFi/merkle-go/merkle"
+	"github.com/ComposableFi/go-merkle-trees/merkle"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"

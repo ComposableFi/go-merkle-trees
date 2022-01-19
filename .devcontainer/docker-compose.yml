@@ -1,9 +1,9 @@
 version: "3.3"
 services:
-  merkle-go:
+  go-merkle-trees:
     build: .
     # networks:
-    #   - merkle-go-net
+    #   - go-merkle-trees-net
     # ports:
     #   - "8080:8080"
     # expose:
@@ -22,9 +22,9 @@ services:
       # - ~/.kube:/home/districter/.kube
       # - ~/.kube:/root/.kube
       # VSCODE Extensions
-      - merkle-go-vscode-extensions:/home/vscode/.vscode-server/extensions
+      - go-merkle-trees-vscode-extensions:/home/vscode/.vscode-server/extensions
       # And/or for VS Code Insiders
-      - merkle-go-vscode-extensions-insider:/home/vscode/.vscode-server-insiders/extensions
+      - go-merkle-trees-vscode-extensions-insider:/home/vscode/.vscode-server-insiders/extensions
     # environment:
     # - TZ=
     # cap_add:
@@ -36,9 +36,9 @@ services:
     command: /bin/sh -c "while sleep 1000; do :; done"
 
 # networks:
-#   merkle-go-net:
+#   go-merkle-trees-net:
 #     driver: bridge
 
 volumes:
-  merkle-go-vscode-extensions:
-  merkle-go-vscode-extensions-insider:
+  go-merkle-trees-vscode-extensions:
+  go-merkle-trees-vscode-extensions-insider:

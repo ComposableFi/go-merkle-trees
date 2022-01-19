@@ -3,7 +3,7 @@ package merkle_test
 import (
 	"crypto/sha256"
 
-	"github.com/ComposableFi/merkle-go/merkle"
+	"github.com/ComposableFi/go-merkle-trees/merkle"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 

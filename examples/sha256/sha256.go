@@ -3,7 +3,7 @@ package main
 import (
 	"crypto/sha256"
 
-	"github.com/ComposableFi/merkle-go/merkle"
+	"github.com/ComposableFi/go-merkle-trees/merkle"
 )
 
 type Sha256Hasher struct{}
