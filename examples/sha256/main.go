@@ -14,61 +14,36 @@ func main() {
 		"Hey",
 		"Hola",
 	}
-	var leavesI []interface{}
+	var leavesI []merkle.Hash
 	for _, l := range leaves {
-		leavesI = append(leavesI, []byte(l))
+		h, _ := Sha256Hasher{}.Hash([]byte(l))
+		leavesI = append(leavesI, h)
 	}
-	cbmt := merkle.CBMT{
-		Merge: MergeByteArray{},
+
+	merkleTree := merkle.NewTree(Sha256Hasher{})
+	merkleTree, err := merkleTree.FromLeaves(leavesI)
+	if err != nil {
+		panic(err)
 	}
-	root := cbmt.BuildMerkleRoot(leavesI)
-	fmt.Printf("Merkle root is %v \n", HashToStr(root))
+
+	root := merkleTree.Root()
+	fmt.Printf("Merkle root is %v \n", merkleTree.RootHex())
 
 	// build merkle proof for 42 (its index is 1);
-	proof, err := cbmt.BuildMerkleProof(leavesI, []uint32{1})
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("merkle proof lemmas are:\n")
-	for _, v := range proof.Lemmas {
-		fmt.Printf(" - %v\n", HashToStr(v))
-	}
-	fmt.Printf("merkle proof indices are %v\n", proof.Indices)
+	proof := merkleTree.Proof([]uint32{1})
 
-	// TODO: make []byte conversion and compare possible
+	fmt.Printf("merkle proof hashes are:\n")
+	for _, v := range proof.ProofHashesHex() {
+		fmt.Printf(" - %v\n", v)
+	}
+
 	// verify merkle proof
-	// verifyResult, err := proof.Verify(root, []interface{}{"Hi"})
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// fmt.Printf("merkle proof verify result is %v\n", verifyResult)
-
-	// build merkle proof for 42 and 20191116 (indices are 1 and 4);
-	proof, err = cbmt.BuildMerkleProof(leavesI, []uint32{1, 4})
+	verifyResult, err := proof.Verify(root)
 	if err != nil {
 		panic(err)
+	} else if !verifyResult {
+		panic("merkle proof verify result is false")
 	}
-
-	fmt.Printf("merkle proof lemmas are:\n")
-	for _, v := range proof.Lemmas {
-		fmt.Printf(" - %v\n", HashToStr(v))
-	}
-	fmt.Printf("merkle proof indices are %v\n", proof.Indices)
-
-	// retrieve leaves
-	retrievedLeaves, err := cbmt.RetriveLeaves(proof, leavesI)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Printf("retrieved leaves are:\n")
-	for _, v := range retrievedLeaves {
-		fmt.Printf(" - %v\n", HashToStr(v))
-	}
-	root, err = proof.GetRoot(retrievedLeaves)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("calculated root of proof is %v\n", HashToStr(root))
+	fmt.Printf("merkle proof verify result is %v\n", verifyResult)
 
 }

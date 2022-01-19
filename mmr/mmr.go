@@ -207,8 +207,7 @@ func (m *MMR) GenProof(posList []uint64) (*MerkleProof, error) {
 		return nil, ErrGenProofForInvalidLeaves
 	}
 	if m.size == 1 && reflect.DeepEqual(posList, []uint64{0}) {
-		fmt.Printf("returning empty proof \n")
-		return newMerkleProof(m.size, NewIterator(), m.merge), nil
+		return NewMerkleProof(m.size, NewIterator(), m.merge), nil
 	}
 
 	sort.Slice(posList, func(i, j int) bool {
@@ -252,7 +251,7 @@ func (m *MMR) GenProof(posList []uint64) (*MerkleProof, error) {
 		proof.push(p)
 	}
 
-	return newMerkleProof(m.size, proof, m.merge), nil
+	return NewMerkleProof(m.size, proof, m.merge), nil
 }
 
 func (m *MMR) Commit() interface{} {
@@ -265,7 +264,7 @@ type MerkleProof struct {
 	Merge   merkle.Merge
 }
 
-func newMerkleProof(mmrSize uint64, proof *Iterator, m merkle.Merge) *MerkleProof {
+func NewMerkleProof(mmrSize uint64, proof *Iterator, m merkle.Merge) *MerkleProof {
 	return &MerkleProof{
 		mmrSize: mmrSize,
 		proof:   proof,
