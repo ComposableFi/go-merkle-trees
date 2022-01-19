@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 
 	"github.com/ComposableFi/merkle-go/merkle"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 type Sha256Hasher struct{}
@@ -15,6 +16,13 @@ func (hr Sha256Hasher) Hash(b []byte) (merkle.Hash, error) {
 	}
 
 	return h.Sum(nil), nil
+}
+
+type Keccak256Hasher struct{}
+
+func (hr Keccak256Hasher) Hash(b []byte) (merkle.Hash, error) {
+	h := crypto.Keccak256Hash(b)
+	return h.Bytes(), nil
 }
 
 type TestData struct {
