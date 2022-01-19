@@ -7,7 +7,7 @@ type Leaf struct {
 	Hash  []byte
 }
 
-type leafWithHash struct {
+type leafWithashOfH struct {
 	pos    uint64
 	hash   []byte
 	height uint32
@@ -16,4 +16,9 @@ type leafWithHash struct {
 type peak struct {
 	height uint32
 	pos    uint64
+}
+
+// Merge is the interface for merge function of tree
+type MergeI interface {
+	Merge(left, right interface{}) interface{}
 }

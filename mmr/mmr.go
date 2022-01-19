@@ -3,8 +3,6 @@ package mmr
 import (
 	"reflect"
 	"sort"
-
-	"github.com/ComposableFi/go-merkle-trees/merkle"
 )
 
 // MMR contains fields for computing the MMR tree.
@@ -13,13 +11,13 @@ type MMR struct {
 	size  uint64
 	batch *Batch
 	// merge accepts any type that satisfies the Merge interface
-	merge  merkle.Merge
+	merge  MergeI
 	leaves []Leaf
 }
 
 // NewMMR returns a new MMR type. It takes three arguments. It takes the mmrSize, Store and Merge interfaces. It accepts
 // any type that satisfies both the Store and Merge interfaces.
-func NewMMR(mmrSize uint64, s Store, leaves []Leaf, m merkle.Merge) *MMR {
+func NewMMR(mmrSize uint64, s Store, leaves []Leaf, m MergeI) *MMR {
 	return &MMR{
 		size:   mmrSize,
 		batch:  NewBatch(s),
@@ -266,13 +264,13 @@ func (m *MMR) Commit() {
 type Proof struct {
 	mmrSize uint64
 	proof   *Iterator
-	Merge   merkle.Merge
+	Merge   MergeI
 	Leaves  []Leaf
 }
 
 // NewProof creates and returns new Proof. It takes the mmrSize, proof which is of type *Iterator and any type
 // that satisfies the Merge interface.
-func NewProof(mmrSize uint64, proofItems [][]byte, mmrLeaves []Leaf, m merkle.Merge) *Proof {
+func NewProof(mmrSize uint64, proofItems [][]byte, mmrLeaves []Leaf, m MergeI) *Proof {
 	return &Proof{
 		mmrSize: mmrSize,
 		proof:   &Iterator{Items: proofItems},
@@ -297,9 +295,9 @@ func (m *Proof) calculatePeakRoot(leaves []Leaf, peakPos uint64, proofs *Iterato
 	}
 
 	// (position, Hash, height)
-	var queue []leafWithHash
+	var queue []leafWithashOfH
 	for _, l := range leaves {
-		queue = append(queue, leafWithHash{LeafIndexToPos(l.Index), l.Hash, 0})
+		queue = append(queue, leafWithashOfH{LeafIndexToPos(l.Index), l.Hash, 0})
 	}
 
 	// calculate tree root from each items
@@ -341,7 +339,7 @@ func (m *Proof) calculatePeakRoot(leaves []Leaf, peakPos uint64, proofs *Iterato
 		}
 
 		if parentPos < peakPos {
-			queue = append(queue, leafWithHash{parentPos, parentItem, height + 1})
+			queue = append(queue, leafWithashOfH{parentPos, parentItem, height + 1})
 		} else {
 			return parentItem, nil
 		}
@@ -399,9 +397,9 @@ func (m *Proof) CalculateRootWithNewLeaf(leaves []Leaf, newIndex uint64, newElem
 			i++
 		}
 
-		reversePeakHashes := peaksHashes[i:]
-		reverse(reversePeakHashes)
-		peaksHashes = append(peaksHashes[:i], reversePeakHashes...)
+		reversePeahashOfKes := peaksHashes[i:]
+		reverse(reversePeahashOfKes)
+		peaksHashes = append(peaksHashes[:i], reversePeahashOfKes...)
 		iter := NewIterator()
 		iter.Items = peaksHashes
 		m.proof = iter

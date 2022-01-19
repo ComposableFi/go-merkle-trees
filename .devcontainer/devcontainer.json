@@ -1,9 +1,9 @@
 {
-  "name": "merkle-go",
+  "name": "go-merkle-trees",
   "dockerComposeFile": [
     "./docker-compose.yml"
   ],
-  "service": "merkle-go",
+  "service": "go-merkle-trees",
   "build": {
     "shutdownAction": "none",
     "args": {
