@@ -8,7 +8,7 @@ import (
 	"github.com/ComposableFi/go-merkle-trees/helpers"
 )
 
-/// FromLeaves clones the leaves and builds the tree from them
+// FromLeaves clones the leaves and builds the tree from them
 func (t Tree) FromLeaves(leaves []Hash) (Tree, error) {
 	t.Append(leaves)
 	err := t.Commit()
@@ -152,7 +152,7 @@ func (t *Tree) Depth() int {
 	return len(t.layerLeaves()) - 1
 }
 
-/// BaseLeaves returns a copy of the tree leaves - the base level of the tree.
+// BaseLeaves returns a copy of the tree leaves - the base level of the tree.
 func (t *Tree) BaseLeaves() []Hash {
 	layers := t.layers()
 	if len(layers) > 0 {
@@ -161,7 +161,7 @@ func (t *Tree) BaseLeaves() []Hash {
 	return layers[0]
 }
 
-/// LeavesLen returns the number of leaves in the tree.
+// LeavesLen returns the number of leaves in the tree.
 func (t *Tree) LeavesLen() uint32 {
 	leaves := t.leaves()
 	return uint32(len(leaves))
@@ -194,7 +194,7 @@ func (t *Tree) uncommittedDiff() (PartialTree, error) {
 	}
 	commitedLeavesCount := t.LeavesLen()
 	var shadowIndecies []uint32
-	for i, _ := range t.UncommittedLeaves {
+	for i := range t.UncommittedLeaves {
 		shadowIndecies = append(shadowIndecies, commitedLeavesCount+uint32(i))
 	}
 	var shadowNodeLeaves []Leaf
@@ -242,10 +242,9 @@ func sortLeavesByIndex(li []Leaf) {
 }
 
 // treeDepth returns the depth of a tree
-func treeDepth(leaves_count uint32) uint32 {
-	if leaves_count == 1 {
+func treeDepth(leavesCount uint32) uint32 {
+	if leavesCount == 1 {
 		return 1
-	} else {
-		return uint32(math.Ceil(math.Log2(float64(leaves_count))))
 	}
+	return uint32(math.Ceil(math.Log2(float64(leavesCount))))
 }

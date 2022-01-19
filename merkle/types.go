@@ -1,5 +1,6 @@
 package merkle
 
+// Hash is the representation of hash bytes
 type Hash []byte
 
 // Tree is a Merkle Tree that is well suited for both basic and advanced usage.

@@ -102,19 +102,18 @@ func combine(active []merkle.Leaf, rest []merkle.Leaf, combinations [][]merkle.L
 	if len(rest) == 0 {
 		if len(active) == 0 {
 			return combinations
-		} else {
-			combinations = append(combinations, active)
-			return combinations
 		}
-	} else {
-		next := make([]merkle.Leaf, len(active))
-		copy(next, active)
-
-		if len(rest) > 0 {
-			next = append(next, rest[0])
-		}
-		combinations := combine(next, rest[1:], combinations)
-		combinations = combine(active, rest[1:], combinations)
+		combinations = append(combinations, active)
 		return combinations
 	}
+	next := make([]merkle.Leaf, len(active))
+	copy(next, active)
+
+	if len(rest) > 0 {
+		next = append(next, rest[0])
+	}
+	combinations = combine(next, rest[1:], combinations)
+	combinations = combine(active, rest[1:], combinations)
+	return combinations
+
 }

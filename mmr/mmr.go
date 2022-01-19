@@ -297,9 +297,9 @@ func (m *Proof) calculatePeakRoot(leaves []Leaf, peakPos uint64, proofs *Iterato
 	}
 
 	// (position, Hash, height)
-	var queue []leafWithHash
+	var queue []leafWithashOfH
 	for _, l := range leaves {
-		queue = append(queue, leafWithHash{LeafIndexToPos(l.Index), l.Hash, 0})
+		queue = append(queue, leafWithashOfH{LeafIndexToPos(l.Index), l.Hash, 0})
 	}
 
 	// calculate tree root from each items
@@ -341,7 +341,7 @@ func (m *Proof) calculatePeakRoot(leaves []Leaf, peakPos uint64, proofs *Iterato
 		}
 
 		if parentPos < peakPos {
-			queue = append(queue, leafWithHash{parentPos, parentItem, height + 1})
+			queue = append(queue, leafWithashOfH{parentPos, parentItem, height + 1})
 		} else {
 			return parentItem, nil
 		}
@@ -399,9 +399,9 @@ func (m *Proof) CalculateRootWithNewLeaf(leaves []Leaf, newIndex uint64, newElem
 			i++
 		}
 
-		reversePeakHashes := peaksHashes[i:]
-		reverse(reversePeakHashes)
-		peaksHashes = append(peaksHashes[:i], reversePeakHashes...)
+		reversePeahashOfKes := peaksHashes[i:]
+		reverse(reversePeahashOfKes)
+		peaksHashes = append(peaksHashes[:i], reversePeahashOfKes...)
 		iter := NewIterator()
 		iter.Items = peaksHashes
 		m.proof = iter

@@ -131,9 +131,9 @@ func TestGetCorrectRootAfterCommit(t *testing.T) {
 
 	merkleTree.Commit()
 
-	hHash, _ := Sha256Hasher{}.Hash([]byte("h"))
-	kHash, _ := Sha256Hasher{}.Hash([]byte("k"))
-	newLeaves := []merkle.Hash{hHash, kHash}
+	hashOfH, _ := Sha256Hasher{}.Hash([]byte("h"))
+	hashOfK, _ := Sha256Hasher{}.Hash([]byte("k"))
+	newLeaves := []merkle.Hash{hashOfH, hashOfK}
 
 	merkleTree.Append(newLeaves)
 
@@ -189,9 +189,9 @@ func TestChangeTheResultWenCalledTwice(t *testing.T) {
 
 	require.Equal(t, "e2a80e0e872a6c6eaed37b4c1f220e1935004805585b5f99617e48e9c8fe4034", merkleTree.RootHex())
 
-	hHash, _ := Sha256Hasher{}.Hash([]byte("h"))
-	kHash, _ := Sha256Hasher{}.Hash([]byte("k"))
-	merkleTree.Append([]merkle.Hash{hHash, kHash})
+	hashOfH, _ := Sha256Hasher{}.Hash([]byte("h"))
+	hashOfK, _ := Sha256Hasher{}.Hash([]byte("k"))
+	merkleTree.Append([]merkle.Hash{hashOfH, hashOfK})
 
 	merkleTree.Commit()
 	merkleTree.Commit()
@@ -234,9 +234,9 @@ func TestRollbackPreviousCommit(t *testing.T) {
 
 	require.Equal(t, "e2a80e0e872a6c6eaed37b4c1f220e1935004805585b5f99617e48e9c8fe4034", merkleTree.RootHex())
 
-	hHash, _ := Sha256Hasher{}.Hash([]byte("h"))
-	kHash, _ := Sha256Hasher{}.Hash([]byte("k"))
-	merkleTree.Append([]merkle.Hash{hHash, kHash})
+	hashOfH, _ := Sha256Hasher{}.Hash([]byte("h"))
+	hashOfK, _ := Sha256Hasher{}.Hash([]byte("k"))
+	merkleTree.Append([]merkle.Hash{hashOfH, hashOfK})
 
 	uncommittedRootHex, err = merkleTree.UncommittedRootHex()
 	require.NoError(t, err)

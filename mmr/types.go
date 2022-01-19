@@ -7,7 +7,7 @@ type Leaf struct {
 	Hash  []byte
 }
 
-type leafWithHash struct {
+type leafWithashOfH struct {
 	pos    uint64
 	hash   []byte
 	height uint32
