@@ -14,5 +14,5 @@ jobs:
         go-version: ${{ matrix.go-version }}
     - name: Checkout code
       uses: actions/checkout@v2
-    - name: Run Test
-      run: go mod tidy && go test -v ./merkle && go test -v ./mmr
+    - name: Test Merkle
+      run: go mod tidy && go test -v ./merkle
