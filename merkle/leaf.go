@@ -13,7 +13,7 @@ func PopFromPartialtree(slice []PartialTree) (PartialTree, []PartialTree) {
 }
 
 // MapIndiceAndLeaves maps the indices and leaves of a tree
-func MapIndiceAndLeaves(indices []uint32, leaves []Hash) (result []Leaf) {
+func MapIndiceAndLeaves(indices []uint32, leaves [][]byte) (result []Leaf) {
 	for i, idx := range indices {
 		leaf := leaves[i]
 		result = append(result, Leaf{Index: idx, Hash: leaf})

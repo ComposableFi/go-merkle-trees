@@ -9,7 +9,7 @@ import (
 )
 
 // FromLeaves clones the leaves and builds the tree from them
-func (t Tree) FromLeaves(leaves []Hash) (Tree, error) {
+func (t Tree) FromLeaves(leaves [][]byte) (Tree, error) {
 	t.Append(leaves)
 	err := t.Commit()
 	if err != nil {
@@ -19,26 +19,26 @@ func (t Tree) FromLeaves(leaves []Hash) (Tree, error) {
 }
 
 // Root returns the tree root - the top hash of the tree. Used in the inclusion proof verification.
-func (t *Tree) Root() Hash {
+func (t *Tree) Root() []byte {
 	layers := t.layerLeaves()
 	if len(layers) > 0 {
 		lastLayer := layers[len(layers)-1]
 		firstItem := lastLayer[0]
 		return firstItem.Hash
 	}
-	return Hash{}
+	return []byte{}
 }
 
 // RootHex returns a hex encoded string instead of
 func (t *Tree) RootHex() string {
 	root := t.Root()
-	return hex.EncodeToString([]byte(root))
+	return hex.EncodeToString(root)
 }
 
 // HelperNodes returns helper nodes required to build a partial tree for the given indices
 // to be able to extract a root from it. Useful in constructing Merkle proofs
-func (t *Tree) HelperNodes(leafIndices []uint32) []Hash {
-	var helperNodes []Hash
+func (t *Tree) HelperNodes(leafIndices []uint32) [][]byte {
+	var helperNodes [][]byte
 	for _, layer := range t.HelperNodeLeaves(leafIndices) {
 		for _, li := range layer {
 			helperNodes = append(helperNodes, li.Hash)
@@ -90,13 +90,13 @@ func (t *Tree) Proof(leafIndices []uint32) Proof {
 // Insert inserts a new leaf. Please note it won't modify the root just yet; For the changes
 // to be applied to the root, [`MerkleTree::commit`] method should be called first. To get the
 // root of the new tree without applying the changes, you can use
-func (t *Tree) Insert(leaf Hash) {
+func (t *Tree) Insert(leaf []byte) {
 	t.UncommittedLeaves = append(t.UncommittedLeaves, leaf)
 }
 
 // Append appends leaves to the tree. Behaves similarly to [`MerkleTree::insert`], but for a list of
 // items. Takes ownership of the elements.
-func (t *Tree) Append(leaves []Hash) {
+func (t *Tree) Append(leaves [][]byte) {
 	t.UncommittedLeaves = append(t.UncommittedLeaves, leaves...)
 }
 
@@ -111,7 +111,7 @@ func (t *Tree) Commit() error {
 	if len(diff.layers) > 0 {
 		t.history = append(t.history, diff)
 		t.currentWorkingTree.mergeUnverified(diff)
-		t.UncommittedLeaves = []Hash{}
+		t.UncommittedLeaves = [][]byte{}
 	}
 	return nil
 }
@@ -128,10 +128,10 @@ func (t *Tree) Rollback() {
 
 // uncommittedRoot calculates the root of the uncommitted changes as if they were committed.
 // Will return the same hash as root of merkle tree after commit
-func (t *Tree) uncommittedRoot() (Hash, error) {
+func (t *Tree) uncommittedRoot() ([]byte, error) {
 	shadowTree, err := t.uncommittedDiff()
 	if err != nil {
-		return Hash{}, err
+		return []byte{}, err
 	}
 	return shadowTree.Root(), nil
 }
@@ -153,10 +153,10 @@ func (t *Tree) Depth() int {
 }
 
 // BaseLeaves returns a copy of the tree leaves - the base level of the tree.
-func (t *Tree) BaseLeaves() []Hash {
+func (t *Tree) BaseLeaves() [][]byte {
 	layers := t.layers()
 	if len(layers) > 0 {
-		return []Hash{}
+		return [][]byte{}
 	}
 	return layers[0]
 }
@@ -177,7 +177,7 @@ func (t *Tree) leaves() []Leaf {
 
 // layers returns the whole tree, where the first layer is leaves and
 // consequent layers are nodes.
-func (t *Tree) layers() [][]Hash {
+func (t *Tree) layers() [][][]byte {
 	return t.currentWorkingTree.layerNodes()
 }
 

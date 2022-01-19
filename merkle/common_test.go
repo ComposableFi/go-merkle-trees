@@ -9,7 +9,7 @@ import (
 
 type Sha256Hasher struct{}
 
-func (hr Sha256Hasher) Hash(b []byte) (merkle.Hash, error) {
+func (hr Sha256Hasher) Hash(b []byte) ( []byte, error) {
 	h := sha256.New()
 	if _, err := h.Write(b); err != nil {
 		return nil, err
@@ -20,7 +20,7 @@ func (hr Sha256Hasher) Hash(b []byte) (merkle.Hash, error) {
 
 type Keccak256Hasher struct{}
 
-func (hr Keccak256Hasher) Hash(b []byte) (merkle.Hash, error) {
+func (hr Keccak256Hasher) Hash(b []byte) ( []byte, error) {
 	h := crypto.Keccak256Hash(b)
 	return h.Bytes(), nil
 }
@@ -28,7 +28,7 @@ func (hr Keccak256Hasher) Hash(b []byte) (merkle.Hash, error) {
 type TestData struct {
 	leafValues      []string
 	expectedRootHex string
-	leafHashes      []merkle.Hash
+	leafHashes      [] []byte
 }
 type ProofTestCases struct {
 	merkleTree merkle.Tree
@@ -42,7 +42,7 @@ type MerkleProofTestCase struct {
 func setupTestData() TestData {
 	leafValues := []string{"a", "b", "c", "d", "e", "f"}
 	expectedRootHex := "1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2"
-	var leafHashes []merkle.Hash
+	var leafHashes [] []byte
 	for i := 0; i < len(leafValues); i++ {
 		h, _ := Sha256Hasher{}.Hash([]byte(leafValues[i]))
 		leafHashes = append(leafHashes, h)
@@ -60,7 +60,7 @@ func setupProofTestCases() ([]ProofTestCases, error) {
 	}
 	var merkleProofCases []ProofTestCases
 	for i := 0; i < len(maxCase); i++ {
-		var leavesHashes []merkle.Hash
+		var leavesHashes [] []byte
 		var Leaves []merkle.Leaf
 		for j := 0; j < i+1; j++ {
 			h, _ := Sha256Hasher{}.Hash([]byte(maxCase[j]))
@@ -72,7 +72,6 @@ func setupProofTestCases() ([]ProofTestCases, error) {
 		var cases []MerkleProofTestCase
 		for _, proofElements := range possibleProofElementCombinations {
 			var indices []uint32
-			// var leaves2 []merkle.Hash
 			for _, proofElement := range proofElements {
 				indices = append(indices, proofElement.Index)
 				// leaves2 = append(leaves2, proofElement.Hash)
