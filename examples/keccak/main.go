@@ -16,11 +16,11 @@ func main() {
 	}
 	var leavesI [][]byte
 	for _, l := range leaves {
-		h, _ := Sha256Hasher{}.Hash([]byte(l))
+		h, _ := Keccak256Hasher{}.Hash([]byte(l))
 		leavesI = append(leavesI, h)
 	}
 
-	merkleTree := merkle.NewTree(Sha256Hasher{})
+	merkleTree := merkle.NewTree(Keccak256Hasher{})
 	merkleTree, err := merkleTree.FromLeaves(leavesI)
 	if err != nil {
 		panic(err)

@@ -2,13 +2,11 @@ package main
 
 import (
 	"crypto/sha256"
-
-	"github.com/ComposableFi/go-merkle-trees/merkle"
 )
 
 type Sha256Hasher struct{}
 
-func (hr Sha256Hasher) Hash(b []byte) (merkle.Hash, error) {
+func (hr Sha256Hasher) Hash(b []byte) ([]byte, error) {
 	h := sha256.New()
 	if _, err := h.Write(b); err != nil {
 		return nil, err
