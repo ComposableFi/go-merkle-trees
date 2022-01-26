@@ -1,7 +1,7 @@
 package helpers
 
 // SiblingIndex returns index of a sibling element
-func SiblingIndex(idx uint32) uint32 {
+func SiblingIndex(idx uint64) uint64 {
 	if isLeftIndex(idx) {
 		// Right sibling index
 		return idx + 1
@@ -10,13 +10,13 @@ func SiblingIndex(idx uint32) uint32 {
 	return idx - 1
 }
 
-func isLeftIndex(idx uint32) bool {
+func isLeftIndex(idx uint64) bool {
 	return idx%2 == 0
 }
 
 // SiblingIndecies returns indecirs of sibling elements
-func SiblingIndecies(idxs []uint32) []uint32 {
-	var siblings []uint32
+func SiblingIndecies(idxs []uint64) []uint64 {
+	var siblings []uint64
 	for _, i := range idxs {
 		siblings = append(siblings, SiblingIndex(i))
 	}
@@ -24,7 +24,7 @@ func SiblingIndecies(idxs []uint32) []uint32 {
 }
 
 // ParentIndex returns index of a parent element
-func ParentIndex(idx uint32) uint32 {
+func ParentIndex(idx uint64) uint64 {
 	if isLeftIndex(idx) {
 		return idx / 2
 	}
@@ -32,8 +32,8 @@ func ParentIndex(idx uint32) uint32 {
 }
 
 // ParentIndecies returns indecirs of parent elements
-func ParentIndecies(idxs []uint32) []uint32 {
-	var parents []uint32
+func ParentIndecies(idxs []uint64) []uint64 {
+	var parents []uint64
 	for _, i := range idxs {
 		parents = append(parents, ParentIndex(i))
 	}
@@ -41,10 +41,10 @@ func ParentIndecies(idxs []uint32) []uint32 {
 	return parents
 }
 
-// removeDuplicateIndex removes all duplicate values from uint32 slice of indices
-func removeDuplicateIndex(strSlice []uint32) []uint32 {
-	allKeys := make(map[uint32]bool)
-	list := []uint32{}
+// removeDuplicateIndex removes all duplicate values from uint64 slice of indices
+func removeDuplicateIndex(strSlice []uint64) []uint64 {
+	allKeys := make(map[uint64]bool)
+	list := []uint64{}
 	for _, item := range strSlice {
 		if _, value := allKeys[item]; !value {
 			allKeys[item] = true

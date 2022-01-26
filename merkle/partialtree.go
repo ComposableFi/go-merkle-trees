@@ -3,11 +3,13 @@ package merkle
 import (
 	"errors"
 
+	"github.com/ComposableFi/go-merkle-trees/hasher"
 	"github.com/ComposableFi/go-merkle-trees/helpers"
+	"github.com/ComposableFi/go-merkle-trees/types"
 )
 
 // build is a wrapper for buildTree
-func (pt *PartialTree) build(partialLayers [][]Leaf, depth uint32) (PartialTree, error) {
+func (pt *PartialTree) build(partialLayers [][]types.Leaf, depth uint64) (PartialTree, error) {
 	layers, err := pt.buildTree(partialLayers, depth)
 	if err != nil {
 		return PartialTree{}, err
@@ -18,14 +20,14 @@ func (pt *PartialTree) build(partialLayers [][]Leaf, depth uint32) (PartialTree,
 // buildTree is a general algorithm for building a partial tree. It can be used to extract root
 // from merkle proof, or if a complete set of leaves provided as a first argument and no
 // helper indices given, will construct the whole tree.
-func (pt *PartialTree) buildTree(partialLayers [][]Leaf, fullTreeDepth uint32) ([][]Leaf, error) {
+func (pt *PartialTree) buildTree(partialLayers [][]types.Leaf, fullTreeDepth uint64) ([][]types.Leaf, error) {
 	reversedLayers := reverseLayers(partialLayers)
-	var currentLayer []Leaf
-	var partialTree [][]Leaf
-	for i := uint32(0); i < fullTreeDepth; i++ {
+	var currentLayer []types.Leaf
+	var partialTree [][]types.Leaf
+	for i := uint64(0); i < fullTreeDepth; i++ {
 
 		if len(reversedLayers) > 0 {
-			var nodes []Leaf
+			var nodes []types.Leaf
 			nodes, reversedLayers = PopFromLeafQueue(reversedLayers)
 			currentLayer = append(currentLayer, nodes...)
 		}
@@ -34,14 +36,14 @@ func (pt *PartialTree) buildTree(partialLayers [][]Leaf, fullTreeDepth uint32) (
 
 		partialTree = append(partialTree, currentLayer)
 
-		var indices []uint32
+		var indices []uint64
 		var nodes [][]byte
 		for i := 0; i < len(currentLayer); i++ {
 			indices = append(indices, currentLayer[i].Index)
 			nodes = append(nodes, currentLayer[i].Hash)
 		}
 		// freeup for next round
-		currentLayer = make([]Leaf, 0)
+		currentLayer = make([]types.Leaf, 0)
 
 		parentLayerIndices := helpers.ParentIndecies(indices)
 
@@ -59,17 +61,17 @@ func (pt *PartialTree) buildTree(partialLayers [][]Leaf, fullTreeDepth uint32) (
 					rightHash = nil
 				}
 				var err error
-				hash, err = ConcatAndHash(pt.hasher, leftHash, rightHash)
+				hash, err = hasher.MergeAndHash(pt.hasher, leftHash, rightHash)
 				if err != nil {
-					return [][]Leaf{}, err
+					return [][]types.Leaf{}, err
 				}
 
-				currentLayer = append(currentLayer, Leaf{
+				currentLayer = append(currentLayer, types.Leaf{
 					Index: parnetNodeIndex,
 					Hash:  hash,
 				})
 			} else {
-				return [][]Leaf{}, errors.New("not enough helper nodes")
+				return [][]types.Leaf{}, errors.New("not enough helper nodes")
 			}
 		}
 
@@ -91,7 +93,7 @@ func (pt *PartialTree) Root() []byte {
 }
 
 // contains checks if a node index is present in a layer
-func (pt *PartialTree) contains(layerIndex, nodeIndex uint32) bool {
+func (pt *PartialTree) contains(layerIndex, nodeIndex uint64) bool {
 	layer, ok := layerAtIndex(pt.layers, layerIndex)
 	if ok {
 		for _, l := range layer {
@@ -111,17 +113,17 @@ func (pt *PartialTree) contains(layerIndex, nodeIndex uint32) bool {
 /// no need to verify integrity of the result.
 func (pt *PartialTree) mergeUnverified(other PartialTree) {
 	depthDifference := len(other.layers) - len(pt.layers)
-	var combinedTreeSize uint32
+	var combinedTreeSize uint64
 	if depthDifference > 0 {
-		combinedTreeSize = uint32(len(other.layers))
+		combinedTreeSize = uint64(len(other.layers))
 	} else {
-		combinedTreeSize = uint32(len(pt.layers))
+		combinedTreeSize = uint64(len(pt.layers))
 	}
 
-	for layerIndex := uint32(0); layerIndex < combinedTreeSize; layerIndex++ {
-		var combinedLayer, filteredLayer []Leaf
+	for layerIndex := uint64(0); layerIndex < combinedTreeSize; layerIndex++ {
+		var combinedLayer, filteredLayer []types.Leaf
 
-		selfLayer, ok := layerAtIndex(pt.layers, uint32(layerIndex))
+		selfLayer, ok := layerAtIndex(pt.layers, uint64(layerIndex))
 		if ok {
 			for _, node := range selfLayer {
 				if !other.contains(layerIndex, node.Index) {
@@ -145,7 +147,7 @@ func (pt *PartialTree) mergeUnverified(other PartialTree) {
 }
 
 // upsertLayer replaces layer at a given index with a new layer. Used during tree merge
-func (pt *PartialTree) upsertLayer(layerIndex uint32, newLayer []Leaf) {
+func (pt *PartialTree) upsertLayer(layerIndex uint64, newLayer []types.Leaf) {
 	_, ok := layerAtIndex(pt.layers, layerIndex)
 	if ok {
 		pt.layers[layerIndex] = newLayer
@@ -169,18 +171,18 @@ func (pt *PartialTree) layerNodes() [][][]byte {
 }
 
 // getLayers returns partial tree layers
-func (pt *PartialTree) getLayers() [][]Leaf {
+func (pt *PartialTree) getLayers() [][]types.Leaf {
 	return pt.layers
 }
 
 // clear clears all elements in the tree
 func (pt *PartialTree) clear() {
-	pt.layers = [][]Leaf{}
+	pt.layers = [][]types.Leaf{}
 }
 
-// reverseLayers reverses a slice of leaf slice
-func reverseLayers(s [][]Leaf) [][]Leaf {
-	a := make([][]Leaf, len(s))
+// reverseLayers reverses a slice of types.Leaf slice
+func reverseLayers(s [][]types.Leaf) [][]types.Leaf {
+	a := make([][]types.Leaf, len(s))
 	copy(a, s)
 
 	for i := len(a)/2 - 1; i >= 0; i-- {

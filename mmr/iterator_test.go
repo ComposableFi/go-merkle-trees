@@ -12,8 +12,8 @@ func TestNext(t *testing.T) {
 		input [][]byte
 		want  []byte
 	}{
-		"length of one": {input: [][]byte{toHash(1)}, want: toHash(1)},
-		"length of two": {input: [][]byte{toHash(1), toHash(2)}, want: toHash(1)},
+		"length of one": {input: [][]byte{uint32ToHash(1)}, want: uint32ToHash(1)},
+		"length of two": {input: [][]byte{uint32ToHash(1), uint32ToHash(2)}, want: uint32ToHash(1)},
 	}
 
 	for name, test := range tests {
@@ -28,7 +28,7 @@ func TestNext(t *testing.T) {
 		input [][]byte
 		want  []byte
 	}{
-		"length of two": {input: [][]byte{toHash(1), toHash(2)}, want: toHash(2)},
+		"length of two": {input: [][]byte{uint32ToHash(1), uint32ToHash(2)}, want: uint32ToHash(2)},
 	}
 
 	for name, test := range tests {
