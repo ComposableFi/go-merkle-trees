@@ -191,11 +191,8 @@ func TestMMRRoot(t *testing.T) {
 }
 
 func mergeKeccak256(left, right []byte) []byte {
-	// h := sha3.NewLegacyKeccak256()
-
-	// h.Write(append(left, right...))
 	hash, _ := hasher.MergeAndHash(hasher.Keccak256Hasher{}, left, right)
-	return hash // h.Sum(nil)
+	return hash
 }
 
 func hexToByte(h string) []byte {
