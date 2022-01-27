@@ -2,6 +2,7 @@ package mmr
 
 import (
 	"encoding/hex"
+	"fmt"
 	"reflect"
 	"sort"
 
@@ -19,8 +20,9 @@ type MMR struct {
 	leaves []types.Leaf
 }
 
-// NewMMR returns a new MMR type. It takes three arguments. It takes the mmrSize, Store and Merge interfaces. It accepts
-// any type that satisfies both the Store and Merge interfaces.
+// NewMMR returns a new MMR type. It takes four arguments. It takes the mmrSize, Store, leaves and Hasher interfaces. It accepts
+// any type that satisfies both the Store and Hasher interfaces. The parameter 'leaves' are leaves whose proof of inclusion
+// would be verified.
 func NewMMR(mmrSize uint64, s Store, leaves []types.Leaf, m types.Hasher) *MMR {
 	return &MMR{
 		size:   mmrSize,
@@ -141,15 +143,18 @@ func (m *MMR) bagRHSPeaks(rhsPeaks [][]byte) []byte {
 	for len(rhsPeaks) > 1 {
 		var rp, lp []byte
 		if rp, rhsPeaks = pop(rhsPeaks); rp == nil {
-			panic("pop")
+			log.Error("error trying to execute pop on right hand side peaks (rhsPeaks)")
+			return nil
 		}
 
 		if lp, rhsPeaks = pop(rhsPeaks); lp == nil {
-			panic("pop")
+			log.Error("error trying to execute pop on right hand side peaks (rhsPeaks)")
+			return nil
 		}
 		hash, err := hasher.MergeAndHash(m.hasher, rp, lp)
 		if err != nil {
-			panic(err)
+			log.Error(err.Error())
+			return nil
 		}
 		rhsPeaks = append(rhsPeaks, hash)
 	}
@@ -190,7 +195,7 @@ func (m *MMR) genProofForPeak(proof *Iterator, posList []uint64, peakPos uint64)
 		// pop front
 		queue = queue[1:]
 		if !(pos <= peakPos) {
-			panic("Pos is not less than or equal to peak position")
+			return fmt.Errorf("pos is not less than or equal to peak position")
 		}
 
 		if pos == peakPos {
@@ -267,7 +272,7 @@ func (m *MMR) GenProof(posList []uint64) (*Proof, error) {
 		var p []byte
 
 		if p = m.bagRHSPeaks(rhsPeaks); p == nil {
-			panic("bagging rhs peaks")
+			return nil, fmt.Errorf("could not bag right hand side peaks")
 		}
 		proof.push(p)
 	}
@@ -311,7 +316,7 @@ func (m *Proof) ProofItems() [][]byte {
 
 func (m *Proof) calculatePeakRoot(leaves []types.Leaf, peakPos uint64, proofs *Iterator) ([]byte, error) {
 	if len(leaves) == 0 {
-		panic("can't be empty")
+		return nil, fmt.Errorf("leaves can't be empty")
 	}
 
 	// (position, Hash, height)
@@ -380,15 +385,15 @@ func (m *Proof) baggingPeaksHashes(peaksHashes [][]byte) ([]byte, error) {
 	var rightPeak, leftPeak []byte
 	for len(peaksHashes) > 1 {
 		if rightPeak, peaksHashes = pop(peaksHashes); rightPeak == nil {
-			panic("pop")
+			return nil, fmt.Errorf("there are no peak hashes left to pop")
 		}
 
 		if leftPeak, peaksHashes = pop(peaksHashes); leftPeak == nil {
-			panic("pop")
+			return nil, fmt.Errorf("there are no peak hashes left to pop")
 		}
 		hash, err := hasher.MergeAndHash(m.Hasher, rightPeak, leftPeak)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		peaksHashes = append(peaksHashes, hash)
 	}
