@@ -1,50 +1,31 @@
 package merkle_test
 
 import (
-	"crypto/sha256"
-
+	"github.com/ComposableFi/go-merkle-trees/hasher"
 	"github.com/ComposableFi/go-merkle-trees/merkle"
-	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ComposableFi/go-merkle-trees/types"
 )
-
-type Sha256Hasher struct{}
-
-func (hr Sha256Hasher) Hash(b []byte) ( []byte, error) {
-	h := sha256.New()
-	if _, err := h.Write(b); err != nil {
-		return nil, err
-	}
-
-	return h.Sum(nil), nil
-}
-
-type Keccak256Hasher struct{}
-
-func (hr Keccak256Hasher) Hash(b []byte) ( []byte, error) {
-	h := crypto.Keccak256Hash(b)
-	return h.Bytes(), nil
-}
 
 type TestData struct {
 	leafValues      []string
 	expectedRootHex string
-	leafHashes      [] []byte
+	leafHashes      [][]byte
 }
 type ProofTestCases struct {
 	merkleTree merkle.Tree
 	cases      []MerkleProofTestCase
 }
 type MerkleProofTestCase struct {
-	LeafIndicesToProve []uint32
-	Leaves             []merkle.Leaf
+	LeafIndicesToProve []uint64
+	Leaves             []types.Leaf
 }
 
 func setupTestData() TestData {
 	leafValues := []string{"a", "b", "c", "d", "e", "f"}
 	expectedRootHex := "1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2"
-	var leafHashes [] []byte
+	var leafHashes [][]byte
 	for i := 0; i < len(leafValues); i++ {
-		h, _ := Sha256Hasher{}.Hash([]byte(leafValues[i]))
+		h, _ := hasher.Sha256Hasher{}.Hash([]byte(leafValues[i]))
 		leafHashes = append(leafHashes, h)
 	}
 	return TestData{
@@ -60,18 +41,18 @@ func setupProofTestCases() ([]ProofTestCases, error) {
 	}
 	var merkleProofCases []ProofTestCases
 	for i := 0; i < len(maxCase); i++ {
-		var leavesHashes [] []byte
-		var Leaves []merkle.Leaf
+		var leavesHashes [][]byte
+		var Leaves []types.Leaf
 		for j := 0; j < i+1; j++ {
-			h, _ := Sha256Hasher{}.Hash([]byte(maxCase[j]))
+			h, _ := hasher.Sha256Hasher{}.Hash([]byte(maxCase[j]))
 			leavesHashes = append(leavesHashes, h)
-			Leaves = append(Leaves, merkle.Leaf{Index: uint32(j), Hash: h})
+			Leaves = append(Leaves, types.Leaf{Index: uint64(j), Hash: h})
 		}
 		possibleProofElementCombinations := combinations(Leaves)
 
 		var cases []MerkleProofTestCase
 		for _, proofElements := range possibleProofElementCombinations {
-			var indices []uint32
+			var indices []uint64
 			for _, proofElement := range proofElements {
 				indices = append(indices, proofElement.Index)
 				// leaves2 = append(leaves2, proofElement.Hash)
@@ -79,7 +60,7 @@ func setupProofTestCases() ([]ProofTestCases, error) {
 			}
 			cases = append(cases, MerkleProofTestCase{LeafIndicesToProve: indices, Leaves: proofElements})
 		}
-		merkleTree, err := merkle.NewTree(Sha256Hasher{}).FromLeaves(leavesHashes)
+		merkleTree, err := merkle.NewTree(hasher.Sha256Hasher{}).FromLeaves(leavesHashes)
 		if err != nil {
 			return []ProofTestCases{}, err
 		}
@@ -93,11 +74,11 @@ func setupProofTestCases() ([]ProofTestCases, error) {
 	return merkleProofCases, nil
 }
 
-func combinations(leaves []merkle.Leaf) [][]merkle.Leaf {
-	return combine([]merkle.Leaf{}, leaves, [][]merkle.Leaf{})
+func combinations(leaves []types.Leaf) [][]types.Leaf {
+	return combine([]types.Leaf{}, leaves, [][]types.Leaf{})
 }
 
-func combine(active []merkle.Leaf, rest []merkle.Leaf, combinations [][]merkle.Leaf) [][]merkle.Leaf {
+func combine(active []types.Leaf, rest []types.Leaf, combinations [][]types.Leaf) [][]types.Leaf {
 	if len(rest) == 0 {
 		if len(active) == 0 {
 			return combinations
@@ -105,7 +86,7 @@ func combine(active []merkle.Leaf, rest []merkle.Leaf, combinations [][]merkle.L
 		combinations = append(combinations, active)
 		return combinations
 	}
-	next := make([]merkle.Leaf, len(active))
+	next := make([]types.Leaf, len(active))
 	copy(next, active)
 
 	if len(rest) > 0 {

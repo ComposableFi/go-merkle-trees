@@ -19,11 +19,11 @@ func main() {
 	}
 	var leavesI [][]byte
 	for _, l := range leaves {
-		h, _ := hasher.Sha256Hasher{}.Hash([]byte(l))
+		h, _ := hasher.Keccak256Hasher{}.Hash([]byte(l))
 		leavesI = append(leavesI, h)
 	}
 
-	merkleTree := merkle.NewTree(hasher.Sha256Hasher{})
+	merkleTree := merkle.NewTree(hasher.Keccak256Hasher{})
 	merkleTree, err := merkleTree.FromLeaves(leavesI)
 	if err != nil {
 		panic(err)
@@ -50,7 +50,7 @@ func main() {
 	fmt.Printf("merkle proof verify result is %v\n", verifyResult)
 
 	leavesMmr := []types.Leaf{{Index: uint64(0), Hash: leavesI[0]}}
-	mmrTree := mmr.NewMMR(0, mmr.NewMemStore(), leavesMmr, hasher.Sha256Hasher{})
+	mmrTree := mmr.NewMMR(0, mmr.NewMemStore(), leavesMmr, hasher.Keccak256Hasher{})
 	var positions []uint64
 	for i := 0; i < len(leavesI); i++ {
 		pos, err := mmrTree.Push(leavesI[i])
@@ -84,5 +84,4 @@ func main() {
 	verifyResult = mmrProof.Verify(mmrRoot)
 
 	fmt.Printf("MMR verify result is %v\n", verifyResult)
-
 }

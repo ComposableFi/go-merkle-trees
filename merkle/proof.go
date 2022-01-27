@@ -6,6 +6,7 @@ import (
 	"math"
 
 	"github.com/ComposableFi/go-merkle-trees/helpers"
+	"github.com/ComposableFi/go-merkle-trees/types"
 )
 
 // Verify uses proof to verify that a given set of elements is contained in the original data
@@ -23,12 +24,12 @@ func (p Proof) Verify(root []byte) (bool, error) {
 func (p Proof) Root() ([]byte, error) {
 	treeDepth := treeDepth(p.totalLeavesCount)
 	sortLeavesByIndex(p.leaves)
-	var leafIndices []uint32
+	var leafIndices []uint64
 	for _, l := range p.leaves {
 		leafIndices = append(leafIndices, l.Index)
 	}
 	proofIndicesLayers := proofIndeciesByLayers(leafIndices, p.totalLeavesCount)
-	var proofLayers [][]Leaf
+	var proofLayers [][]types.Leaf
 	proofCopy := make([][]byte, len(p.proofHashes))
 	copy(proofCopy, p.proofHashes)
 	for _, proofIndices := range proofIndicesLayers {
@@ -85,15 +86,15 @@ func (p Proof) ProofHashesHex() []string {
 }
 
 // proofIndeciesByLayers returns the proof indices by layers
-func proofIndeciesByLayers(sortedLeafIndices []uint32, leavsCount uint32) [][]uint32 {
+func proofIndeciesByLayers(sortedLeafIndices []uint64, leavsCount uint64) [][]uint64 {
 	depth := treeDepth(leavsCount)
 	unevenLayers := unevenLayers(leavsCount)
-	var proofIndices [][]uint32
-	for layerIndex := uint32(0); layerIndex < depth; layerIndex++ {
+	var proofIndices [][]uint64
+	for layerIndex := uint64(0); layerIndex < depth; layerIndex++ {
 		siblingIndices := helpers.SiblingIndecies(sortedLeafIndices)
 		leavesCount := unevenLayers[layerIndex]
 		layerLastNodeIndex := sortedLeafIndices[len(sortedLeafIndices)-1]
-		if layerLastNodeIndex == uint32(leavesCount)-1 {
+		if layerLastNodeIndex == uint64(leavesCount)-1 {
 			_, siblingIndices = helpers.PopFromUint32Queue(siblingIndices)
 		}
 
@@ -106,15 +107,15 @@ func proofIndeciesByLayers(sortedLeafIndices []uint32, leavsCount uint32) [][]ui
 }
 
 // unevenLayers returns map of indices that are not even
-func unevenLayers(treeLeavesCount uint32) map[uint32]uint32 {
+func unevenLayers(treeLeavesCount uint64) map[uint64]uint64 {
 	depth := treeDepth(treeLeavesCount)
-	unevenLayers := make(map[uint32]uint32)
-	for i := uint32(0); i < depth; i++ {
+	unevenLayers := make(map[uint64]uint64)
+	for i := uint64(0); i < depth; i++ {
 		unevenLayer := treeLeavesCount%2 != 0
 		if unevenLayer {
 			unevenLayers[i] = treeLeavesCount
 		}
-		treeLeavesCount = uint32(math.Ceil(float64(treeLeavesCount) / 2))
+		treeLeavesCount = uint64(math.Ceil(float64(treeLeavesCount) / 2))
 	}
 	return unevenLayers
 }

@@ -3,6 +3,7 @@ package merkle_test
 import (
 	"testing"
 
+	"github.com/ComposableFi/go-merkle-trees/hasher"
 	"github.com/ComposableFi/go-merkle-trees/merkle"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -12,9 +13,9 @@ import (
 func TestCorrectProofs(t *testing.T) {
 	testData := setupTestData()
 	expectedRoot := testData.expectedRootHex
-	indicesToProve := []uint32{3, 4}
+	indicesToProve := []uint64{3, 4}
 
-	merkleTree, err := merkle.NewTree(Sha256Hasher{}).FromLeaves(testData.leafHashes)
+	merkleTree, err := merkle.NewTree(hasher.Sha256Hasher{}).FromLeaves(testData.leafHashes)
 	require.NoError(t, err)
 
 	proof := merkleTree.Proof(indicesToProve)
@@ -51,7 +52,7 @@ func TestVerifyProof(t *testing.T) {
 		leaves = append(leaves, h)
 	}
 
-	merkleTree := merkle.NewTree(Keccak256Hasher{})
+	merkleTree := merkle.NewTree(hasher.Keccak256Hasher{})
 	merkleTree, err := merkleTree.FromLeaves(leaves)
 	require.NoError(t, err)
 
@@ -59,13 +60,13 @@ func TestVerifyProof(t *testing.T) {
 	require.Equal(t, expectedRoot, rootHex)
 
 	for i := 0; i < len(testAddresses); i++ {
-		proof := merkleTree.Proof([]uint32{uint32(i)})
+		proof := merkleTree.Proof([]uint64{uint64(i)})
 		root, err := proof.RootHex()
 		require.NoError(t, err)
 		require.Equal(t, root, expectedRoot)
 	}
 
-	lastProof := merkleTree.Proof([]uint32{uint32(len(leaves) - 1)}).ProofHashesHex()
+	lastProof := merkleTree.Proof([]uint64{uint64(len(leaves) - 1)}).ProofHashesHex()
 	require.Equal(t, lastProof, []string{
 		"340bcb1d49b2d82802ddbcf5b85043edb3427b65d09d7f758fbc76932ad2da2f",
 		"ba0580e5bd530bc93d61276df7969fb5b4ae8f1864b4a28c280249575198ff1f",

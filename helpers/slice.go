@@ -1,7 +1,7 @@
 package helpers
 
-// PopFromUint32Queue pops front element of uint32 slice
-func PopFromUint32Queue(slice []uint32) (uint32, []uint32) {
+// PopFromUint32Queue pops front element of uint64 slice
+func PopFromUint32Queue(slice []uint64) (uint64, []uint64) {
 	popElem, newSlice := slice[len(slice)-1], slice[:len(slice)-1]
 	return popElem, newSlice
 
@@ -14,15 +14,15 @@ func PopFromInterfaceQueue(slice [][]byte) ([]byte, [][]byte) {
 
 }
 
-// PopTwoElementsFromEndInterfaceQueue pops last two element of uint32 slice
+// PopTwoElementsFromEndInterfaceQueue pops last two element of uint64 slice
 func PopTwoElementsFromEndInterfaceQueue(slice [][]byte) ([]byte, []byte, [][]byte) {
 	sliceLen := len(slice)
 	lastElem, beforeLastElem, newSlice := slice[sliceLen-1], slice[sliceLen-2], slice[:sliceLen-2]
 	return beforeLastElem, lastElem, newSlice
 }
 
-// Uint32SliceContains checks if a slice contains specific uint32 number
-func Uint32SliceContains(slice []uint32, num uint32) bool {
+// Uint32SliceContains checks if a slice contains specific uint64 number
+func Uint32SliceContains(slice []uint64, num uint64) bool {
 	for _, v := range slice {
 		if v == num {
 			return true
@@ -32,8 +32,8 @@ func Uint32SliceContains(slice []uint32, num uint32) bool {
 }
 
 // Difference finds the elements of first slice that are not present in the second slice
-func Difference(slice1 []uint32, slice2 []uint32) []uint32 {
-	var diff []uint32
+func Difference(slice1 []uint64, slice2 []uint64) []uint64 {
+	var diff []uint64
 
 	for _, s1 := range slice1 {
 		found := false

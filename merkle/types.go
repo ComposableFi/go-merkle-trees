@@ -1,5 +1,9 @@
 package merkle
 
+import (
+	"github.com/ComposableFi/go-merkle-trees/types"
+)
+
 // Tree is a Merkle Tree that is well suited for both basic and advanced usage.
 //
 // Basic features include the creation and verification of Merkle proofs from a set of leaves.
@@ -12,11 +16,11 @@ type Tree struct {
 	currentWorkingTree PartialTree
 	history            []PartialTree
 	UncommittedLeaves  [][]byte
-	hasher             Hasher
+	hasher             types.Hasher
 }
 
 // NewTree creates a new instance of merkle tree. requires a hash algorithm to be specified.
-func NewTree(hasher Hasher) Tree {
+func NewTree(hasher types.Hasher) Tree {
 	return Tree{
 		currentWorkingTree: NewPartialTree(hasher),
 		history:            []PartialTree{},
@@ -30,15 +34,15 @@ func NewTree(hasher Hasher) Tree {
 // multiple trees into one.
 // It is a rare case when you need to use this struct on it's own. It's mostly used inside
 type PartialTree struct {
-	layers [][]Leaf
-	hasher Hasher
+	layers [][]types.Leaf
+	hasher types.Hasher
 }
 
 // NewPartialTree Takes hasher as an argument and build a Merkle Tree from them.
 // Since it's a partial tree, hashes must be accompanied by their index in the original tree.
-func NewPartialTree(hasher Hasher) PartialTree {
+func NewPartialTree(hasher types.Hasher) PartialTree {
 	return PartialTree{
-		layers: [][]Leaf{},
+		layers: [][]types.Leaf{},
 		hasher: hasher,
 	}
 }
@@ -49,28 +53,17 @@ func NewPartialTree(hasher Hasher) PartialTree {
 // parameter to the Proof.
 type Proof struct {
 	proofHashes      [][]byte
-	leaves           []Leaf
-	totalLeavesCount uint32
-	hasher           Hasher
+	leaves           []types.Leaf
+	totalLeavesCount uint64
+	hasher           types.Hasher
 }
 
 // NewProof create new instance of merkle proof
-func NewProof(leaves []Leaf, proofHashes [][]byte, totalLeavesCount uint32, hasher Hasher) Proof {
+func NewProof(leaves []types.Leaf, proofHashes [][]byte, totalLeavesCount uint64, hasher types.Hasher) Proof {
 	return Proof{
 		leaves:           leaves,
 		proofHashes:      proofHashes,
 		totalLeavesCount: totalLeavesCount,
 		hasher:           hasher,
 	}
-}
-
-// Hasher is an interface used to provide a hashing algorithm for the library.
-type Hasher interface {
-	Hash(data []byte) ([]byte, error)
-}
-
-// Leaf is a represention of leaf index and its hash
-type Leaf struct {
-	Index uint32
-	Hash  []byte
 }

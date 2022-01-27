@@ -3,6 +3,8 @@ package mmr
 import (
 	"math/bits"
 	"reflect"
+
+	"github.com/ComposableFi/go-merkle-trees/types"
 )
 
 func getPeakPosByHeight(height uint32) uint64 {
@@ -114,6 +116,6 @@ func reverse(s interface{}) {
 	}
 }
 
-func pushLeaf(leaves *[]Leaf, l Leaf) {
+func pushLeaf(leaves *[]types.Leaf, l types.Leaf) {
 	*leaves = append(*leaves, l)
 }

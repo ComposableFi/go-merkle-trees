@@ -1,8 +1,13 @@
 package mmr
 
 import (
+	"encoding/hex"
+	"fmt"
 	"reflect"
 	"sort"
+
+	"github.com/ComposableFi/go-merkle-trees/hasher"
+	"github.com/ComposableFi/go-merkle-trees/types"
 )
 
 // MMR contains fields for computing the MMR tree.
@@ -10,18 +15,19 @@ type MMR struct {
 	// size is the MMR size of the tree
 	size  uint64
 	batch *Batch
-	// merge accepts any type that satisfies the Merge interface
-	merge  MergeI
-	leaves []Leaf
+	// hasher accepts any type that satisfies the Merge interface
+	hasher types.Hasher
+	leaves []types.Leaf
 }
 
-// NewMMR returns a new MMR type. It takes three arguments. It takes the mmrSize, Store and Merge interfaces. It accepts
-// any type that satisfies both the Store and Merge interfaces.
-func NewMMR(mmrSize uint64, s Store, leaves []Leaf, m MergeI) *MMR {
+// NewMMR returns a new MMR type. It takes four arguments. It takes the mmrSize, Store, leaves and Hasher interfaces. It accepts
+// any type that satisfies both the Store and Hasher interfaces. The parameter 'leaves' are leaves whose proof of inclusion
+// would be verified.
+func NewMMR(mmrSize uint64, s Store, leaves []types.Leaf, m types.Hasher) *MMR {
 	return &MMR{
 		size:   mmrSize,
 		batch:  NewBatch(s),
-		merge:  m,
+		hasher: m,
 		leaves: leaves,
 	}
 }
@@ -80,9 +86,12 @@ func (m *MMR) Push(elem []byte) (uint64, error) {
 		if err != nil {
 			return 0, err
 		}
-
-		parentElem := m.merge.Merge(leftElem, rightElem)
-		elems = append(elems, parentElem.([]byte))
+		hash, err := hasher.MergeAndHash(m.hasher, leftElem, rightElem)
+		if err != nil {
+			return 0, err
+		}
+		parentElem := hash
+		elems = append(elems, parentElem)
 		height++
 	}
 	// store hashes
@@ -92,8 +101,8 @@ func (m *MMR) Push(elem []byte) (uint64, error) {
 	return elemPos, nil
 }
 
-// GetRoot returns the root of the MMR tree
-func (m *MMR) GetRoot() ([]byte, error) {
+// Root returns the root of the MMR tree
+func (m *MMR) Root() ([]byte, error) {
 	if m.size == 0 {
 		return nil, ErrGetRootOnEmpty
 	} else if m.size == 1 {
@@ -121,17 +130,33 @@ func (m *MMR) GetRoot() ([]byte, error) {
 	return p, nil
 }
 
+// RootHex returns a hex encoded string instead of
+func (m *MMR) RootHex() (string, error) {
+	root, err := m.Root()
+	if err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(root), nil
+}
+
 func (m *MMR) bagRHSPeaks(rhsPeaks [][]byte) []byte {
 	for len(rhsPeaks) > 1 {
 		var rp, lp []byte
 		if rp, rhsPeaks = pop(rhsPeaks); rp == nil {
-			panic("pop")
+			log.Error("error trying to execute pop on right hand side peaks (rhsPeaks)")
+			return nil
 		}
 
 		if lp, rhsPeaks = pop(rhsPeaks); lp == nil {
-			panic("pop")
+			log.Error("error trying to execute pop on right hand side peaks (rhsPeaks)")
+			return nil
 		}
-		rhsPeaks = append(rhsPeaks, m.merge.Merge(rp, lp).([]byte))
+		hash, err := hasher.MergeAndHash(m.hasher, rp, lp)
+		if err != nil {
+			log.Error(err.Error())
+			return nil
+		}
+		rhsPeaks = append(rhsPeaks, hash)
 	}
 
 	if len(rhsPeaks) > 0 {
@@ -170,7 +195,7 @@ func (m *MMR) genProofForPeak(proof *Iterator, posList []uint64, peakPos uint64)
 		// pop front
 		queue = queue[1:]
 		if !(pos <= peakPos) {
-			panic("Pos is not less than or equal to peak position")
+			return fmt.Errorf("pos is not less than or equal to peak position")
 		}
 
 		if pos == peakPos {
@@ -211,7 +236,7 @@ func (m *MMR) GenProof(posList []uint64) (*Proof, error) {
 		return nil, ErrGenProofForInvalidLeaves
 	}
 	if m.size == 1 && reflect.DeepEqual(posList, []uint64{0}) {
-		return NewProof(m.size, [][]byte{}, m.leaves, m.merge), nil
+		return NewProof(m.size, [][]byte{}, m.leaves, m.hasher), nil
 	}
 
 	sort.Slice(posList, func(i, j int) bool {
@@ -247,12 +272,12 @@ func (m *MMR) GenProof(posList []uint64) (*Proof, error) {
 		var p []byte
 
 		if p = m.bagRHSPeaks(rhsPeaks); p == nil {
-			panic("bagging rhs peaks")
+			return nil, fmt.Errorf("could not bag right hand side peaks")
 		}
 		proof.push(p)
 	}
 
-	return NewProof(m.size, proof.Items, m.leaves, m.merge), nil
+	return NewProof(m.size, proof.Items, m.leaves, m.hasher), nil
 }
 
 // Commit calls the commit method on the batch property. It adds a batch element to the store
@@ -264,17 +289,17 @@ func (m *MMR) Commit() {
 type Proof struct {
 	mmrSize uint64
 	proof   *Iterator
-	Merge   MergeI
-	Leaves  []Leaf
+	Hasher  types.Hasher
+	Leaves  []types.Leaf
 }
 
 // NewProof creates and returns new Proof. It takes the mmrSize, proof which is of type *Iterator and any type
 // that satisfies the Merge interface.
-func NewProof(mmrSize uint64, proofItems [][]byte, mmrLeaves []Leaf, m MergeI) *Proof {
+func NewProof(mmrSize uint64, proofItems [][]byte, mmrLeaves []types.Leaf, m types.Hasher) *Proof {
 	return &Proof{
 		mmrSize: mmrSize,
 		proof:   &Iterator{Items: proofItems},
-		Merge:   m,
+		Hasher:  m,
 		Leaves:  mmrLeaves,
 	}
 }
@@ -289,9 +314,9 @@ func (m *Proof) ProofItems() [][]byte {
 	return m.proof.Items
 }
 
-func (m *Proof) calculatePeakRoot(leaves []Leaf, peakPos uint64, proofs *Iterator) ([]byte, error) {
+func (m *Proof) calculatePeakRoot(leaves []types.Leaf, peakPos uint64, proofs *Iterator) ([]byte, error) {
 	if len(leaves) == 0 {
-		panic("can't be empty")
+		return nil, fmt.Errorf("leaves can't be empty")
 	}
 
 	// (position, Hash, height)
@@ -333,9 +358,17 @@ func (m *Proof) calculatePeakRoot(leaves []Leaf, peakPos uint64, proofs *Iterato
 
 		var parentItem []byte
 		if nextHeight > height {
-			parentItem = m.Merge.Merge(siblingItem, item).([]byte)
+			hash, err := hasher.MergeAndHash(m.Hasher, siblingItem, item)
+			if err != nil {
+				return nil, err
+			}
+			parentItem = hash
 		} else {
-			parentItem = m.Merge.Merge(item, siblingItem).([]byte)
+			hash, err := hasher.MergeAndHash(m.Hasher, item, siblingItem)
+			if err != nil {
+				return nil, err
+			}
+			parentItem = hash
 		}
 
 		if parentPos < peakPos {
@@ -352,13 +385,17 @@ func (m *Proof) baggingPeaksHashes(peaksHashes [][]byte) ([]byte, error) {
 	var rightPeak, leftPeak []byte
 	for len(peaksHashes) > 1 {
 		if rightPeak, peaksHashes = pop(peaksHashes); rightPeak == nil {
-			panic("pop")
+			return nil, fmt.Errorf("there are no peak hashes left to pop")
 		}
 
 		if leftPeak, peaksHashes = pop(peaksHashes); leftPeak == nil {
-			panic("pop")
+			return nil, fmt.Errorf("there are no peak hashes left to pop")
 		}
-		peaksHashes = append(peaksHashes, m.Merge.Merge(rightPeak, leftPeak).([]byte))
+		hash, err := hasher.MergeAndHash(m.Hasher, rightPeak, leftPeak)
+		if err != nil {
+			return nil, err
+		}
+		peaksHashes = append(peaksHashes, hash)
 	}
 
 	if len(peaksHashes) == 0 {
@@ -381,7 +418,7 @@ func (m *Proof) CalculateRoot() ([]byte, error) {
 // CalculateRootWithNewLeaf calculates and returns a new root provided a new leaf element, new position and new MMRsize.
 // from merkle proof of leaf n to calculate merkle root of n + 1 leaves. By observing the MMR construction graph we know
 // it is possible. https://github.com/jjyr/merkle-mountain-range#construct this is kinda tricky, but it works, and useful
-func (m *Proof) CalculateRootWithNewLeaf(leaves []Leaf, newIndex uint64, newElem []byte, newMMRSize uint64) ([]byte, error) {
+func (m *Proof) CalculateRootWithNewLeaf(leaves []types.Leaf, newIndex uint64, newElem []byte, newMMRSize uint64) ([]byte, error) {
 	newPos := LeafIndexToPos(newIndex)
 	posHeight := posHeightInTree(newPos)
 	nextHeight := posHeightInTree(newPos + 1)
@@ -403,11 +440,11 @@ func (m *Proof) CalculateRootWithNewLeaf(leaves []Leaf, newIndex uint64, newElem
 		iter := NewIterator()
 		iter.Items = peaksHashes
 		m.proof = iter
-		m.Leaves = []Leaf{{Index: newIndex, Hash: newElem}}
+		m.Leaves = []types.Leaf{{Index: newIndex, Hash: newElem}}
 		m.mmrSize = newMMRSize
 		return m.CalculateRoot()
 	}
-	pushLeaf(&leaves, Leaf{Index: newIndex, Hash: newElem})
+	pushLeaf(&leaves, types.Leaf{Index: newIndex, Hash: newElem})
 	m.Leaves = leaves
 	m.mmrSize = newMMRSize
 	return m.CalculateRoot()
@@ -425,7 +462,7 @@ func (m *Proof) Verify(root []byte) bool {
 	return reflect.DeepEqual(calculatedRoot, root)
 }
 
-func (m *Proof) calculatePeaksHashes(leaves []Leaf, mmrSize uint64, proofs *Iterator) ([][]byte, error) {
+func (m *Proof) calculatePeaksHashes(leaves []types.Leaf, mmrSize uint64, proofs *Iterator) ([][]byte, error) {
 	// special handle the only 1 Hash Proof
 	if mmrSize == 1 && len(leaves) == 1 && LeafIndexToPos(leaves[0].Index) == 0 {
 		var items [][]byte
@@ -443,7 +480,7 @@ func (m *Proof) calculatePeaksHashes(leaves []Leaf, mmrSize uint64, proofs *Iter
 	peaks := getPeaks(mmrSize)
 	var peaksHashes [][]byte
 	for _, peaksPos := range peaks {
-		lvs := takeWhileVec(&leaves, func(l Leaf) bool {
+		lvs := takeWhileVec(&leaves, func(l types.Leaf) bool {
 			return LeafIndexToPos(l.Index) <= peaksPos
 		})
 
@@ -486,7 +523,7 @@ func (m *Proof) calculatePeaksHashes(leaves []Leaf, mmrSize uint64, proofs *Iter
 	return peaksHashes, nil
 }
 
-func takeWhileVec(v *[]Leaf, p func(Leaf) bool) []Leaf {
+func takeWhileVec(v *[]types.Leaf, p func(types.Leaf) bool) []types.Leaf {
 	vCopy := *v
 	for i := 0; i < len(vCopy); i++ {
 		if !p(vCopy[i]) {

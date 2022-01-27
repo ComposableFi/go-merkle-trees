@@ -6,6 +6,7 @@ import (
 	"sort"
 
 	"github.com/ComposableFi/go-merkle-trees/helpers"
+	"github.com/ComposableFi/go-merkle-trees/types"
 )
 
 // FromLeaves clones the leaves and builds the tree from them
@@ -37,7 +38,7 @@ func (t *Tree) RootHex() string {
 
 // HelperNodes returns helper nodes required to build a partial tree for the given indices
 // to be able to extract a root from it. Useful in constructing Merkle proofs
-func (t *Tree) HelperNodes(leafIndices []uint32) [][]byte {
+func (t *Tree) HelperNodes(leafIndices []uint64) [][]byte {
 	var helperNodes [][]byte
 	for _, layer := range t.HelperNodeLeaves(leafIndices) {
 		for _, li := range layer {
@@ -49,13 +50,13 @@ func (t *Tree) HelperNodes(leafIndices []uint32) [][]byte {
 
 // HelperNodeLeaves gets all helper nodes required to build a partial merkle tree for the given indices,
 // cloning all required hashes into the resulting vector.
-func (t *Tree) HelperNodeLeaves(leafIndeceis []uint32) [][]Leaf {
-	var helperNodes [][]Leaf
+func (t *Tree) HelperNodeLeaves(leafIndeceis []uint64) [][]types.Leaf {
+	var helperNodes [][]types.Leaf
 	for _, treeLayer := range t.layerLeaves() {
 		siblings := helpers.SiblingIndecies(leafIndeceis)
 		helperIndices := helpers.Difference(siblings, leafIndeceis)
 
-		var helpersLayer []Leaf
+		var helpersLayer []types.Leaf
 		for _, idx := range helperIndices {
 			leaf, found := leafAtIndex(treeLayer, idx)
 			if found {
@@ -71,10 +72,10 @@ func (t *Tree) HelperNodeLeaves(leafIndeceis []uint32) [][]Leaf {
 }
 
 // Proof Returns the Merkle proof required to prove the inclusion of items in a data set.
-func (t *Tree) Proof(leafIndices []uint32) Proof {
+func (t *Tree) Proof(leafIndices []uint64) Proof {
 	leavesLen := t.LeavesLen()
 	leaves := t.leaves()
-	var proofLeaves []Leaf
+	var proofLeaves []types.Leaf
 
 	for _, index := range leafIndices {
 		for _, leaf := range leaves {
@@ -87,7 +88,7 @@ func (t *Tree) Proof(leafIndices []uint32) Proof {
 	return NewProof(proofLeaves, t.HelperNodes(leafIndices), leavesLen, t.hasher)
 }
 
-// Insert inserts a new leaf. Please note it won't modify the root just yet; For the changes
+// Insert inserts a new types.Leaf. Please note it won't modify the root just yet; For the changes
 // to be applied to the root, [`MerkleTree::commit`] method should be called first. To get the
 // root of the new tree without applying the changes, you can use
 func (t *Tree) Insert(leaf []byte) {
@@ -162,17 +163,17 @@ func (t *Tree) BaseLeaves() [][]byte {
 }
 
 // LeavesLen returns the number of leaves in the tree.
-func (t *Tree) LeavesLen() uint32 {
+func (t *Tree) LeavesLen() uint64 {
 	leaves := t.leaves()
-	return uint32(len(leaves))
+	return uint64(len(leaves))
 }
 
 // leaves returns leaves of the current working tree
-func (t *Tree) leaves() []Leaf {
+func (t *Tree) leaves() []types.Leaf {
 	if len(t.layerLeaves()) > 0 {
 		return t.layerLeaves()[0]
 	}
-	return []Leaf{}
+	return []types.Leaf{}
 }
 
 // layers returns the whole tree, where the first layer is leaves and
@@ -182,7 +183,7 @@ func (t *Tree) layers() [][][]byte {
 }
 
 // layerLeaves returns leaves of the current working tree
-func (t *Tree) layerLeaves() [][]Leaf {
+func (t *Tree) layerLeaves() [][]types.Leaf {
 	return t.currentWorkingTree.layers
 }
 
@@ -193,17 +194,17 @@ func (t *Tree) uncommittedDiff() (PartialTree, error) {
 		return PartialTree{}, nil
 	}
 	commitedLeavesCount := t.LeavesLen()
-	var shadowIndecies []uint32
+	var shadowIndecies []uint64
 	for i := range t.UncommittedLeaves {
-		shadowIndecies = append(shadowIndecies, commitedLeavesCount+uint32(i))
+		shadowIndecies = append(shadowIndecies, commitedLeavesCount+uint64(i))
 	}
-	var shadowNodeLeaves []Leaf
+	var shadowNodeLeaves []types.Leaf
 	for i := 0; i < len(shadowIndecies); i++ {
-		x := Leaf{Index: shadowIndecies[i], Hash: t.UncommittedLeaves[i]}
+		x := types.Leaf{Index: shadowIndecies[i], Hash: t.UncommittedLeaves[i]}
 		shadowNodeLeaves = append(shadowNodeLeaves, x)
 	}
 	partialTreeLeaves := t.HelperNodeLeaves(shadowIndecies)
-	leavesInNewTree := t.LeavesLen() + uint32(len(t.UncommittedLeaves))
+	leavesInNewTree := t.LeavesLen() + uint64(len(t.UncommittedLeaves))
 	uncommittedTreeDepth := treeDepth(leavesInNewTree)
 	if len(partialTreeLeaves) == 0 {
 		partialTreeLeaves = append(partialTreeLeaves, shadowNodeLeaves)
@@ -217,34 +218,34 @@ func (t *Tree) uncommittedDiff() (PartialTree, error) {
 	return tree.build(partialTreeLeaves, uncommittedTreeDepth)
 }
 
-// leafAtIndex returns leaf object at the index
-func leafAtIndex(leavesAndHash []Leaf, index uint32) (Leaf, bool) {
+// leafAtIndex returns types.Leaf object at the index
+func leafAtIndex(leavesAndHash []types.Leaf, index uint64) (types.Leaf, bool) {
 	for _, l := range leavesAndHash {
 		if l.Index == index {
 			return l, true
 		}
 	}
-	return Leaf{}, false
+	return types.Leaf{}, false
 }
 
 // layerAtIndex returns layer object at the index
-func layerAtIndex(layers [][]Leaf, index uint32) ([]Leaf, bool) {
+func layerAtIndex(layers [][]types.Leaf, index uint64) ([]types.Leaf, bool) {
 	if len(layers) > int(index) {
 		return layers[index], true
 	}
-	return []Leaf{}, false
+	return []types.Leaf{}, false
 }
 
 // sortLeavesByIndex sorts leaves by their index
-func sortLeavesByIndex(li []Leaf) {
+func sortLeavesByIndex(li []types.Leaf) {
 	sort.Slice(li, func(i, j int) bool { return li[i].Index < li[j].Index })
 
 }
 
 // treeDepth returns the depth of a tree
-func treeDepth(leavesCount uint32) uint32 {
+func treeDepth(leavesCount uint64) uint64 {
 	if leavesCount == 1 {
 		return 1
 	}
-	return uint32(math.Ceil(math.Log2(float64(leavesCount))))
+	return uint64(math.Ceil(math.Log2(float64(leavesCount))))
 }
