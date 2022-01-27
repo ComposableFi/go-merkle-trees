@@ -49,11 +49,7 @@ func main() {
 	}
 	fmt.Printf("merkle proof verify result is %v\n", verifyResult)
 
-	var leavesMmr []types.Leaf
-	for i := 0; i < len(leavesI); i++ {
-		h, _ := hasher.Sha256Hasher{}.Hash(leavesI[i])
-		leavesMmr = append(leavesMmr, types.Leaf{Index: uint64(i), Hash: h})
-	}
+	leavesMmr := []types.Leaf{{Index: uint64(0), Hash: leavesI[0]}}
 	mmrTree := mmr.NewMMR(0, mmr.NewMemStore(), leavesMmr, hasher.Sha256Hasher{})
 	var positions []uint64
 	for i := 0; i < len(leavesI); i++ {

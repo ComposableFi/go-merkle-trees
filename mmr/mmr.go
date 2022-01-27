@@ -20,8 +20,9 @@ type MMR struct {
 	leaves []types.Leaf
 }
 
-// NewMMR returns a new MMR type. It takes three arguments. It takes the mmrSize, Store and Merge interfaces. It accepts
-// any type that satisfies both the Store and Merge interfaces.
+// NewMMR returns a new MMR type. It takes four arguments. It takes the mmrSize, Store, leaves and Hasher interfaces. It accepts
+// any type that satisfies both the Store and Hasher interfaces. The parameter 'leaves' are leaves whose proof of inclusion
+// would be verified.
 func NewMMR(mmrSize uint64, s Store, leaves []types.Leaf, m types.Hasher) *MMR {
 	return &MMR{
 		size:   mmrSize,
