@@ -321,10 +321,10 @@ func Test7LeafVerify(t *testing.T) {
 func Test15LeafVerify(t *testing.T) {
 	fmt.Println("                                    15-leaf MMR:                            ")
 	fmt.Println("                                                                            ")
-	fmt.Println("    Height 4 |             15                                               ")
-	fmt.Println("    Height 3 |      7             14                22                      ")
-	fmt.Println("    Height 2 |   3      6     10      13       18        21       25        ")
-	fmt.Println("    Height 1 | 1  2   4  5   8  9   11  12   16  17   19   20   23  24  26  ")
+	fmt.Println("    Height 3 |             14                                               ")
+	fmt.Println("    Height 2 |      6             13                21                      ")
+	fmt.Println("    Height 1 |   2      5     9      12       17        20       24        ")
+	fmt.Println("    Height 0 | 0  1   3  4   7  8   10  11   15  16   18   19   22  23  25  ")
 	fmt.Println("             | |--|---|--|---|--|-----|---|---|---|----|---|----|---|---|---")
 	fmt.Println("Hash indices | 0  1   2  3   4  5     6   7   8   9   10   11   12  13  14  ")
 
@@ -332,32 +332,32 @@ func Test15LeafVerify(t *testing.T) {
 	//  - For leaf nodes, node hash is the SCALE-encoding of the leaf data.
 	//  - For parent nodes, node hash is the hash of it's children (left, right).
 	//
-	// 0xda5e6d0616e05c6a6348605a37ca33493fc1a15ad1e6a405ee05c17843fdafed // 1  LEAF NODE
-	// 0xff5d891b28463a3440e1b650984685efdf260e482cb3807d53c49090841e755f // 2  LEAF NODE
-	// 0xbc54778fab79f586f007bd408dca2c4aa07959b27d1f2c8f4f2549d1fcfac8f8 // 3  PARENT[1, 2] NODE
-	// 0x7a84d84807ce4bbff8fb84667edf82aff5f2c5eb62e835f32093ee19a43c2de7 // 4  LEAF NODE
-	// 0x27d8f4221cd6f7fc141ea20844c92aa8f647ac520853fbded619a46b1146ab8a // 5  LEAF NODE
-	// 0x00b0046bd2d63fcb760cf50a262448bb2bbf9a264b0b0950d8744044edf00dc3 // 6  PARENT[4, 5] NODE
-	// 0xe53ee36ba6c068b1a6cfef7862fed5005df55615e1c9fa6eeefe08329ac4b94b // 7  PARENT[3, 6] NODE
-	// 0x99af07747700389aba6e6cb0ee5d553fa1241688d9f96e48987bca1d7f275cbe // 8  LEAF NODE
-	// 0xc09d4a008a0f1ef37860bef33ec3088ccd94268c0bfba7ff1b3c2a1075b0eb92 // 9  LEAF NODE
-	// 0xdad09f50b41822fc5ecadc25b08c3a61531d4d60e962a5aa0b6998fad5c37c5e // 10 PARENT[8, 9] NODE
-	// 0xaf3327deed0515c8d1902c9b5cd375942d42f388f3bfe3d1cd6e1b86f9cc456c // 11 LEAF NODE
-	// 0x643609ae1433f1d6caf366bb917873c3a3d82d7dc30e1c5e9a224d537f630dab // 12 LEAF NODE
-	// 0x7fde31376facc58f621bacd80dfd77166544c84155bf1b82bf32281b93feaf78 // 13 PARENT[11, 12] NODE
-	// 0xa63c4ec7ed257b6b4ab4fab3676f70b3b7c717357b537c0321d766de0e9e5312 // 14 PARENT[10, 13] NODE
-	// 0xea97f06e80ac768687e72d4224999a51d272e1b4cafcbc64bd3ce63357119954 // 15 PARENT[7, 14] NODE
-	// 0xbf5f579a06beced3256538b161b5096839db4b94ea1d3862bbe1fa5a2182e074 // 16 LEAF NODE
-	// 0x7d8a0fe1021702eada6c608f3e09f833b63f21fdfe60f3bbb3401d5add4479af // 17 LEAF NODE
-	// 0xa9ef6dd0b19d56f48a05c2475629c59713d0a992d335917135029432d611533d // 18 PARENT[16, 17] NODE
-	// 0x2fd49d6e84591c6cc1fc38189b806dec1a1cb00c62727b63ac1cb9a37022c0fe // 19 LEAF NODE
-	// 0x365f9e095800bd03add9be88b7f7bb06ff644ac2b77ce5da6a7c77e2fb19f1fb // 20 LEAF NODE
-	// 0x3f7b0534bf60f62057a1ab9a0bf4751014d4d464245b5a7ad86801c9bac21b15 // 21 PARENT[19, 20] NODE
-	// 0x16c5d5eb80eec816ca1804cd15705ac2418325b51b57a272e5e7f119e197c31f // 22 PARENT[18, 21] NODE
-	// 0x94014b81bc56d64cac8dcde8eee47da0ed9b1319dccd9e86ad8d2266d8ef060a // 23 LEAF NODE
-	// 0x883f1aca23002690575957cc85663774bbd3b9549ba5f0ee0fcc8aed9c88cf99 // 24 LEAF NODE
-	// 0x1ce766309c74f07f3dc0839080f518ddcb6500d31fc4e0cf21534bad0785dfc4 // 25 PARENT[23, 24] NODE
-	// 0x0a73e5a8443de3fcb6f918d786ad6dece6733ec936aa6b1b79beaab19e269d68 // 26 LEAF NODE
+	// 0xda5e6d0616e05c6a6348605a37ca33493fc1a15ad1e6a405ee05c17843fdafed // 0  LEAF NODE
+	// 0xff5d891b28463a3440e1b650984685efdf260e482cb3807d53c49090841e755f // 1  LEAF NODE
+	// 0xbc54778fab79f586f007bd408dca2c4aa07959b27d1f2c8f4f2549d1fcfac8f8 // 2  PARENT[1, 2] NODE
+	// 0x7a84d84807ce4bbff8fb84667edf82aff5f2c5eb62e835f32093ee19a43c2de7 // 3  LEAF NODE
+	// 0x27d8f4221cd6f7fc141ea20844c92aa8f647ac520853fbded619a46b1146ab8a // 4  LEAF NODE
+	// 0x00b0046bd2d63fcb760cf50a262448bb2bbf9a264b0b0950d8744044edf00dc3 // 5  PARENT[4, 5] NODE
+	// 0xe53ee36ba6c068b1a6cfef7862fed5005df55615e1c9fa6eeefe08329ac4b94b // 6  PARENT[3, 6] NODE
+	// 0x99af07747700389aba6e6cb0ee5d553fa1241688d9f96e48987bca1d7f275cbe // 7  LEAF NODE
+	// 0xc09d4a008a0f1ef37860bef33ec3088ccd94268c0bfba7ff1b3c2a1075b0eb92 // 8  LEAF NODE
+	// 0xdad09f50b41822fc5ecadc25b08c3a61531d4d60e962a5aa0b6998fad5c37c5e // 9 PARENT[8, 9] NODE
+	// 0xaf3327deed0515c8d1902c9b5cd375942d42f388f3bfe3d1cd6e1b86f9cc456c // 10 LEAF NODE
+	// 0x643609ae1433f1d6caf366bb917873c3a3d82d7dc30e1c5e9a224d537f630dab // 11 LEAF NODE
+	// 0x7fde31376facc58f621bacd80dfd77166544c84155bf1b82bf32281b93feaf78 // 12 PARENT[11, 12] NODE
+	// 0xa63c4ec7ed257b6b4ab4fab3676f70b3b7c717357b537c0321d766de0e9e5312 // 13 PARENT[10, 13] NODE
+	// 0xea97f06e80ac768687e72d4224999a51d272e1b4cafcbc64bd3ce63357119954 // 14 PARENT[7, 14] NODE
+	// 0xbf5f579a06beced3256538b161b5096839db4b94ea1d3862bbe1fa5a2182e074 // 15 LEAF NODE
+	// 0x7d8a0fe1021702eada6c608f3e09f833b63f21fdfe60f3bbb3401d5add4479af // 16 LEAF NODE
+	// 0xa9ef6dd0b19d56f48a05c2475629c59713d0a992d335917135029432d611533d // 17 PARENT[16, 17] NODE
+	// 0x2fd49d6e84591c6cc1fc38189b806dec1a1cb00c62727b63ac1cb9a37022c0fe // 18 LEAF NODE
+	// 0x365f9e095800bd03add9be88b7f7bb06ff644ac2b77ce5da6a7c77e2fb19f1fb // 19 LEAF NODE
+	// 0x3f7b0534bf60f62057a1ab9a0bf4751014d4d464245b5a7ad86801c9bac21b15 // 20 PARENT[19, 20] NODE
+	// 0x16c5d5eb80eec816ca1804cd15705ac2418325b51b57a272e5e7f119e197c31f // 21 PARENT[18, 21] NODE
+	// 0x94014b81bc56d64cac8dcde8eee47da0ed9b1319dccd9e86ad8d2266d8ef060a // 22 LEAF NODE
+	// 0x883f1aca23002690575957cc85663774bbd3b9549ba5f0ee0fcc8aed9c88cf99 // 23 LEAF NODE
+	// 0x1ce766309c74f07f3dc0839080f518ddcb6500d31fc4e0cf21534bad0785dfc4 // 24 PARENT[23, 24] NODE
+	// 0x0a73e5a8443de3fcb6f918d786ad6dece6733ec936aa6b1b79beaab19e269d68 // 25 LEAF NODE
 
 	tests := map[string]struct {
 		leafIndex uint64
@@ -365,21 +365,21 @@ func Test15LeafVerify(t *testing.T) {
 		leaf      []byte
 		proofs    [][]byte
 	}{
-		"leaf index 7 (node 12)": {7, 15,
+		"leaf index 7 (node 11)": {7, 15,
 			hexToByte("643609ae1433f1d6caf366bb917873c3a3d82d7dc30e1c5e9a224d537f630dab"),
 			[][]byte{
-				hexToByte("af3327deed0515c8d1902c9b5cd375942d42f388f3bfe3d1cd6e1b86f9cc456c"), // 11
-				hexToByte("dad09f50b41822fc5ecadc25b08c3a61531d4d60e962a5aa0b6998fad5c37c5e"), // 10
-				hexToByte("e53ee36ba6c068b1a6cfef7862fed5005df55615e1c9fa6eeefe08329ac4b94b"), // 7
+				hexToByte("af3327deed0515c8d1902c9b5cd375942d42f388f3bfe3d1cd6e1b86f9cc456c"), // 10
+				hexToByte("dad09f50b41822fc5ecadc25b08c3a61531d4d60e962a5aa0b6998fad5c37c5e"), // 9
+				hexToByte("e53ee36ba6c068b1a6cfef7862fed5005df55615e1c9fa6eeefe08329ac4b94b"), // 6
 				mergeKeccak256( // bag right hand side peaks keccak(right, left)
 					mergeKeccak256(
-						hexToByte("0a73e5a8443de3fcb6f918d786ad6dece6733ec936aa6b1b79beaab19e269d68"), // 26
-						hexToByte("1ce766309c74f07f3dc0839080f518ddcb6500d31fc4e0cf21534bad0785dfc4"), // 25
+						hexToByte("0a73e5a8443de3fcb6f918d786ad6dece6733ec936aa6b1b79beaab19e269d68"), // 25
+						hexToByte("1ce766309c74f07f3dc0839080f518ddcb6500d31fc4e0cf21534bad0785dfc4"), // 24
 					),
-					hexToByte("16c5d5eb80eec816ca1804cd15705ac2418325b51b57a272e5e7f119e197c31f"), // 22
+					hexToByte("16c5d5eb80eec816ca1804cd15705ac2418325b51b57a272e5e7f119e197c31f"), // 21
 				),
 			}},
-		"leaf index 8 (node 16)": {8, 15,
+		"leaf index 8 (node 15)": {8, 15,
 			hexToByte("bf5f579a06beced3256538b161b5096839db4b94ea1d3862bbe1fa5a2182e074"),
 			[][]byte{
 				hexToByte("ea97f06e80ac768687e72d4224999a51d272e1b4cafcbc64bd3ce63357119954"), // 15

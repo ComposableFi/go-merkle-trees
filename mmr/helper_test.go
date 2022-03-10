@@ -20,7 +20,7 @@ func TestPosHeightInTree(t *testing.T) {
 	}
 
 	for name, test := range tests {
-		got := posHeightInTree(test.input)
+		got := PosHeightInTree(test.input)
 		if got != test.want {
 			t.Errorf("%s: want %v  got %v", name, test.want, got)
 		}
@@ -44,7 +44,7 @@ func TestGetPeaks(t *testing.T) {
 	}
 
 	for name, test := range tests {
-		got := getPeaks(test.input)
+		got := GetPeaks(test.input)
 		if !reflect.DeepEqual(got, test.want) {
 			t.Errorf("%s: want %v  got %v", name, test.want, got)
 		}
