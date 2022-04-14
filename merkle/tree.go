@@ -5,7 +5,6 @@ import (
 	"math"
 	"sort"
 
-	"github.com/ComposableFi/go-merkle-trees/helpers"
 	"github.com/ComposableFi/go-merkle-trees/types"
 )
 
@@ -53,8 +52,8 @@ func (t *Tree) HelperNodes(leafIndices []uint64) [][]byte {
 func (t *Tree) HelperNodeLeaves(leafIndeceis []uint64) [][]types.Leaf {
 	var helperNodes [][]types.Leaf
 	for _, treeLayer := range t.layerLeaves() {
-		siblings := helpers.SiblingIndecies(leafIndeceis)
-		helperIndices := helpers.Difference(siblings, leafIndeceis)
+		siblings := SiblingIndecies(leafIndeceis)
+		helperIndices := SliceDifference(siblings, leafIndeceis)
 
 		var helpersLayer []types.Leaf
 		for _, idx := range helperIndices {
@@ -66,7 +65,7 @@ func (t *Tree) HelperNodeLeaves(leafIndeceis []uint64) [][]types.Leaf {
 
 		helperNodes = append(helperNodes, helpersLayer)
 
-		leafIndeceis = helpers.ParentIndecies(leafIndeceis)
+		leafIndeceis = ParentIndecies(leafIndeceis)
 	}
 	return helperNodes
 }

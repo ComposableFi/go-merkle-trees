@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/ComposableFi/go-merkle-trees/hasher"
-	"github.com/ComposableFi/go-merkle-trees/helpers"
 	"github.com/ComposableFi/go-merkle-trees/merkle"
 	"github.com/stretchr/testify/require"
 )
@@ -303,7 +302,7 @@ func BenchmarkSiblingIndices(b *testing.B) {
 	mtree.Append(leaves)
 	shadowIndices := mtree.GetShadowIndecies()
 	for n := 0; n < b.N; n++ {
-		helpers.SiblingIndecies(shadowIndices)
+		merkle.SiblingIndecies(shadowIndices)
 	}
 }
 
@@ -313,7 +312,7 @@ func BenchmarkParentIndices(b *testing.B) {
 	mtree.Append(leaves)
 	shadowIndices := mtree.GetShadowIndecies()
 	for n := 0; n < b.N; n++ {
-		helpers.ParentIndecies(shadowIndices)
+		merkle.ParentIndecies(shadowIndices)
 	}
 }
 

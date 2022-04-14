@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"math"
 
-	"github.com/ComposableFi/go-merkle-trees/helpers"
 	"github.com/ComposableFi/go-merkle-trees/types"
 )
 
@@ -91,16 +90,16 @@ func proofIndeciesByLayers(sortedLeafIndices []uint64, leavsCount uint64) [][]ui
 	unevenLayers := unevenLayers(leavsCount)
 	var proofIndices [][]uint64
 	for layerIndex := uint64(0); layerIndex < depth; layerIndex++ {
-		siblingIndices := helpers.SiblingIndecies(sortedLeafIndices)
+		siblingIndices := SiblingIndecies(sortedLeafIndices)
 		leavesCount := unevenLayers[layerIndex]
 		layerLastNodeIndex := sortedLeafIndices[len(sortedLeafIndices)-1]
 		if layerLastNodeIndex == uint64(leavesCount)-1 {
-			_, siblingIndices = helpers.PopFromUint32Queue(siblingIndices)
+			_, siblingIndices = popFromIndexQueue(siblingIndices)
 		}
 
-		proofNodesIndices := helpers.Difference(siblingIndices, sortedLeafIndices)
+		proofNodesIndices := SliceDifference(siblingIndices, sortedLeafIndices)
 		proofIndices = append(proofIndices, proofNodesIndices)
-		sortedLeafIndices = helpers.ParentIndecies(sortedLeafIndices)
+		sortedLeafIndices = ParentIndecies(sortedLeafIndices)
 	}
 	return proofIndices
 

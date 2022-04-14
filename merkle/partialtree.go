@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"github.com/ComposableFi/go-merkle-trees/hasher"
-	"github.com/ComposableFi/go-merkle-trees/helpers"
 	"github.com/ComposableFi/go-merkle-trees/types"
 )
 
@@ -45,7 +44,7 @@ func (pt *PartialTree) buildTree(partialLayers [][]types.Leaf, fullTreeDepth uin
 		// freeup for next round
 		currentLayer = make([]types.Leaf, 0)
 
-		parentLayerIndices := helpers.ParentIndecies(indices)
+		parentLayerIndices := ParentIndecies(indices)
 
 		for i := 0; i < len(parentLayerIndices); i++ {
 			parnetNodeIndex := parentLayerIndices[i]
