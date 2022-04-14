@@ -7,24 +7,10 @@ func PopFromUint32Queue(slice []uint64) (uint64, []uint64) {
 
 }
 
-// PopFromInterfaceQueue pops front element of interface slice
-func PopFromInterfaceQueue(slice [][]byte) ([]byte, [][]byte) {
-	popElem, newSlice := slice[0], slice[1:]
-	return popElem, newSlice
-
-}
-
-// PopTwoElementsFromEndInterfaceQueue pops last two element of uint64 slice
-func PopTwoElementsFromEndInterfaceQueue(slice [][]byte) ([]byte, []byte, [][]byte) {
-	sliceLen := len(slice)
-	lastElem, beforeLastElem, newSlice := slice[sliceLen-1], slice[sliceLen-2], slice[:sliceLen-2]
-	return beforeLastElem, lastElem, newSlice
-}
-
 // Uint32SliceContains checks if a slice contains specific uint64 number
 func Uint32SliceContains(slice []uint64, num uint64) bool {
-	for _, v := range slice {
-		if v == num {
+	for i := 0; i < len(slice); i++ {
+		if slice[i] == num {
 			return true
 		}
 	}
@@ -35,17 +21,17 @@ func Uint32SliceContains(slice []uint64, num uint64) bool {
 func Difference(slice1 []uint64, slice2 []uint64) []uint64 {
 	var diff []uint64
 
-	for _, s1 := range slice1 {
+	for i := 0; i < len(slice1); i++ {
 		found := false
-		for _, s2 := range slice2 {
-			if s1 == s2 {
+		for j := 0; j < len(slice2); j++ {
+			if slice1[i] == slice2[j] {
 				found = true
 				break
 			}
 		}
 		// String not found. We add it to return slice
 		if !found {
-			diff = append(diff, s1)
+			diff = append(diff, slice1[i])
 		}
 	}
 

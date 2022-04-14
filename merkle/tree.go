@@ -193,16 +193,10 @@ func (t *Tree) uncommittedDiff() (PartialTree, error) {
 	if len(t.UncommittedLeaves) == 0 {
 		return PartialTree{}, nil
 	}
-	commitedLeavesCount := t.LeavesLen()
-	var shadowIndecies []uint64
-	for i := range t.UncommittedLeaves {
-		shadowIndecies = append(shadowIndecies, commitedLeavesCount+uint64(i))
-	}
-	var shadowNodeLeaves []types.Leaf
-	for i := 0; i < len(shadowIndecies); i++ {
-		x := types.Leaf{Index: shadowIndecies[i], Hash: t.UncommittedLeaves[i]}
-		shadowNodeLeaves = append(shadowNodeLeaves, x)
-	}
+
+	shadowIndecies := t.GetShadowIndecies()
+	shadowNodeLeaves := t.GetShadowLeaves(shadowIndecies)
+
 	partialTreeLeaves := t.HelperNodeLeaves(shadowIndecies)
 	leavesInNewTree := t.LeavesLen() + uint64(len(t.UncommittedLeaves))
 	uncommittedTreeDepth := treeDepth(leavesInNewTree)
@@ -218,9 +212,34 @@ func (t *Tree) uncommittedDiff() (PartialTree, error) {
 	return tree.build(partialTreeLeaves, uncommittedTreeDepth)
 }
 
+// GetShadowIndecies returns shadow indices of the uncommited leaves
+func (t *Tree) GetShadowIndecies() []uint64 {
+	if len(t.UncommittedLeaves) == 0 {
+		return []uint64{}
+	}
+
+	commitedLeavesCount := t.LeavesLen()
+	var shadowIndecies []uint64
+	for i := 0; i < len(t.UncommittedLeaves); i++ {
+		shadowIndecies = append(shadowIndecies, commitedLeavesCount+uint64(i))
+	}
+	return shadowIndecies
+}
+
+// GetShadowLeaves returns shadow leaves of the uncommited leaves
+func (t *Tree) GetShadowLeaves(shadowIndecies []uint64) []types.Leaf {
+	var shadowNodeLeaves []types.Leaf
+	for i := 0; i < len(shadowIndecies); i++ {
+		leaf := types.Leaf{Index: shadowIndecies[i], Hash: t.UncommittedLeaves[i]}
+		shadowNodeLeaves = append(shadowNodeLeaves, leaf)
+	}
+	return shadowNodeLeaves
+}
+
 // leafAtIndex returns types.Leaf object at the index
 func leafAtIndex(leavesAndHash []types.Leaf, index uint64) (types.Leaf, bool) {
-	for _, l := range leavesAndHash {
+	for i := 0; i < len(leavesAndHash); i++ {
+		l := leavesAndHash[i]
 		if l.Index == index {
 			return l, true
 		}
@@ -239,7 +258,6 @@ func layerAtIndex(layers [][]types.Leaf, index uint64) ([]types.Leaf, bool) {
 // sortLeavesByIndex sorts leaves by their index
 func sortLeavesByIndex(li []types.Leaf) {
 	sort.Slice(li, func(i, j int) bool { return li[i].Index < li[j].Index })
-
 }
 
 // treeDepth returns the depth of a tree

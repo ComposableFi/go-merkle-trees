@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/ComposableFi/go-merkle-trees/hasher"
+	"github.com/ComposableFi/go-merkle-trees/helpers"
 	"github.com/ComposableFi/go-merkle-trees/merkle"
 	"github.com/stretchr/testify/require"
 )
@@ -13,14 +14,9 @@ func TestNewMerkleTree(t *testing.T) {
 }
 
 func TestFromLeaves(t *testing.T) {
-	aHash, err := hasher.Sha256Hasher{}.Hash([]byte("a"))
-	require.NoError(t, err)
-	bHash, err := hasher.Sha256Hasher{}.Hash([]byte("b"))
-	require.NoError(t, err)
-	cHash, err := hasher.Sha256Hasher{}.Hash([]byte("c"))
+	leaves, err := sampleHashes()
 	require.NoError(t, err)
 
-	leaves := [][]byte{aHash, bHash, cHash}
 	mtree := merkle.NewTree(hasher.Sha256Hasher{})
 	mtree, err = mtree.FromLeaves(leaves)
 	require.NoError(t, err)
@@ -28,14 +24,9 @@ func TestFromLeaves(t *testing.T) {
 }
 
 func TestRoot(t *testing.T) {
-	aHash, err := hasher.Sha256Hasher{}.Hash([]byte("a"))
-	require.NoError(t, err)
-	bHash, err := hasher.Sha256Hasher{}.Hash([]byte("b"))
-	require.NoError(t, err)
-	cHash, err := hasher.Sha256Hasher{}.Hash([]byte("c"))
+	leaves, err := sampleHashes()
 	require.NoError(t, err)
 
-	leaves := [][]byte{aHash, bHash, cHash}
 	mtree := merkle.NewTree(hasher.Sha256Hasher{})
 	mtree, err = mtree.FromLeaves(leaves)
 	require.NoError(t, err)
@@ -254,4 +245,84 @@ func TestRollbackPreviousCommit(t *testing.T) {
 
 	merkleTree.Rollback()
 	require.Equal(t, "1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2", merkleTree.RootHex())
+}
+
+func sampleHashes() ([][]byte, error) {
+	aHash, err := hasher.Sha256Hasher{}.Hash([]byte("a"))
+	if err != nil {
+		return nil, err
+	}
+	bHash, err := hasher.Sha256Hasher{}.Hash([]byte("b"))
+	if err != nil {
+		return nil, err
+	}
+	cHash, err := hasher.Sha256Hasher{}.Hash([]byte("c"))
+	if err != nil {
+		return nil, err
+	}
+	return [][]byte{aHash, bHash, cHash}, nil
+}
+
+// Benchmarking
+func BenchmarkSha256Hash(b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		hasher.Sha256Hasher{}.Hash([]byte("a"))
+	}
+}
+
+func BenchmarkFromLeaves(b *testing.B) {
+	leaves, _ := sampleHashes()
+	for n := 0; n < b.N; n++ {
+		mtree := merkle.NewTree(hasher.Sha256Hasher{})
+		mtree.FromLeaves(leaves)
+	}
+}
+
+func BenchmarkShadowIndices(b *testing.B) {
+	leaves, _ := sampleHashes()
+	mtree := merkle.NewTree(hasher.Sha256Hasher{})
+	mtree.Append(leaves)
+	for n := 0; n < b.N; n++ {
+		mtree.GetShadowIndecies()
+	}
+}
+
+func BenchmarkShadowLeaves(b *testing.B) {
+	leaves, _ := sampleHashes()
+	mtree := merkle.NewTree(hasher.Sha256Hasher{})
+	mtree.Append(leaves)
+	shadowIndices := mtree.GetShadowIndecies()
+	for n := 0; n < b.N; n++ {
+		mtree.GetShadowLeaves(shadowIndices)
+	}
+}
+
+func BenchmarkSiblingIndices(b *testing.B) {
+	leaves, _ := sampleHashes()
+	mtree := merkle.NewTree(hasher.Sha256Hasher{})
+	mtree.Append(leaves)
+	shadowIndices := mtree.GetShadowIndecies()
+	for n := 0; n < b.N; n++ {
+		helpers.SiblingIndecies(shadowIndices)
+	}
+}
+
+func BenchmarkParentIndices(b *testing.B) {
+	leaves, _ := sampleHashes()
+	mtree := merkle.NewTree(hasher.Sha256Hasher{})
+	mtree.Append(leaves)
+	shadowIndices := mtree.GetShadowIndecies()
+	for n := 0; n < b.N; n++ {
+		helpers.ParentIndecies(shadowIndices)
+	}
+}
+
+func BenchmarkHelperNodeLeaves(b *testing.B) {
+	leaves, _ := sampleHashes()
+	mtree := merkle.NewTree(hasher.Sha256Hasher{})
+	mtree.Append(leaves)
+	shadowIndices := mtree.GetShadowIndecies()
+	for n := 0; n < b.N; n++ {
+		mtree.HelperNodeLeaves(shadowIndices)
+	}
 }
