@@ -2,8 +2,8 @@ package merkle
 
 import "sort"
 
-// SiblingIndecies returns indecirs of sibling elements
-func SiblingIndecies(idxs []uint64) []uint64 {
+// siblingIndecies returns indecirs of sibling elements
+func siblingIndecies(idxs []uint64) []uint64 {
 	var siblings []uint64
 	for i := 0; i < len(idxs); i++ {
 		siblings = append(siblings, siblingIndex(idxs[i]))
@@ -11,8 +11,8 @@ func SiblingIndecies(idxs []uint64) []uint64 {
 	return siblings
 }
 
-// ParentIndecies returns indecirs of parent elements
-func ParentIndecies(idxs []uint64) []uint64 {
+// parentIndecies returns indecirs of parent elements
+func parentIndecies(idxs []uint64) []uint64 {
 	var parents []uint64
 	for i := 0; i < len(idxs); i++ {
 		parents = append(parents, parentIndex(idxs[i]))

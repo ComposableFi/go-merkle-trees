@@ -52,8 +52,8 @@ func (t *Tree) HelperNodes(leafIndices []uint64) [][]byte {
 func (t *Tree) HelperNodeLeaves(leafIndeceis []uint64) [][]types.Leaf {
 	var helperNodes [][]types.Leaf
 	for _, treeLayer := range t.layerLeaves() {
-		siblings := SiblingIndecies(leafIndeceis)
-		helperIndices := SliceDifference(siblings, leafIndeceis)
+		siblings := siblingIndecies(leafIndeceis)
+		helperIndices := sliceDifference(siblings, leafIndeceis)
 
 		var helpersLayer []types.Leaf
 		for _, idx := range helperIndices {
@@ -65,7 +65,7 @@ func (t *Tree) HelperNodeLeaves(leafIndeceis []uint64) [][]types.Leaf {
 
 		helperNodes = append(helperNodes, helpersLayer)
 
-		leafIndeceis = ParentIndecies(leafIndeceis)
+		leafIndeceis = parentIndecies(leafIndeceis)
 	}
 	return helperNodes
 }
@@ -119,7 +119,7 @@ func (t *Tree) Commit() error {
 // Rollback rolls back one commit and reverts the tree to the previous state.
 // Removes the most recent commit from the history.
 func (t *Tree) Rollback() {
-	_, t.history = PopFromPartialtree(t.history)
+	_, t.history = popFromPartialtree(t.history)
 	t.currentWorkingTree.clear()
 	for _, commit := range t.history {
 		t.currentWorkingTree.mergeUnverified(commit)

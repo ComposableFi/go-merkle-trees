@@ -1,22 +1,21 @@
-package merkle_test
+package merkle
 
 import (
 	"testing"
 
 	"github.com/ComposableFi/go-merkle-trees/hasher"
-	"github.com/ComposableFi/go-merkle-trees/merkle"
 	"github.com/stretchr/testify/require"
 )
 
 func TestNewMerkleTree(t *testing.T) {
-	merkle.NewTree(hasher.Sha256Hasher{})
+	NewTree(hasher.Sha256Hasher{})
 }
 
 func TestFromLeaves(t *testing.T) {
 	leaves, err := sampleHashes()
 	require.NoError(t, err)
 
-	mtree := merkle.NewTree(hasher.Sha256Hasher{})
+	mtree := NewTree(hasher.Sha256Hasher{})
 	mtree, err = mtree.FromLeaves(leaves)
 	require.NoError(t, err)
 	require.Equal(t, [][]byte{}, mtree.UncommittedLeaves)
@@ -26,7 +25,7 @@ func TestRoot(t *testing.T) {
 	leaves, err := sampleHashes()
 	require.NoError(t, err)
 
-	mtree := merkle.NewTree(hasher.Sha256Hasher{})
+	mtree := NewTree(hasher.Sha256Hasher{})
 	mtree, err = mtree.FromLeaves(leaves)
 	require.NoError(t, err)
 
@@ -46,7 +45,7 @@ func TestProof(t *testing.T) {
 		h, _ := hasher.Sha256Hasher{}.Hash([]byte(values[i]))
 		leaves = append(leaves, h)
 	}
-	mtree := merkle.NewTree(hasher.Sha256Hasher{})
+	mtree := NewTree(hasher.Sha256Hasher{})
 	mtree, err := mtree.FromLeaves(leaves)
 	require.NoError(t, err)
 
@@ -62,7 +61,7 @@ func TestProof(t *testing.T) {
 func TestCorrectTreeRoot(t *testing.T) {
 	testData := setupTestData()
 
-	merkleTree, err := merkle.NewTree(hasher.Sha256Hasher{}).FromLeaves(testData.leafHashes)
+	merkleTree, err := NewTree(hasher.Sha256Hasher{}).FromLeaves(testData.leafHashes)
 	require.NoError(t, err)
 	rootHex := merkleTree.RootHex()
 	require.Equal(t, testData.expectedRootHex, rootHex)
@@ -71,7 +70,7 @@ func TestCorrectTreeRoot(t *testing.T) {
 func TestCorrectTreeDepth(t *testing.T) {
 	testData := setupTestData()
 
-	merkleTree, err := merkle.NewTree(hasher.Sha256Hasher{}).FromLeaves(testData.leafHashes)
+	merkleTree, err := NewTree(hasher.Sha256Hasher{}).FromLeaves(testData.leafHashes)
 	require.NoError(t, err)
 	depth := merkleTree.Depth()
 	require.Equal(t, 3, depth)
@@ -85,7 +84,7 @@ func TestCorrectProofRoot(t *testing.T) {
 		"252f10c83610ebca1a059c0bae8255eba2f95be4d1d7bcfa89d7248a82d9f111",
 		"e5a01fee14e0ed5c48714f22180f25ad8365b53f9779f79dc4a3d7e93963f94a",
 	}
-	merkleTree, err := merkle.NewTree(hasher.Sha256Hasher{}).FromLeaves(testData.leafHashes)
+	merkleTree, err := NewTree(hasher.Sha256Hasher{}).FromLeaves(testData.leafHashes)
 	require.NoError(t, err)
 	proof := merkleTree.Proof(indicesToProve)
 	require.Equal(t, expectedProofHashes, proof.ProofHashesHex())
@@ -96,9 +95,9 @@ func TestGetCorrectRootAfterCommit(t *testing.T) {
 	expectedRoot := testData.expectedRootHex
 	leafHashes := testData.leafHashes
 
-	merkleTree, err := merkle.NewTree(hasher.Sha256Hasher{}).FromLeaves([][]byte{})
+	merkleTree, err := NewTree(hasher.Sha256Hasher{}).FromLeaves([][]byte{})
 	require.NoError(t, err)
-	merkleTree2, err := merkle.NewTree(hasher.Sha256Hasher{}).FromLeaves(leafHashes)
+	merkleTree2, err := NewTree(hasher.Sha256Hasher{}).FromLeaves(leafHashes)
 	require.NoError(t, err)
 
 	merkleTree.Append(leafHashes)
@@ -150,7 +149,7 @@ func TestChangeTheResultWenCalledTwice(t *testing.T) {
 		leaves = append(leaves, h)
 	}
 
-	merkleTree := merkle.NewTree(hasher.Sha256Hasher{})
+	merkleTree := NewTree(hasher.Sha256Hasher{})
 
 	// Appending leaves to the tree without committing
 	merkleTree.Append(leaves)
@@ -204,7 +203,7 @@ func TestRollbackPreviousCommit(t *testing.T) {
 		leaves = append(leaves, h)
 	}
 
-	merkleTree := merkle.NewTree(hasher.Sha256Hasher{})
+	merkleTree := NewTree(hasher.Sha256Hasher{})
 	merkleTree.Append(leaves)
 
 	require.Equal(t, []byte{}, merkleTree.Root())
@@ -272,14 +271,14 @@ func BenchmarkSha256Hash(b *testing.B) {
 func BenchmarkFromLeaves(b *testing.B) {
 	leaves, _ := sampleHashes()
 	for n := 0; n < b.N; n++ {
-		mtree := merkle.NewTree(hasher.Sha256Hasher{})
+		mtree := NewTree(hasher.Sha256Hasher{})
 		mtree.FromLeaves(leaves)
 	}
 }
 
 func BenchmarkShadowIndices(b *testing.B) {
 	leaves, _ := sampleHashes()
-	mtree := merkle.NewTree(hasher.Sha256Hasher{})
+	mtree := NewTree(hasher.Sha256Hasher{})
 	mtree.Append(leaves)
 	for n := 0; n < b.N; n++ {
 		mtree.GetShadowIndecies()
@@ -288,7 +287,7 @@ func BenchmarkShadowIndices(b *testing.B) {
 
 func BenchmarkShadowLeaves(b *testing.B) {
 	leaves, _ := sampleHashes()
-	mtree := merkle.NewTree(hasher.Sha256Hasher{})
+	mtree := NewTree(hasher.Sha256Hasher{})
 	mtree.Append(leaves)
 	shadowIndices := mtree.GetShadowIndecies()
 	for n := 0; n < b.N; n++ {
@@ -298,27 +297,27 @@ func BenchmarkShadowLeaves(b *testing.B) {
 
 func BenchmarkSiblingIndices(b *testing.B) {
 	leaves, _ := sampleHashes()
-	mtree := merkle.NewTree(hasher.Sha256Hasher{})
+	mtree := NewTree(hasher.Sha256Hasher{})
 	mtree.Append(leaves)
 	shadowIndices := mtree.GetShadowIndecies()
 	for n := 0; n < b.N; n++ {
-		merkle.SiblingIndecies(shadowIndices)
+		siblingIndecies(shadowIndices)
 	}
 }
 
 func BenchmarkParentIndices(b *testing.B) {
 	leaves, _ := sampleHashes()
-	mtree := merkle.NewTree(hasher.Sha256Hasher{})
+	mtree := NewTree(hasher.Sha256Hasher{})
 	mtree.Append(leaves)
 	shadowIndices := mtree.GetShadowIndecies()
 	for n := 0; n < b.N; n++ {
-		merkle.ParentIndecies(shadowIndices)
+		parentIndecies(shadowIndices)
 	}
 }
 
 func BenchmarkHelperNodeLeaves(b *testing.B) {
 	leaves, _ := sampleHashes()
-	mtree := merkle.NewTree(hasher.Sha256Hasher{})
+	mtree := NewTree(hasher.Sha256Hasher{})
 	mtree.Append(leaves)
 	shadowIndices := mtree.GetShadowIndecies()
 	for n := 0; n < b.N; n++ {

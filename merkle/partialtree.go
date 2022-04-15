@@ -27,7 +27,7 @@ func (pt *PartialTree) buildTree(partialLayers [][]types.Leaf, fullTreeDepth uin
 
 		if len(reversedLayers) > 0 {
 			var nodes []types.Leaf
-			nodes, reversedLayers = PopFromLeafQueue(reversedLayers)
+			nodes, reversedLayers = popFromLeafQueue(reversedLayers)
 			currentLayer = append(currentLayer, nodes...)
 		}
 
@@ -44,7 +44,7 @@ func (pt *PartialTree) buildTree(partialLayers [][]types.Leaf, fullTreeDepth uin
 		// freeup for next round
 		currentLayer = make([]types.Leaf, 0)
 
-		parentLayerIndices := ParentIndecies(indices)
+		parentLayerIndices := parentIndecies(indices)
 
 		for i := 0; i < len(parentLayerIndices); i++ {
 			parnetNodeIndex := parentLayerIndices[i]

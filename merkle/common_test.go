@@ -1,8 +1,7 @@
-package merkle_test
+package merkle
 
 import (
 	"github.com/ComposableFi/go-merkle-trees/hasher"
-	"github.com/ComposableFi/go-merkle-trees/merkle"
 	"github.com/ComposableFi/go-merkle-trees/types"
 )
 
@@ -12,7 +11,7 @@ type TestData struct {
 	leafHashes      [][]byte
 }
 type ProofTestCases struct {
-	merkleTree merkle.Tree
+	merkleTree Tree
 	cases      []MerkleProofTestCase
 }
 type MerkleProofTestCase struct {
@@ -60,7 +59,7 @@ func setupProofTestCases() ([]ProofTestCases, error) {
 			}
 			cases = append(cases, MerkleProofTestCase{LeafIndicesToProve: indices, Leaves: proofElements})
 		}
-		merkleTree, err := merkle.NewTree(hasher.Sha256Hasher{}).FromLeaves(leavesHashes)
+		merkleTree, err := NewTree(hasher.Sha256Hasher{}).FromLeaves(leavesHashes)
 		if err != nil {
 			return []ProofTestCases{}, err
 		}

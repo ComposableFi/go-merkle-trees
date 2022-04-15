@@ -37,7 +37,7 @@ func (p Proof) Root() ([]byte, error) {
 			proofHashes = append(proofHashes, proofCopy[0])
 			proofCopy = proofCopy[1:]
 		}
-		m := MapIndiceAndLeaves(proofIndices, proofHashes)
+		m := mapIndiceAndLeaves(proofIndices, proofHashes)
 		proofLayers = append(proofLayers, m)
 	}
 
@@ -90,16 +90,16 @@ func proofIndeciesByLayers(sortedLeafIndices []uint64, leavsCount uint64) [][]ui
 	unevenLayers := unevenLayers(leavsCount)
 	var proofIndices [][]uint64
 	for layerIndex := uint64(0); layerIndex < depth; layerIndex++ {
-		siblingIndices := SiblingIndecies(sortedLeafIndices)
+		siblingIndices := siblingIndecies(sortedLeafIndices)
 		leavesCount := unevenLayers[layerIndex]
 		layerLastNodeIndex := sortedLeafIndices[len(sortedLeafIndices)-1]
 		if layerLastNodeIndex == uint64(leavesCount)-1 {
 			_, siblingIndices = popFromIndexQueue(siblingIndices)
 		}
 
-		proofNodesIndices := SliceDifference(siblingIndices, sortedLeafIndices)
+		proofNodesIndices := sliceDifference(siblingIndices, sortedLeafIndices)
 		proofIndices = append(proofIndices, proofNodesIndices)
-		sortedLeafIndices = ParentIndecies(sortedLeafIndices)
+		sortedLeafIndices = parentIndecies(sortedLeafIndices)
 	}
 	return proofIndices
 

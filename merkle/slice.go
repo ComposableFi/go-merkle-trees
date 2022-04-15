@@ -7,8 +7,8 @@ func popFromIndexQueue(slice []uint64) (uint64, []uint64) {
 
 }
 
-// SliceDifference finds the elements of first slice that are not present in the second slice
-func SliceDifference(slice1 []uint64, slice2 []uint64) []uint64 {
+// sliceDifference finds the elements of first slice that are not present in the second slice
+func sliceDifference(slice1 []uint64, slice2 []uint64) []uint64 {
 	var diff []uint64
 
 	for i := 0; i < len(slice1); i++ {
