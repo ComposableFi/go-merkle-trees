@@ -72,7 +72,7 @@ func TestCorrectTreeDepth(t *testing.T) {
 
 	merkleTree, err := NewTree(hasher.Sha256Hasher{}).FromLeaves(testData.leafHashes)
 	require.NoError(t, err)
-	depth := merkleTree.Depth()
+	depth := merkleTree.depth()
 	require.Equal(t, 3, depth)
 }
 
@@ -100,9 +100,9 @@ func TestGetCorrectRootAfterCommit(t *testing.T) {
 	merkleTree2, err := NewTree(hasher.Sha256Hasher{}).FromLeaves(leafHashes)
 	require.NoError(t, err)
 
-	merkleTree.Append(leafHashes)
+	merkleTree.append(leafHashes)
 
-	root, err := merkleTree.UncommittedRootHex()
+	root, err := merkleTree.uncommittedRootHex()
 	require.NoError(t, err)
 
 	require.Equal(t, expectedRoot, merkleTree2.RootHex())
@@ -111,30 +111,30 @@ func TestGetCorrectRootAfterCommit(t *testing.T) {
 	expectedRoot = "e2a80e0e872a6c6eaed37b4c1f220e1935004805585b5f99617e48e9c8fe4034"
 	leaf, err := hasher.Sha256Hasher{}.Hash([]byte("g"))
 	require.NoError(t, err)
-	merkleTree.Insert(leaf)
+	merkleTree.insert(leaf)
 
-	uncommittedRoot, err := merkleTree.UncommittedRootHex()
+	uncommittedRoot, err := merkleTree.uncommittedRootHex()
 	require.NoError(t, err)
 	require.Equal(t, expectedRoot, uncommittedRoot)
 
 	require.Equal(t, []byte{}, merkleTree.Root())
 
-	merkleTree.Commit()
+	merkleTree.commit()
 
 	hashOfH, _ := hasher.Sha256Hasher{}.Hash([]byte("h"))
 	hashOfK, _ := hasher.Sha256Hasher{}.Hash([]byte("k"))
 	newLeaves := [][]byte{hashOfH, hashOfK}
 
-	merkleTree.Append(newLeaves)
+	merkleTree.append(newLeaves)
 
 	require.Equal(t, "e2a80e0e872a6c6eaed37b4c1f220e1935004805585b5f99617e48e9c8fe4034", merkleTree.RootHex())
-	uncommittedRootHex, err := merkleTree.UncommittedRootHex()
+	uncommittedRootHex, err := merkleTree.uncommittedRootHex()
 	require.NoError(t, err)
 	require.Equal(t, "09b6890b23e32e607f0e5f670ab224e36af8f6599cbe88b468f4b0f761802dd6", uncommittedRootHex)
 
-	merkleTree.Commit()
+	merkleTree.commit()
 
-	leaves := merkleTree.BaseLeaves()
+	leaves := merkleTree.baseLeaves()
 	reconstructedTree, err := merkleTree.FromLeaves(leaves)
 	require.NoError(t, err)
 	require.Equal(t, "09b6890b23e32e607f0e5f670ab224e36af8f6599cbe88b468f4b0f761802dd6", reconstructedTree.RootHex())
@@ -152,46 +152,46 @@ func TestChangeTheResultWenCalledTwice(t *testing.T) {
 	merkleTree := NewTree(hasher.Sha256Hasher{})
 
 	// Appending leaves to the tree without committing
-	merkleTree.Append(leaves)
+	merkleTree.append(leaves)
 
 	require.Equal(t, []byte{}, merkleTree.Root())
 
-	uncommittedRootHex, err := merkleTree.UncommittedRootHex()
+	uncommittedRootHex, err := merkleTree.uncommittedRootHex()
 	require.NoError(t, err)
 	require.Equal(t, "1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2", uncommittedRootHex)
 
-	merkleTree.Commit()
+	merkleTree.commit()
 
 	require.Equal(t, "1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2", merkleTree.RootHex())
 
-	uncommittedRootHex, err = merkleTree.UncommittedRootHex()
+	uncommittedRootHex, err = merkleTree.uncommittedRootHex()
 	require.NoError(t, err)
 	require.Equal(t, "", uncommittedRootHex)
 
 	gHash, _ := hasher.Sha256Hasher{}.Hash([]byte("g"))
-	merkleTree.Insert(gHash)
+	merkleTree.insert(gHash)
 
-	uncommittedRootHex, err = merkleTree.UncommittedRootHex()
+	uncommittedRootHex, err = merkleTree.uncommittedRootHex()
 	require.NoError(t, err)
 	require.Equal(t, "e2a80e0e872a6c6eaed37b4c1f220e1935004805585b5f99617e48e9c8fe4034", uncommittedRootHex)
 
-	merkleTree.Commit()
+	merkleTree.commit()
 
 	require.Equal(t, "e2a80e0e872a6c6eaed37b4c1f220e1935004805585b5f99617e48e9c8fe4034", merkleTree.RootHex())
 
 	hashOfH, _ := hasher.Sha256Hasher{}.Hash([]byte("h"))
 	hashOfK, _ := hasher.Sha256Hasher{}.Hash([]byte("k"))
-	merkleTree.Append([][]byte{hashOfH, hashOfK})
+	merkleTree.append([][]byte{hashOfH, hashOfK})
 
-	merkleTree.Commit()
-	merkleTree.Commit()
+	merkleTree.commit()
+	merkleTree.commit()
 
 	require.Equal(t, "09b6890b23e32e607f0e5f670ab224e36af8f6599cbe88b468f4b0f761802dd6", merkleTree.RootHex())
 
-	merkleTree.Rollback()
+	merkleTree.rollback()
 	require.Equal(t, "e2a80e0e872a6c6eaed37b4c1f220e1935004805585b5f99617e48e9c8fe4034", merkleTree.RootHex())
 
-	merkleTree.Rollback()
+	merkleTree.rollback()
 	require.Equal(t, "1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2", merkleTree.RootHex())
 }
 
@@ -204,44 +204,44 @@ func TestRollbackPreviousCommit(t *testing.T) {
 	}
 
 	merkleTree := NewTree(hasher.Sha256Hasher{})
-	merkleTree.Append(leaves)
+	merkleTree.append(leaves)
 
 	require.Equal(t, []byte{}, merkleTree.Root())
 
-	merkleTree.Commit()
+	merkleTree.commit()
 
 	require.Equal(t, "1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2", merkleTree.RootHex())
 
 	gHash, _ := hasher.Sha256Hasher{}.Hash([]byte("g"))
-	merkleTree.Insert(gHash)
+	merkleTree.insert(gHash)
 
-	uncommittedRootHex, err := merkleTree.UncommittedRootHex()
+	uncommittedRootHex, err := merkleTree.uncommittedRootHex()
 	require.NoError(t, err)
 
 	require.Equal(t, "e2a80e0e872a6c6eaed37b4c1f220e1935004805585b5f99617e48e9c8fe4034", uncommittedRootHex)
 
-	merkleTree.Commit()
+	merkleTree.commit()
 
 	require.Equal(t, "e2a80e0e872a6c6eaed37b4c1f220e1935004805585b5f99617e48e9c8fe4034", merkleTree.RootHex())
 
 	hashOfH, _ := hasher.Sha256Hasher{}.Hash([]byte("h"))
 	hashOfK, _ := hasher.Sha256Hasher{}.Hash([]byte("k"))
-	merkleTree.Append([][]byte{hashOfH, hashOfK})
+	merkleTree.append([][]byte{hashOfH, hashOfK})
 
-	uncommittedRootHex, err = merkleTree.UncommittedRootHex()
+	uncommittedRootHex, err = merkleTree.uncommittedRootHex()
 	require.NoError(t, err)
 	require.Equal(t, "09b6890b23e32e607f0e5f670ab224e36af8f6599cbe88b468f4b0f761802dd6", uncommittedRootHex)
 
 	require.Equal(t, "e2a80e0e872a6c6eaed37b4c1f220e1935004805585b5f99617e48e9c8fe4034", merkleTree.RootHex())
 
-	merkleTree.Commit()
+	merkleTree.commit()
 
 	require.Equal(t, "09b6890b23e32e607f0e5f670ab224e36af8f6599cbe88b468f4b0f761802dd6", merkleTree.RootHex())
 
-	merkleTree.Rollback()
+	merkleTree.rollback()
 	require.Equal(t, "e2a80e0e872a6c6eaed37b4c1f220e1935004805585b5f99617e48e9c8fe4034", merkleTree.RootHex())
 
-	merkleTree.Rollback()
+	merkleTree.rollback()
 	require.Equal(t, "1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2", merkleTree.RootHex())
 }
 
@@ -279,27 +279,27 @@ func BenchmarkFromLeaves(b *testing.B) {
 func BenchmarkShadowIndices(b *testing.B) {
 	leaves, _ := sampleHashes()
 	mtree := NewTree(hasher.Sha256Hasher{})
-	mtree.Append(leaves)
+	mtree.append(leaves)
 	for n := 0; n < b.N; n++ {
-		mtree.GetShadowIndecies()
+		mtree.getShadowIndecies()
 	}
 }
 
 func BenchmarkShadowLeaves(b *testing.B) {
 	leaves, _ := sampleHashes()
 	mtree := NewTree(hasher.Sha256Hasher{})
-	mtree.Append(leaves)
-	shadowIndices := mtree.GetShadowIndecies()
+	mtree.append(leaves)
+	shadowIndices := mtree.getShadowIndecies()
 	for n := 0; n < b.N; n++ {
-		mtree.GetShadowLeaves(shadowIndices)
+		mtree.getShadowLeaves(shadowIndices)
 	}
 }
 
 func BenchmarkSiblingIndices(b *testing.B) {
 	leaves, _ := sampleHashes()
 	mtree := NewTree(hasher.Sha256Hasher{})
-	mtree.Append(leaves)
-	shadowIndices := mtree.GetShadowIndecies()
+	mtree.append(leaves)
+	shadowIndices := mtree.getShadowIndecies()
 	for n := 0; n < b.N; n++ {
 		siblingIndecies(shadowIndices)
 	}
@@ -308,8 +308,8 @@ func BenchmarkSiblingIndices(b *testing.B) {
 func BenchmarkParentIndices(b *testing.B) {
 	leaves, _ := sampleHashes()
 	mtree := NewTree(hasher.Sha256Hasher{})
-	mtree.Append(leaves)
-	shadowIndices := mtree.GetShadowIndecies()
+	mtree.append(leaves)
+	shadowIndices := mtree.getShadowIndecies()
 	for n := 0; n < b.N; n++ {
 		parentIndecies(shadowIndices)
 	}
@@ -318,9 +318,9 @@ func BenchmarkParentIndices(b *testing.B) {
 func BenchmarkHelperNodeLeaves(b *testing.B) {
 	leaves, _ := sampleHashes()
 	mtree := NewTree(hasher.Sha256Hasher{})
-	mtree.Append(leaves)
-	shadowIndices := mtree.GetShadowIndecies()
+	mtree.append(leaves)
+	shadowIndices := mtree.getShadowIndecies()
 	for n := 0; n < b.N; n++ {
-		mtree.HelperNodeLeaves(shadowIndices)
+		mtree.helperNodeLeaves(shadowIndices)
 	}
 }

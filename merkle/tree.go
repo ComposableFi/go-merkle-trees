@@ -10,8 +10,8 @@ import (
 
 // FromLeaves clones the leaves and builds the tree from them
 func (t Tree) FromLeaves(leaves [][]byte) (Tree, error) {
-	t.Append(leaves)
-	err := t.Commit()
+	t.append(leaves)
+	err := t.commit()
 	if err != nil {
 		return Tree{}, err
 	}
@@ -35,11 +35,11 @@ func (t *Tree) RootHex() string {
 	return hex.EncodeToString(root)
 }
 
-// HelperNodes returns helper nodes required to build a partial tree for the given indices
+// helperNodes returns helper nodes required to build a partial tree for the given indices
 // to be able to extract a root from it. Useful in constructing Merkle proofs
-func (t *Tree) HelperNodes(leafIndices []uint64) [][]byte {
+func (t *Tree) helperNodes(leafIndices []uint64) [][]byte {
 	var helperNodes [][]byte
-	for _, layer := range t.HelperNodeLeaves(leafIndices) {
+	for _, layer := range t.helperNodeLeaves(leafIndices) {
 		for _, li := range layer {
 			helperNodes = append(helperNodes, li.Hash)
 		}
@@ -47,9 +47,9 @@ func (t *Tree) HelperNodes(leafIndices []uint64) [][]byte {
 	return helperNodes
 }
 
-// HelperNodeLeaves gets all helper nodes required to build a partial merkle tree for the given indices,
+// helperNodeLeaves gets all helper nodes required to build a partial merkle tree for the given indices,
 // cloning all required hashes into the resulting vector.
-func (t *Tree) HelperNodeLeaves(leafIndeceis []uint64) [][]types.Leaf {
+func (t *Tree) helperNodeLeaves(leafIndeceis []uint64) [][]types.Leaf {
 	var helperNodes [][]types.Leaf
 	for _, treeLayer := range t.layerLeaves() {
 		siblings := siblingIndecies(leafIndeceis)
@@ -72,7 +72,7 @@ func (t *Tree) HelperNodeLeaves(leafIndeceis []uint64) [][]types.Leaf {
 
 // Proof Returns the Merkle proof required to prove the inclusion of items in a data set.
 func (t *Tree) Proof(leafIndices []uint64) Proof {
-	leavesLen := t.LeavesLen()
+	leavesLen := t.leavesLen()
 	leaves := t.leaves()
 	var proofLeaves []types.Leaf
 
@@ -84,26 +84,26 @@ func (t *Tree) Proof(leafIndices []uint64) Proof {
 			}
 		}
 	}
-	return NewProof(proofLeaves, t.HelperNodes(leafIndices), leavesLen, t.hasher)
+	return NewProof(proofLeaves, t.helperNodes(leafIndices), leavesLen, t.hasher)
 }
 
-// Insert inserts a new types.Leaf. Please note it won't modify the root just yet; For the changes
+// insert inserts a new types.Leaf. Please note it won't modify the root just yet; For the changes
 // to be applied to the root, [`MerkleTree::commit`] method should be called first. To get the
 // root of the new tree without applying the changes, you can use
-func (t *Tree) Insert(leaf []byte) {
+func (t *Tree) insert(leaf []byte) {
 	t.UncommittedLeaves = append(t.UncommittedLeaves, leaf)
 }
 
-// Append appends leaves to the tree. Behaves similarly to [`MerkleTree::insert`], but for a list of
+// append appends leaves to the tree. Behaves similarly to [`MerkleTree::insert`], but for a list of
 // items. Takes ownership of the elements.
-func (t *Tree) Append(leaves [][]byte) {
+func (t *Tree) append(leaves [][]byte) {
 	t.UncommittedLeaves = append(t.UncommittedLeaves, leaves...)
 }
 
-// Commit commits the changes made by [`MerkleTree::insert`] and [`MerkleTree::append`]
+// commit commits the changes made by [`MerkleTree::insert`] and [`MerkleTree::append`]
 // and modifies the root.
 // Commits are saved to the history, so the tree can be rolled back to any previous commit
-func (t *Tree) Commit() error {
+func (t *Tree) commit() error {
 	diff, err := t.uncommittedDiff()
 	if err != nil {
 		return err
@@ -116,9 +116,9 @@ func (t *Tree) Commit() error {
 	return nil
 }
 
-// Rollback rolls back one commit and reverts the tree to the previous state.
+// rollback rolls back one commit and reverts the tree to the previous state.
 // Removes the most recent commit from the history.
-func (t *Tree) Rollback() {
+func (t *Tree) rollback() {
 	_, t.history = popFromPartialtree(t.history)
 	t.currentWorkingTree.clear()
 	for _, commit := range t.history {
@@ -136,9 +136,9 @@ func (t *Tree) uncommittedRoot() ([]byte, error) {
 	return shadowTree.Root(), nil
 }
 
-// UncommittedRootHex calculates the root of the uncommitted changes as if they were committed. Serializes
+// uncommittedRootHex calculates the root of the uncommitted changes as if they were committed. Serializes
 // the result as a hex string.
-func (t *Tree) UncommittedRootHex() (string, error) {
+func (t *Tree) uncommittedRootHex() (string, error) {
 	root, err := t.uncommittedRoot()
 	if err != nil {
 		return "", err
@@ -146,14 +146,14 @@ func (t *Tree) UncommittedRootHex() (string, error) {
 	return hex.EncodeToString(root), nil
 }
 
-// Depth returns the tree depth. A tree depth is how many layers there is between the
+// depth returns the tree depth. A tree depth is how many layers there is between the
 // leaves and the root
-func (t *Tree) Depth() int {
+func (t *Tree) depth() int {
 	return len(t.layerLeaves()) - 1
 }
 
-// BaseLeaves returns a copy of the tree leaves - the base level of the tree.
-func (t *Tree) BaseLeaves() [][]byte {
+// baseLeaves returns a copy of the tree leaves - the base level of the tree.
+func (t *Tree) baseLeaves() [][]byte {
 	layers := t.layers()
 	if len(layers) > 0 {
 		return [][]byte{}
@@ -161,8 +161,8 @@ func (t *Tree) BaseLeaves() [][]byte {
 	return layers[0]
 }
 
-// LeavesLen returns the number of leaves in the tree.
-func (t *Tree) LeavesLen() uint64 {
+// leavesLen returns the number of leaves in the tree.
+func (t *Tree) leavesLen() uint64 {
 	leaves := t.leaves()
 	return uint64(len(leaves))
 }
@@ -193,11 +193,11 @@ func (t *Tree) uncommittedDiff() (PartialTree, error) {
 		return PartialTree{}, nil
 	}
 
-	shadowIndecies := t.GetShadowIndecies()
-	shadowNodeLeaves := t.GetShadowLeaves(shadowIndecies)
+	shadowIndecies := t.getShadowIndecies()
+	shadowNodeLeaves := t.getShadowLeaves(shadowIndecies)
 
-	partialTreeLeaves := t.HelperNodeLeaves(shadowIndecies)
-	leavesInNewTree := t.LeavesLen() + uint64(len(t.UncommittedLeaves))
+	partialTreeLeaves := t.helperNodeLeaves(shadowIndecies)
+	leavesInNewTree := t.leavesLen() + uint64(len(t.UncommittedLeaves))
 	uncommittedTreeDepth := treeDepth(leavesInNewTree)
 	if len(partialTreeLeaves) == 0 {
 		partialTreeLeaves = append(partialTreeLeaves, shadowNodeLeaves)
@@ -211,13 +211,13 @@ func (t *Tree) uncommittedDiff() (PartialTree, error) {
 	return tree.build(partialTreeLeaves, uncommittedTreeDepth)
 }
 
-// GetShadowIndecies returns shadow indices of the uncommited leaves
-func (t *Tree) GetShadowIndecies() []uint64 {
+// getShadowIndecies returns shadow indices of the uncommited leaves
+func (t *Tree) getShadowIndecies() []uint64 {
 	if len(t.UncommittedLeaves) == 0 {
 		return []uint64{}
 	}
 
-	commitedLeavesCount := t.LeavesLen()
+	commitedLeavesCount := t.leavesLen()
 	var shadowIndecies []uint64
 	for i := 0; i < len(t.UncommittedLeaves); i++ {
 		shadowIndecies = append(shadowIndecies, commitedLeavesCount+uint64(i))
@@ -225,8 +225,8 @@ func (t *Tree) GetShadowIndecies() []uint64 {
 	return shadowIndecies
 }
 
-// GetShadowLeaves returns shadow leaves of the uncommited leaves
-func (t *Tree) GetShadowLeaves(shadowIndecies []uint64) []types.Leaf {
+// getShadowLeaves returns shadow leaves of the uncommited leaves
+func (t *Tree) getShadowLeaves(shadowIndecies []uint64) []types.Leaf {
 	var shadowNodeLeaves []types.Leaf
 	for i := 0; i < len(shadowIndecies); i++ {
 		leaf := types.Leaf{Index: shadowIndecies[i], Hash: t.UncommittedLeaves[i]}
