@@ -4,8 +4,10 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"math/rand"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/ComposableFi/go-merkle-trees/hasher"
 	merkleMmr "github.com/ComposableFi/go-merkle-trees/mmr"
@@ -810,16 +812,6 @@ func prepareMMR(count uint32) (uint64, merkleMmr.Store, []uint64) {
 	return mmrSize, store, positions
 }
 
-func TestPrepareMMR(t *testing.T) {
-	var count uint32 = 100000
-	size, _, positions := prepareMMR(count)
-	if len(positions) == 0 {
-		t.Errorf("length of positions can't be 0")
-	}
-
-	fmt.Printf("count %v size %v", count, size)
-}
-
 func BenchmarkMMRInsertion(b *testing.B) {
 	var table = []struct {
 		input uint32
@@ -834,4 +826,48 @@ func BenchmarkMMRInsertion(b *testing.B) {
 			prepareMMR(t.input)
 		})
 	}
+}
+
+func BenchmarkMMR_GenProof(b *testing.B) {
+	mmrSize, store, positions := prepareMMR(1000000)
+	mmrTree := merkleMmr.NewMMR(mmrSize, store, []types.Leaf{}, hasher.Keccak256Hasher{})
+
+	rand.Seed(time.Now().UnixNano())
+	randomPositionIndex := rand.Int63n(int64(len(positions)))
+	b.Run(fmt.Sprintf("MMR gen proof"), func(b *testing.B) {
+		mmrTree.GenProof([]uint64{positions[randomPositionIndex]})
+	})
+}
+
+func BenchmarkProof_Verify(b *testing.B) {
+	mmrSize, store, positions := prepareMMR(1000000)
+	mmrTree := merkleMmr.NewMMR(mmrSize, store, []types.Leaf{}, hasher.Keccak256Hasher{})
+	root, _ := mmrTree.Root()
+
+	var proofs []struct {
+		index uint64
+		elem  []byte
+		proof *merkleMmr.Proof
+	}
+	for i := 0; i < 10000; i++ {
+		rand.Seed(time.Now().UnixNano())
+		randomIndex := rand.Int63n(int64(len(positions)))
+		pos := positions[randomIndex]
+		elem := store.GetElem(pos)
+		proof, _ := mmrTree.GenProof([]uint64{pos})
+
+		proofs = append(proofs, struct {
+			index uint64
+			elem  []byte
+			proof *merkleMmr.Proof
+		}{index: uint64(randomIndex), elem: elem, proof: proof})
+	}
+
+	b.Run("MMR Verify", func(b *testing.B) {
+		rand.Seed(time.Now().UnixNano())
+		randomIndex := rand.Int63n(int64(len(proofs)))
+		proof := proofs[randomIndex]
+		proof.proof.LeavesToVerify([]types.Leaf{{Index: proof.index, Hash: proof.elem}})
+		proof.proof.Verify(root)
+	})
 }

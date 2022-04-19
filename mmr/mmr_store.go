@@ -2,7 +2,7 @@ package mmr
 
 // Store defines the required method on any store passed to the Batch struct
 type Store interface {
-	getElem(pos uint64) []byte
+	GetElem(pos uint64) []byte
 	append(pos uint64, elems [][]byte)
 }
 
@@ -30,7 +30,7 @@ func (b *Batch) append(pos uint64, elems [][]byte) {
 	b.memoryBatch = append(b.memoryBatch, BatchElem{pos, elems})
 }
 
-func (b *Batch) getElem(pos uint64) []byte {
+func (b *Batch) GetElem(pos uint64) []byte {
 	i := len(b.memoryBatch)
 	for i > 0 {
 		mb := b.memoryBatch[i-1]
@@ -44,7 +44,7 @@ func (b *Batch) getElem(pos uint64) []byte {
 			break
 		}
 	}
-	return b.store.getElem(pos)
+	return b.store.GetElem(pos)
 }
 
 func (b *Batch) commit() {

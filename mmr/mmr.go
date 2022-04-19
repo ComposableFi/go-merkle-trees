@@ -45,7 +45,7 @@ func (m *MMR) findElem(pos uint64, hashes [][]byte) ([]byte, error) {
 		return hashes[posOffset], nil
 	}
 
-	elem := m.batch.getElem(pos)
+	elem := m.batch.GetElem(pos)
 	if elem == nil {
 		return nil, ErrInconsistentStore
 	}
@@ -105,7 +105,7 @@ func (m *MMR) Root() ([]byte, error) {
 	if m.size == 0 {
 		return nil, ErrGetRootOnEmpty
 	} else if m.size == 1 {
-		e := m.batch.getElem(0)
+		e := m.batch.GetElem(0)
 		if e == nil {
 			return nil, ErrInconsistentStore
 		}
@@ -114,7 +114,7 @@ func (m *MMR) Root() ([]byte, error) {
 
 	var peaks [][]byte
 	for _, peakPos := range GetPeaks(m.size) {
-		elem := m.batch.getElem(peakPos)
+		elem := m.batch.GetElem(peakPos)
 		if elem == nil {
 			return nil, ErrInconsistentStore
 		}
@@ -176,7 +176,7 @@ func (m *MMR) genProofForPeak(proof *Iterator, posList []uint64, peakPos uint64)
 	}
 	// take peak root from store if no positions need to be proof
 	if len(posList) == 0 {
-		elem := m.batch.getElem(peakPos)
+		elem := m.batch.GetElem(peakPos)
 		if elem == nil {
 			return ErrInconsistentStore
 		}
@@ -215,7 +215,7 @@ func (m *MMR) genProofForPeak(proof *Iterator, posList []uint64, peakPos uint64)
 			// drop sibling
 			queue = queue[1:]
 		} else {
-			p := m.batch.getElem(sibPos)
+			p := m.batch.GetElem(sibPos)
 			if p == nil {
 				return ErrCorruptedProof
 			}
@@ -311,6 +311,10 @@ func (m *Proof) MMRSize() uint64 {
 // ProofItems returns all the proof items from the Iterator.
 func (m *Proof) ProofItems() [][]byte {
 	return m.proof.Items
+}
+
+func (m *Proof) LeavesToVerify(leaves []types.Leaf) {
+	m.Leaves = leaves
 }
 
 // calculatePeakRoot calculates the peak root hash of a peak of position peakPos using its child leaves and the proofs.

@@ -14,6 +14,6 @@ func (m MemStore) append(pos uint64, elem [][]byte) {
 	}
 }
 
-func (m MemStore) getElem(pos uint64) []byte {
+func (m MemStore) GetElem(pos uint64) []byte {
 	return m[pos]
 }
