@@ -31,13 +31,12 @@ func (b *Batch) append(pos uint64, elems [][]byte) {
 }
 
 func (b *Batch) getElem(pos uint64) []byte {
-	memoryBatch := make([]BatchElem, len(b.memoryBatch))
-	copy(memoryBatch, b.memoryBatch)
-	Reverse(memoryBatch)
-
-	for _, mb := range memoryBatch {
+	i := len(b.memoryBatch)
+	for i > 0 {
+		mb := b.memoryBatch[i-1]
 		startPos, elems := mb.pos, mb.elems
 		if pos < startPos {
+			i -= 1
 			continue
 		} else if pos < startPos+uint64(len(elems)) {
 			return elems[pos-startPos]

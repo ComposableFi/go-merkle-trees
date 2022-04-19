@@ -58,11 +58,9 @@ func testMMR(count uint32, proofElem []uint32) error {
 	}
 
 	mmrTree.Commit()
-
 	result := proof.Verify(root)
-
 	if !result {
-		return err
+		return fmt.Errorf("error verifying root")
 	}
 
 	return nil
@@ -790,5 +788,50 @@ func TestFixture15Leaves(t *testing.T) {
 		if !merkleProof.Verify(fixture15Leaves.rootHash) {
 			t.Errorf("failed to verify leaf inclusion for leaf index %v", p.leafIndex)
 		}
+	}
+}
+
+func prepareMMR(count uint32) (uint64, merkleMmr.Store, []uint64) {
+	var store = merkleMmr.NewMemStore()
+	var mmrTree = merkleMmr.NewMMR(0, store, []types.Leaf{}, hasher.Keccak256Hasher{})
+
+	var positions []uint64
+	for i := uint32(0); i < count; i++ {
+		position, err := mmrTree.Push(uint32ToHash(i))
+		if err != nil {
+			return 0, nil, nil
+		}
+		positions = append(positions, position)
+	}
+
+	mmrSize := mmrTree.MMRSize()
+	mmrTree.Commit()
+
+	return mmrSize, store, positions
+}
+
+func TestPrepareMMR(t *testing.T) {
+	var count uint32 = 100000
+	size, _, positions := prepareMMR(count)
+	if len(positions) == 0 {
+		t.Errorf("length of positions can't be 0")
+	}
+
+	fmt.Printf("count %v size %v", count, size)
+}
+
+func BenchmarkMMRInsertion(b *testing.B) {
+	var table = []struct {
+		input uint32
+	}{
+		{input: 10000},
+		{input: 100000},
+		{input: 1000000},
+	}
+
+	for _, t := range table {
+		b.Run(fmt.Sprintf("input_size_%d", t.input), func(b *testing.B) {
+			prepareMMR(t.input)
+		})
 	}
 }

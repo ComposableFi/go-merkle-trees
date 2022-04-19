@@ -86,11 +86,10 @@ func (m *MMR) Push(elem []byte) (uint64, error) {
 		if err != nil {
 			return 0, err
 		}
-		hash, err := hasher.MergeAndHash(m.hasher, leftElem, rightElem)
+		parentElem, err := hasher.MergeAndHash(m.hasher, leftElem, rightElem)
 		if err != nil {
 			return 0, err
 		}
-		parentElem := hash
 		elems = append(elems, parentElem)
 		height++
 	}
@@ -142,12 +141,12 @@ func (m *MMR) RootHex() (string, error) {
 func (m *MMR) bagRHSPeaks(rhsPeaks [][]byte) []byte {
 	for len(rhsPeaks) > 1 {
 		var rp, lp []byte
-		if rp, rhsPeaks = pop(rhsPeaks); rp == nil {
+		if rp = pop(&rhsPeaks); rp == nil {
 			log.Error("error trying to execute pop on right hand side peaks (rhsPeaks)")
 			return nil
 		}
 
-		if lp, rhsPeaks = pop(rhsPeaks); lp == nil {
+		if lp = pop(&rhsPeaks); lp == nil {
 			log.Error("error trying to execute pop on right hand side peaks (rhsPeaks)")
 			return nil
 		}
@@ -247,7 +246,7 @@ func (m *MMR) GenProof(posList []uint64) (*Proof, error) {
 	// generate merkle proof for each peaks
 	var baggingTrack uint
 	for _, peakPos := range peaks {
-		pl := takeWhileVecUint64(&posList, func(u uint64) bool {
+		pl := filterLeavesByPosition(&posList, func(u uint64) bool {
 			return u <= peakPos
 		})
 		if len(pl) == 0 {
@@ -314,18 +313,18 @@ func (m *Proof) ProofItems() [][]byte {
 	return m.proof.Items
 }
 
+// calculatePeakRoot calculates the peak root hash of a peak of position peakPos using its child leaves and the proofs.
 func (m *Proof) calculatePeakRoot(leaves []types.Leaf, peakPos uint64, proofs *Iterator) ([]byte, error) {
 	if len(leaves) == 0 {
 		return nil, fmt.Errorf("leaves can't be empty")
 	}
 
-	// (position, Hash, height)
 	var queue []leafWithashOfH
 	for _, l := range leaves {
 		queue = append(queue, leafWithashOfH{LeafIndexToPos(l.Index), l.Hash, 0})
 	}
 
-	// calculate tree root from each items
+	// calculate tree root from each item
 	for len(queue) > 0 {
 		pop := queue[0]
 		// pop from front
@@ -338,19 +337,21 @@ func (m *Proof) calculatePeakRoot(leaves []types.Leaf, peakPos uint64, proofs *I
 		// calculate sibling
 		var nextHeight = PosHeightInTree(pos + 1)
 		var sibPos, parentPos = func() (uint64, uint64) {
-			var siblingOffset = siblingOffset(height)
+			var sbOffset = siblingOffset(height)
 			if nextHeight > height {
-				// implies Pos is right sibling
-				return pos - siblingOffset, pos + 1
+				// implies leaf is the right sibling
+				return pos - sbOffset, pos + 1
 			}
-			// Pos is left sibling
-			return pos + siblingOffset, pos + parentOffset(height)
+			// leaf is the next sibling
+			return pos + sbOffset, pos + parentOffset(height)
 		}()
 
 		var siblingItem []byte
 		if len(queue) > 0 && queue[0].pos == sibPos {
 			siblingItem, queue = queue[0].hash, queue[1:]
 		} else {
+			// if the next item in the queue isn't the sibling of the leaf, the next item in the proof would be
+			// the sibling item. If there's no item left in the proof, then the proof is corrupted.
 			if siblingItem = proofs.Next(); siblingItem == nil {
 				return nil, ErrCorruptedProof
 			}
@@ -358,6 +359,7 @@ func (m *Proof) calculatePeakRoot(leaves []types.Leaf, peakPos uint64, proofs *I
 
 		var parentItem []byte
 		if nextHeight > height {
+			// nextHeight is greater than height if the item is the right sibling.
 			hash, err := hasher.MergeAndHash(m.Hasher, siblingItem, item)
 			if err != nil {
 				return nil, err
@@ -384,13 +386,14 @@ func (m *Proof) calculatePeakRoot(leaves []types.Leaf, peakPos uint64, proofs *I
 func (m *Proof) baggingPeaksHashes(peaksHashes [][]byte) ([]byte, error) {
 	var rightPeak, leftPeak []byte
 	for len(peaksHashes) > 1 {
-		if rightPeak, peaksHashes = pop(peaksHashes); rightPeak == nil {
+		if rightPeak = pop(&peaksHashes); rightPeak == nil {
 			return nil, fmt.Errorf("there are no peak hashes left to pop")
 		}
 
-		if leftPeak, peaksHashes = pop(peaksHashes); leftPeak == nil {
+		if leftPeak = pop(&peaksHashes); leftPeak == nil {
 			return nil, fmt.Errorf("there are no peak hashes left to pop")
 		}
+		// when bagging the peaks of an MMR, hashes of the peaks are merged from right to left.
 		hash, err := hasher.MergeAndHash(m.Hasher, rightPeak, leftPeak)
 		if err != nil {
 			return nil, err
@@ -434,9 +437,13 @@ func (m *Proof) CalculateRootWithNewLeaf(leaves []types.Leaf, newIndex uint64, n
 			i++
 		}
 
-		reversePeahashOfKes := peaksHashes[i:]
-		Reverse(reversePeahashOfKes)
-		peaksHashes = append(peaksHashes[:i], reversePeahashOfKes...)
+		var reversedHashes [][]byte
+		var hashSubset = peaksHashes[i:]
+		for j := len(hashSubset); j > 0; j-- {
+			reversedHashes = append(reversedHashes, hashSubset[j-1])
+		}
+
+		peaksHashes = append(peaksHashes[:i], reversedHashes...)
 		iter := NewIterator()
 		iter.Items = peaksHashes
 		m.proof = iter
@@ -479,13 +486,14 @@ func (m *Proof) calculatePeaksHashes(leaves []types.Leaf, mmrSize uint64, proofs
 
 	peaks := GetPeaks(mmrSize)
 	var peaksHashes [][]byte
-	for _, peaksPos := range peaks {
-		lvs := takeWhileVec(&leaves, func(l types.Leaf) bool {
-			return LeafIndexToPos(l.Index) <= peaksPos
+	for _, peakPos := range peaks {
+		// filter out the leaf of position peakPos or leaves that are children of a peak with position peakPos
+		lvs := filterLeaves(&leaves, func(l types.Leaf) bool {
+			return LeafIndexToPos(l.Index) <= peakPos
 		})
 
 		var peakRoot []byte
-		if len(lvs) == 1 && LeafIndexToPos(lvs[0].Index) == peaksPos {
+		if len(lvs) == 1 && LeafIndexToPos(lvs[0].Index) == peakPos {
 			// Hash is the peak
 			peakRoot = lvs[0].Hash
 		} else if len(lvs) == 0 {
@@ -499,7 +507,7 @@ func (m *Proof) calculatePeaksHashes(leaves []types.Leaf, mmrSize uint64, proofs
 			}
 		} else {
 			var err error
-			peakRoot, err = m.calculatePeakRoot(lvs, peaksPos, proofs)
+			peakRoot, err = m.calculatePeakRoot(lvs, peakPos, proofs)
 			if err != nil {
 				return nil, err
 			}
@@ -523,7 +531,11 @@ func (m *Proof) calculatePeaksHashes(leaves []types.Leaf, mmrSize uint64, proofs
 	return peaksHashes, nil
 }
 
-func takeWhileVec(v *[]types.Leaf, p func(types.Leaf) bool) []types.Leaf {
+// filterLeaves takes a pointer to a slice of types.Leaf and closure as arguments. It will call this closure on each item.
+// If false is returned from calling the closure, it will ignore the remaining elements in the slice and set the slice
+// passed as an argument to a slice of those ignored items. It will then return a slice of items that returned true when
+// the closure was called on them.
+func filterLeaves(v *[]types.Leaf, p func(types.Leaf) bool) []types.Leaf {
 	vCopy := *v
 	for i := 0; i < len(vCopy); i++ {
 		if !p(vCopy[i]) {
@@ -535,7 +547,7 @@ func takeWhileVec(v *[]types.Leaf, p func(types.Leaf) bool) []types.Leaf {
 	return vCopy[:]
 }
 
-func takeWhileVecUint64(v *[]uint64, p func(uint64) bool) []uint64 {
+func filterLeavesByPosition(v *[]uint64, p func(uint64) bool) []uint64 {
 	vCopy := *v
 	for i := 0; i < len(vCopy); i++ {
 		if !p(vCopy[i]) {
