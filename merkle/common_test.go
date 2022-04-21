@@ -16,7 +16,7 @@ type ProofTestCases struct {
 }
 type MerkleProofTestCase struct {
 	LeafIndicesToProve []uint64
-	Leaves             []types.Leaf
+	Leaves             Leaves
 }
 
 func setupTestData() TestData {
@@ -41,7 +41,7 @@ func setupProofTestCases() ([]ProofTestCases, error) {
 	var merkleProofCases []ProofTestCases
 	for i := 0; i < len(maxCase); i++ {
 		var leavesHashes [][]byte
-		var Leaves []types.Leaf
+		var Leaves Leaves
 		for j := 0; j < i+1; j++ {
 			h, _ := hasher.Sha256Hasher{}.Hash([]byte(maxCase[j]))
 			leavesHashes = append(leavesHashes, h)
@@ -73,11 +73,11 @@ func setupProofTestCases() ([]ProofTestCases, error) {
 	return merkleProofCases, nil
 }
 
-func combinations(leaves []types.Leaf) [][]types.Leaf {
-	return combine([]types.Leaf{}, leaves, [][]types.Leaf{})
+func combinations(leaves Leaves) Layers {
+	return combine(Leaves{}, leaves, Layers{})
 }
 
-func combine(active []types.Leaf, rest []types.Leaf, combinations [][]types.Leaf) [][]types.Leaf {
+func combine(active Leaves, rest Leaves, combinations Layers) Layers {
 	if len(rest) == 0 {
 		if len(active) == 0 {
 			return combinations
@@ -85,7 +85,7 @@ func combine(active []types.Leaf, rest []types.Leaf, combinations [][]types.Leaf
 		combinations = append(combinations, active)
 		return combinations
 	}
-	next := make([]types.Leaf, len(active))
+	next := make(Leaves, len(active))
 	copy(next, active)
 
 	if len(rest) > 0 {

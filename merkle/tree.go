@@ -20,7 +20,7 @@ func (t Tree) FromLeaves(leaves [][]byte) (Tree, error) {
 
 // Root returns the tree root - the top hash of the tree. Used in the inclusion proof verification.
 func (t *Tree) Root() []byte {
-	layers := t.layerLeaves()
+	layers := t.layers()
 	if len(layers) > 0 {
 		lastLayer := layers[len(layers)-1]
 		firstItem := lastLayer[0]
@@ -35,27 +35,27 @@ func (t *Tree) RootHex() string {
 	return hex.EncodeToString(root)
 }
 
-// helperNodes returns helper nodes required to build a partial tree for the given indices
+// helperNodesHashes returns helper nodes required to build a partial tree for the given indices
 // to be able to extract a root from it. Useful in constructing Merkle proofs
-func (t *Tree) helperNodes(leafIndices []uint64) [][]byte {
-	var helperNodes [][]byte
-	for _, layer := range t.helperNodeLeaves(leafIndices) {
+func (t *Tree) helperNodesHashes(leafIndices []uint64) [][]byte {
+	var helperNodesHashes [][]byte
+	for _, layer := range t.helperNodeLayers(leafIndices) {
 		for _, li := range layer {
-			helperNodes = append(helperNodes, li.Hash)
+			helperNodesHashes = append(helperNodesHashes, li.Hash)
 		}
 	}
-	return helperNodes
+	return helperNodesHashes
 }
 
-// helperNodeLeaves gets all helper nodes required to build a partial merkle tree for the given indices,
+// helperNodeLayers gets all helper nodes required to build a partial merkle tree for the given indices,
 // cloning all required hashes into the resulting vector.
-func (t *Tree) helperNodeLeaves(leafIndeceis []uint64) [][]types.Leaf {
-	var helperNodes [][]types.Leaf
-	for _, treeLayer := range t.layerLeaves() {
+func (t *Tree) helperNodeLayers(leafIndeceis []uint64) Layers {
+	var helperNodes Layers
+	for _, treeLayer := range t.layers() {
 		siblings := siblingIndecies(leafIndeceis)
 		helperIndices := sliceDifference(siblings, leafIndeceis)
 
-		var helpersLayer []types.Leaf
+		var helpersLayer Leaves
 		for _, idx := range helperIndices {
 			leaf, found := leafAtIndex(treeLayer, idx)
 			if found {
@@ -74,7 +74,7 @@ func (t *Tree) helperNodeLeaves(leafIndeceis []uint64) [][]types.Leaf {
 func (t *Tree) Proof(leafIndices []uint64) Proof {
 	leavesLen := t.leavesLen()
 	leaves := t.leaves()
-	var proofLeaves []types.Leaf
+	var proofLeaves Leaves
 
 	for _, index := range leafIndices {
 		for _, leaf := range leaves {
@@ -84,7 +84,7 @@ func (t *Tree) Proof(leafIndices []uint64) Proof {
 			}
 		}
 	}
-	return NewProof(proofLeaves, t.helperNodes(leafIndices), leavesLen, t.hasher)
+	return NewProof(proofLeaves, t.helperNodesHashes(leafIndices), leavesLen, t.hasher)
 }
 
 // insert inserts a new types.Leaf. Please note it won't modify the root just yet; For the changes
@@ -119,7 +119,7 @@ func (t *Tree) commit() error {
 // rollback rolls back one commit and reverts the tree to the previous state.
 // Removes the most recent commit from the history.
 func (t *Tree) rollback() {
-	_, t.history = popFromPartialtree(t.history)
+	_, t.history = popPartialtree(t.history)
 	t.currentWorkingTree.clear()
 	for _, commit := range t.history {
 		t.currentWorkingTree.mergeUnverified(commit)
@@ -149,12 +149,12 @@ func (t *Tree) uncommittedRootHex() (string, error) {
 // depth returns the tree depth. A tree depth is how many layers there is between the
 // leaves and the root
 func (t *Tree) depth() int {
-	return len(t.layerLeaves()) - 1
+	return len(t.layers()) - 1
 }
 
 // baseLeaves returns a copy of the tree leaves - the base level of the tree.
 func (t *Tree) baseLeaves() [][]byte {
-	layers := t.layers()
+	layers := t.layersNodesHashes()
 	if len(layers) > 0 {
 		return [][]byte{}
 	}
@@ -168,21 +168,21 @@ func (t *Tree) leavesLen() uint64 {
 }
 
 // leaves returns leaves of the current working tree
-func (t *Tree) leaves() []types.Leaf {
-	if len(t.layerLeaves()) > 0 {
-		return t.layerLeaves()[0]
+func (t *Tree) leaves() Leaves {
+	if len(t.layers()) > 0 {
+		return t.layers()[0]
 	}
-	return []types.Leaf{}
+	return Leaves{}
 }
 
-// layers returns the whole tree, where the first layer is leaves and
-// consequent layers are nodes.
-func (t *Tree) layers() [][][]byte {
-	return t.currentWorkingTree.layerNodes()
+// layersNodesHashes returns the whole tree, where the first layer is leaves and
+// consequent layersNodesHashes are nodes.
+func (t *Tree) layersNodesHashes() [][][]byte {
+	return t.currentWorkingTree.layerNodesHashes()
 }
 
-// layerLeaves returns leaves of the current working tree
-func (t *Tree) layerLeaves() [][]types.Leaf {
+// layers returns leaves of the current working tree
+func (t *Tree) layers() Layers {
 	return t.currentWorkingTree.layers
 }
 
@@ -193,22 +193,23 @@ func (t *Tree) uncommittedDiff() (PartialTree, error) {
 		return PartialTree{}, nil
 	}
 
+	partialTreeLayers, uncommittedTreeDepth := t.uncommitedPartialTreeLayers()
+
+	tree := NewPartialTree(t.hasher)
+	return tree.build(partialTreeLayers, uncommittedTreeDepth)
+}
+
+// uncommitedPartialTreeLayers calculates shadow indices and leaves then returns uncommited partial tree layers
+func (t *Tree) uncommitedPartialTreeLayers() (Layers, uint64) {
 	shadowIndecies := t.getShadowIndecies()
 	shadowNodeLeaves := t.getShadowLeaves(shadowIndecies)
 
-	partialTreeLeaves := t.helperNodeLeaves(shadowIndecies)
+	partialTreeLayers := t.helperNodeLayers(shadowIndecies)
+	partialTreeLayers = appendShadowLayers(partialTreeLayers, shadowNodeLeaves)
+
 	leavesInNewTree := t.leavesLen() + uint64(len(t.UncommittedLeaves))
 	uncommittedTreeDepth := treeDepth(leavesInNewTree)
-	if len(partialTreeLeaves) == 0 {
-		partialTreeLeaves = append(partialTreeLeaves, shadowNodeLeaves)
-	} else {
-		firstLayer := partialTreeLeaves[0]
-		firstLayer = append(firstLayer, shadowNodeLeaves...)
-		sortLeavesByIndex(firstLayer)
-		partialTreeLeaves[0] = firstLayer
-	}
-	tree := NewPartialTree(t.hasher)
-	return tree.build(partialTreeLeaves, uncommittedTreeDepth)
+	return partialTreeLayers, uncommittedTreeDepth
 }
 
 // getShadowIndecies returns shadow indices of the uncommited leaves
@@ -226,8 +227,8 @@ func (t *Tree) getShadowIndecies() []uint64 {
 }
 
 // getShadowLeaves returns shadow leaves of the uncommited leaves
-func (t *Tree) getShadowLeaves(shadowIndecies []uint64) []types.Leaf {
-	var shadowNodeLeaves []types.Leaf
+func (t *Tree) getShadowLeaves(shadowIndecies []uint64) Leaves {
+	var shadowNodeLeaves Leaves
 	for i := 0; i < len(shadowIndecies); i++ {
 		leaf := types.Leaf{Index: shadowIndecies[i], Hash: t.UncommittedLeaves[i]}
 		shadowNodeLeaves = append(shadowNodeLeaves, leaf)
@@ -236,7 +237,7 @@ func (t *Tree) getShadowLeaves(shadowIndecies []uint64) []types.Leaf {
 }
 
 // leafAtIndex returns types.Leaf object at the index
-func leafAtIndex(leavesAndHash []types.Leaf, index uint64) (types.Leaf, bool) {
+func leafAtIndex(leavesAndHash Leaves, index uint64) (types.Leaf, bool) {
 	for i := 0; i < len(leavesAndHash); i++ {
 		l := leavesAndHash[i]
 		if l.Index == index {
@@ -247,15 +248,15 @@ func leafAtIndex(leavesAndHash []types.Leaf, index uint64) (types.Leaf, bool) {
 }
 
 // layerAtIndex returns layer object at the index
-func layerAtIndex(layers [][]types.Leaf, index uint64) ([]types.Leaf, bool) {
+func layerAtIndex(layers Layers, index uint64) (Leaves, bool) {
 	if len(layers) > int(index) {
 		return layers[index], true
 	}
-	return []types.Leaf{}, false
+	return Leaves{}, false
 }
 
 // sortLeavesByIndex sorts leaves by their index
-func sortLeavesByIndex(li []types.Leaf) {
+func sortLeavesByIndex(li Leaves) {
 	sort.Slice(li, func(i, j int) bool { return li[i].Index < li[j].Index })
 }
 
@@ -265,4 +266,22 @@ func treeDepth(leavesCount uint64) uint64 {
 		return 1
 	}
 	return uint64(math.Ceil(math.Log2(float64(leavesCount))))
+}
+
+func appendShadowLayers(partialTreeLayers Layers, shadowNodeLeaves Leaves) Layers {
+	if len(partialTreeLayers) == 0 {
+		partialTreeLayers = append(partialTreeLayers, shadowNodeLeaves)
+	} else {
+		firstLayer := partialTreeLayers[0]
+		firstLayer = append(firstLayer, shadowNodeLeaves...)
+		sortLeavesByIndex(firstLayer)
+		partialTreeLayers[0] = firstLayer
+	}
+	return partialTreeLayers
+}
+
+// popPartialtree pops last element in a partial tree slice
+func popPartialtree(slice []PartialTree) (PartialTree, []PartialTree) {
+	popElem, newSlice := slice[len(slice)-1], slice[0:len(slice)-1]
+	return popElem, newSlice
 }

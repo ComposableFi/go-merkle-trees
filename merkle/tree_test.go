@@ -321,6 +321,6 @@ func BenchmarkHelperNodeLeaves(b *testing.B) {
 	mtree.append(leaves)
 	shadowIndices := mtree.getShadowIndecies()
 	for n := 0; n < b.N; n++ {
-		mtree.helperNodeLeaves(shadowIndices)
+		mtree.helperNodeLayers(shadowIndices)
 	}
 }

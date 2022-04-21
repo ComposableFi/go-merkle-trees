@@ -11,7 +11,7 @@ func siblingIndecies(idxs []uint64) []uint64 {
 	return siblings
 }
 
-// parentIndecies returns indecirs of parent elements
+// parentIndecies returns indecies of parent elements
 func parentIndecies(idxs []uint64) []uint64 {
 	var parents []uint64
 	for i := 0; i < len(idxs); i++ {
@@ -33,6 +33,14 @@ func siblingIndex(idx uint64) uint64 {
 
 func isLeftIndex(idx uint64) bool {
 	return idx%2 == 0
+}
+
+func getLeftIndex(idx int) int {
+	return idx * 2
+}
+
+func getRightIndex(idx int) int {
+	return getLeftIndex(idx) + 1
 }
 
 // parentIndex returns index of a parent element

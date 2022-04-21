@@ -8,7 +8,7 @@ import (
 )
 
 // build is a wrapper for buildTree
-func (pt *PartialTree) build(partialLayers [][]types.Leaf, depth uint64) (PartialTree, error) {
+func (pt *PartialTree) build(partialLayers Layers, depth uint64) (PartialTree, error) {
 	layers, err := pt.buildTree(partialLayers, depth)
 	if err != nil {
 		return PartialTree{}, err
@@ -19,15 +19,15 @@ func (pt *PartialTree) build(partialLayers [][]types.Leaf, depth uint64) (Partia
 // buildTree is a general algorithm for building a partial tree. It can be used to extract root
 // from merkle proof, or if a complete set of leaves provided as a first argument and no
 // helper indices given, will construct the whole tree.
-func (pt *PartialTree) buildTree(partialLayers [][]types.Leaf, fullTreeDepth uint64) ([][]types.Leaf, error) {
+func (pt *PartialTree) buildTree(partialLayers Layers, fullTreeDepth uint64) (Layers, error) {
 	reversedLayers := reverseLayers(partialLayers)
-	var currentLayer []types.Leaf
-	var partialTree [][]types.Leaf
+	var currentLayer Leaves
+	var partialTree Layers
 	for i := uint64(0); i < fullTreeDepth; i++ {
 
 		if len(reversedLayers) > 0 {
-			var nodes []types.Leaf
-			nodes, reversedLayers = popFromLeafQueue(reversedLayers)
+			var nodes Leaves
+			nodes, reversedLayers = popLayer(reversedLayers)
 			currentLayer = append(currentLayer, nodes...)
 		}
 
@@ -35,34 +35,30 @@ func (pt *PartialTree) buildTree(partialLayers [][]types.Leaf, fullTreeDepth uin
 
 		partialTree = append(partialTree, currentLayer)
 
-		var indices []uint64
-		var nodes [][]byte
-		for i := 0; i < len(currentLayer); i++ {
-			indices = append(indices, currentLayer[i].Index)
-			nodes = append(nodes, currentLayer[i].Hash)
-		}
+		indices, hashes := extractIndicesAdnHashes(currentLayer)
+
 		// freeup for next round
-		currentLayer = make([]types.Leaf, 0)
+		currentLayer = make(Leaves, 0)
 
-		parentLayerIndices := parentIndecies(indices)
+		parentIndices := parentIndecies(indices)
 
-		for i := 0; i < len(parentLayerIndices); i++ {
-			parnetNodeIndex := parentLayerIndices[i]
-			leftIndex := i * 2
-			if len(nodes) > leftIndex {
-				leftHash := nodes[leftIndex]
-				rightIndex := i*2 + 1
+		for i := 0; i < len(parentIndices); i++ {
+			parnetNodeIndex := parentIndices[i]
+			leftIndex := getLeftIndex(i)
+			if len(hashes) > leftIndex {
+				rightIndex := getRightIndex(i)
 
-				var hash, rightHash []byte
-				if len(nodes) > rightIndex {
-					rightHash = nodes[rightIndex]
+				leftHash := hashes[leftIndex]
+				var rightHash []byte
+				if len(hashes) > rightIndex {
+					rightHash = hashes[rightIndex]
 				} else {
 					rightHash = nil
 				}
-				var err error
-				hash, err = hasher.MergeAndHash(pt.hasher, leftHash, rightHash)
+
+				hash, err := hasher.MergeAndHash(pt.hasher, leftHash, rightHash)
 				if err != nil {
-					return [][]types.Leaf{}, err
+					return Layers{}, err
 				}
 
 				currentLayer = append(currentLayer, types.Leaf{
@@ -70,7 +66,7 @@ func (pt *PartialTree) buildTree(partialLayers [][]types.Leaf, fullTreeDepth uin
 					Hash:  hash,
 				})
 			} else {
-				return [][]types.Leaf{}, errors.New("not enough helper nodes")
+				return Layers{}, errors.New("not enough helper nodes")
 			}
 		}
 
@@ -93,13 +89,15 @@ func (pt *PartialTree) Root() []byte {
 
 // contains checks if a node index is present in a layer
 func (pt *PartialTree) contains(layerIndex, nodeIndex uint64) bool {
-	layer, ok := layerAtIndex(pt.layers, layerIndex)
+	layerLeaves, ok := layerAtIndex(pt.layers, layerIndex)
 	if ok {
-		for _, l := range layer {
+		for i := 0; i < len(layerLeaves); i++ {
+			l := layerLeaves[i]
 			if nodeIndex == l.Index {
 				return true
 			}
 		}
+
 	}
 	return false
 }
@@ -120,17 +118,17 @@ func (pt *PartialTree) mergeUnverified(other PartialTree) {
 	}
 
 	for layerIndex := uint64(0); layerIndex < combinedTreeSize; layerIndex++ {
-		var combinedLayer, filteredLayer []types.Leaf
+		var combinedLayer, filteredLayer Leaves
 
 		selfLayer, ok := layerAtIndex(pt.layers, uint64(layerIndex))
 		if ok {
-			for _, node := range selfLayer {
+			for i := 0; i < len(selfLayer); i++ {
+				node := selfLayer[i]
 				if !other.contains(layerIndex, node.Index) {
 					filteredLayer = append(filteredLayer, node)
 				}
 			}
 			combinedLayer = append(combinedLayer, filteredLayer...)
-
 		}
 
 		otherLayer, ok := layerAtIndex(other.layers, layerIndex)
@@ -146,7 +144,7 @@ func (pt *PartialTree) mergeUnverified(other PartialTree) {
 }
 
 // upsertLayer replaces layer at a given index with a new layer. Used during tree merge
-func (pt *PartialTree) upsertLayer(layerIndex uint64, newLayer []types.Leaf) {
+func (pt *PartialTree) upsertLayer(layerIndex uint64, newLayer Leaves) {
 	_, ok := layerAtIndex(pt.layers, layerIndex)
 	if ok {
 		pt.layers[layerIndex] = newLayer
@@ -156,13 +154,15 @@ func (pt *PartialTree) upsertLayer(layerIndex uint64, newLayer []types.Leaf) {
 
 }
 
-// layerNodes returns all hashes of all layers
-func (pt *PartialTree) layerNodes() [][][]byte {
+// layerNodesHashes returns all hashes of all layers
+func (pt *PartialTree) layerNodesHashes() [][][]byte {
 	var allHashes [][][]byte
-	for _, l := range pt.getLayers() {
+	layers := pt.getLayers()
+	for i := 0; i < len(layers); i++ {
 		var layerHashes [][]byte
-		for _, h := range l {
-			layerHashes = append(layerHashes, h.Hash)
+		l := layers[i]
+		for j := 0; j < len(l); j++ {
+			layerHashes = append(layerHashes, l[j].Hash)
 		}
 		allHashes = append(allHashes, layerHashes)
 	}
@@ -170,18 +170,18 @@ func (pt *PartialTree) layerNodes() [][][]byte {
 }
 
 // getLayers returns partial tree layers
-func (pt *PartialTree) getLayers() [][]types.Leaf {
+func (pt *PartialTree) getLayers() Layers {
 	return pt.layers
 }
 
 // clear clears all elements in the tree
 func (pt *PartialTree) clear() {
-	pt.layers = [][]types.Leaf{}
+	pt.layers = Layers{}
 }
 
 // reverseLayers reverses a slice of types.Leaf slice
-func reverseLayers(s [][]types.Leaf) [][]types.Leaf {
-	a := make([][]types.Leaf, len(s))
+func reverseLayers(s Layers) Layers {
+	a := make(Layers, len(s))
 	copy(a, s)
 
 	for i := len(a)/2 - 1; i >= 0; i-- {
@@ -190,4 +190,21 @@ func reverseLayers(s [][]types.Leaf) [][]types.Leaf {
 	}
 
 	return a
+}
+
+// popLayer pops last element in the layers
+func popLayer(slice Layers) (Leaves, Layers) {
+	popElem, newSlice := slice[len(slice)-1], slice[0:len(slice)-1]
+	return popElem, newSlice
+}
+
+func extractIndicesAdnHashes(leaves Leaves) ([]uint64, [][]byte) {
+	leavesLen := len(leaves)
+	indices := make([]uint64, leavesLen)
+	hashes := make([][]byte, leavesLen)
+	for i := 0; i < leavesLen; i++ {
+		l := leaves[i]
+		indices[i], hashes[i] = l.Index, l.Hash
+	}
+	return indices, hashes
 }

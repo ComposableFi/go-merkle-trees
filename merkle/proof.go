@@ -23,21 +23,22 @@ func (p Proof) Verify(root []byte) (bool, error) {
 func (p Proof) Root() ([]byte, error) {
 	treeDepth := treeDepth(p.totalLeavesCount)
 	sortLeavesByIndex(p.leaves)
-	var leafIndices []uint64
-	for _, l := range p.leaves {
-		leafIndices = append(leafIndices, l.Index)
+	leafIndices := make([]uint64, len(p.leaves))
+	for i := 0; i < len(p.leaves); i++ {
+		leafIndices[i] = p.leaves[i].Index
 	}
 	proofIndicesLayers := proofIndeciesByLayers(leafIndices, p.totalLeavesCount)
-	var proofLayers [][]types.Leaf
+	var proofLayers Layers
 	proofCopy := make([][]byte, len(p.proofHashes))
 	copy(proofCopy, p.proofHashes)
-	for _, proofIndices := range proofIndicesLayers {
+	for i := 0; i < len(proofIndicesLayers); i++ {
+		proofIndices := proofIndicesLayers[i]
 		var proofHashes [][]byte
 		for i := 0; i < len(proofIndices); i++ {
 			proofHashes = append(proofHashes, proofCopy[0])
 			proofCopy = proofCopy[1:]
 		}
-		m := mapIndiceAndLeaves(proofIndices, proofHashes)
+		m := mapIndiceToLeaves(proofIndices, proofHashes)
 		proofLayers = append(proofLayers, m)
 	}
 
@@ -76,10 +77,10 @@ func (p Proof) ProofHashes() [][]byte {
 // ProofHashesHex returns all hashes from the proof, sorted from the left to right,
 // bottom to top, as a vector of lower hex strings.
 func (p Proof) ProofHashesHex() []string {
-	var hexList []string
-	for _, p := range p.proofHashes {
-		hex := hex.EncodeToString(p)
-		hexList = append(hexList, hex)
+	hashesLen := len(p.proofHashes)
+	hexList := make([]string, hashesLen)
+	for i := 0; i < hashesLen; i++ {
+		hexList[i] = hex.EncodeToString(p.proofHashes[i])
 	}
 	return hexList
 }
@@ -117,4 +118,14 @@ func unevenLayers(treeLeavesCount uint64) map[uint64]uint64 {
 		treeLeavesCount = uint64(math.Ceil(float64(treeLeavesCount) / 2))
 	}
 	return unevenLayers
+}
+
+// mapIndiceToLeaves maps the indices and leaves of a tree
+func mapIndiceToLeaves(indices []uint64, leavesHashes [][]byte) (result Leaves) {
+	indicesLen := len(indices)
+	result = make(Leaves, indicesLen)
+	for i := 0; i < indicesLen; i++ {
+		result[i] = types.Leaf{Index: indices[i], Hash: leavesHashes[i]}
+	}
+	return result
 }
