@@ -75,6 +75,37 @@ func TestVerifyProof(t *testing.T) {
 
 }
 
+func BenchmarkVerifyProof(b *testing.B) {
+	var leaves [][]byte
+	for _, v := range testAddresses {
+		b := common.FromHex(v)
+		h := crypto.Keccak256Hash(b).Bytes()
+		leaves = append(leaves, h)
+	}
+
+	merkleTree := NewTree(hasher.Keccak256Hasher{})
+	merkleTree, _ = merkleTree.FromLeaves(leaves)
+	for n := 0; n < b.N; n++ {
+		merkleTree.Proof([]uint64{uint64(0)})
+	}
+}
+
+func BenchmarkProofRoot(b *testing.B) {
+	var leaves [][]byte
+	for _, v := range testAddresses {
+		b := common.FromHex(v)
+		h := crypto.Keccak256Hash(b).Bytes()
+		leaves = append(leaves, h)
+	}
+
+	merkleTree := NewTree(hasher.Keccak256Hasher{})
+	merkleTree, _ = merkleTree.FromLeaves(leaves)
+	proof := merkleTree.Proof([]uint64{uint64(0)})
+	for n := 0; n < b.N; n++ {
+		proof.Root()
+	}
+}
+
 var testAddresses = []string{
 	"9aF1Ca5941148eB6A3e9b9C741b69738292C533f",
 	"DD6ca953fddA25c496165D9040F7F77f75B75002",

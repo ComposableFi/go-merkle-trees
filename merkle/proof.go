@@ -48,7 +48,6 @@ func (p Proof) Root() ([]byte, error) {
 		firstLayer = append(firstLayer, p.leaves...)
 		sortLeavesAscending(firstLayer)
 		proofLayers[0] = firstLayer
-
 	} else {
 		proofLayers = append(proofLayers, p.leaves)
 	}
