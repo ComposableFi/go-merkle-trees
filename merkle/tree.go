@@ -48,7 +48,7 @@ func (t *Tree) helperNodesHashes(leafIndices []uint64) [][]byte {
 }
 
 // helperNodeLayers gets all helper nodes required to build a partial merkle tree for the given indices,
-// cloning all required hashes into the resulting vector.
+// cloning all required hashes into the resulting slice.
 func (t *Tree) helperNodeLayers(leafIndeceis []uint64) Layers {
 	var helperNodes Layers
 	for _, treeLayer := range t.layers() {
@@ -129,11 +129,11 @@ func (t *Tree) rollback() {
 // uncommittedRoot calculates the root of the uncommitted changes as if they were committed.
 // Will return the same hash as root of merkle tree after commit
 func (t *Tree) uncommittedRoot() ([]byte, error) {
-	shadowTree, err := t.uncommittedDiff()
+	uncommitedTree, err := t.uncommittedDiff()
 	if err != nil {
 		return []byte{}, err
 	}
-	return shadowTree.Root(), nil
+	return uncommitedTree.Root(), nil
 }
 
 // uncommittedRootHex calculates the root of the uncommitted changes as if they were committed. Serializes
@@ -199,41 +199,42 @@ func (t *Tree) uncommittedDiff() (PartialTree, error) {
 	return tree.build(partialTreeLayers, uncommittedTreeDepth)
 }
 
-// uncommitedPartialTreeLayers calculates shadow indices and leaves then returns uncommited partial tree layers
+// uncommitedPartialTreeLayers calculates reserved indices and leaves then returns uncommited partial tree layers
 func (t *Tree) uncommitedPartialTreeLayers() (Layers, uint64) {
-	shadowIndecies := t.getShadowIndecies()
-	shadowNodeLeaves := t.getShadowLeaves(shadowIndecies)
+	reservedIndecies := t.getUncommitedReservedIndecies()
+	reservedNodeLeaves := t.getUncommitedReservedLeaves(reservedIndecies)
 
-	partialTreeLayers := t.helperNodeLayers(shadowIndecies)
-	partialTreeLayers = appendShadowLayers(partialTreeLayers, shadowNodeLeaves)
+	partialTreeLayers := t.helperNodeLayers(reservedIndecies)
+	partialTreeLayers = appendUncommitedReservedLayers(partialTreeLayers, reservedNodeLeaves)
 
 	leavesInNewTree := t.leavesLen() + uint64(len(t.UncommittedLeaves))
 	uncommittedTreeDepth := treeDepth(leavesInNewTree)
 	return partialTreeLayers, uncommittedTreeDepth
 }
 
-// getShadowIndecies returns shadow indices of the uncommited leaves
-func (t *Tree) getShadowIndecies() []uint64 {
+// getUncommitedReservedIndecies returns uncommited reserved indices of the uncommited leaves
+func (t *Tree) getUncommitedReservedIndecies() []uint64 {
 	if len(t.UncommittedLeaves) == 0 {
 		return []uint64{}
 	}
 
 	commitedLeavesCount := t.leavesLen()
-	var shadowIndecies []uint64
-	for i := 0; i < len(t.UncommittedLeaves); i++ {
-		shadowIndecies = append(shadowIndecies, commitedLeavesCount+uint64(i))
+	unCommitedLeavesCount := len(t.UncommittedLeaves)
+	reservedIndecies := make([]uint64, unCommitedLeavesCount)
+	for i := 0; i < unCommitedLeavesCount; i++ {
+		reservedIndecies[i] = commitedLeavesCount + uint64(i)
 	}
-	return shadowIndecies
+	return reservedIndecies
 }
 
-// getShadowLeaves returns shadow leaves of the uncommited leaves
-func (t *Tree) getShadowLeaves(shadowIndecies []uint64) Leaves {
-	var shadowNodeLeaves Leaves
-	for i := 0; i < len(shadowIndecies); i++ {
-		leaf := types.Leaf{Index: shadowIndecies[i], Hash: t.UncommittedLeaves[i]}
-		shadowNodeLeaves = append(shadowNodeLeaves, leaf)
+// getUncommitedReservedLeaves returns uncommited reserved leaves of the uncommited leaves
+func (t *Tree) getUncommitedReservedLeaves(reservedIndecies []uint64) Leaves {
+	indicesCount := len(reservedIndecies)
+	reservedNodeLeaves := make(Leaves, indicesCount)
+	for i := 0; i < indicesCount; i++ {
+		reservedNodeLeaves[i] = types.Leaf{Index: reservedIndecies[i], Hash: t.UncommittedLeaves[i]}
 	}
-	return shadowNodeLeaves
+	return reservedNodeLeaves
 }
 
 // leafAtIndex returns types.Leaf object at the index
@@ -255,8 +256,8 @@ func layerAtIndex(layers Layers, index uint64) (Leaves, bool) {
 	return Leaves{}, false
 }
 
-// sortLeavesByIndex sorts leaves by their index
-func sortLeavesByIndex(li Leaves) {
+// sortLeavesAscending sorts leaves by their index
+func sortLeavesAscending(li Leaves) {
 	sort.Slice(li, func(i, j int) bool { return li[i].Index < li[j].Index })
 }
 
@@ -268,13 +269,13 @@ func treeDepth(leavesCount uint64) uint64 {
 	return uint64(math.Ceil(math.Log2(float64(leavesCount))))
 }
 
-func appendShadowLayers(partialTreeLayers Layers, shadowNodeLeaves Leaves) Layers {
+func appendUncommitedReservedLayers(partialTreeLayers Layers, reservedNodeLeaves Leaves) Layers {
 	if len(partialTreeLayers) == 0 {
-		partialTreeLayers = append(partialTreeLayers, shadowNodeLeaves)
+		partialTreeLayers = append(partialTreeLayers, reservedNodeLeaves)
 	} else {
 		firstLayer := partialTreeLayers[0]
-		firstLayer = append(firstLayer, shadowNodeLeaves...)
-		sortLeavesByIndex(firstLayer)
+		firstLayer = append(firstLayer, reservedNodeLeaves...)
+		sortLeavesAscending(firstLayer)
 		partialTreeLayers[0] = firstLayer
 	}
 	return partialTreeLayers

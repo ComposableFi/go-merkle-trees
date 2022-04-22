@@ -276,22 +276,22 @@ func BenchmarkFromLeaves(b *testing.B) {
 	}
 }
 
-func BenchmarkShadowIndices(b *testing.B) {
+func BenchmarkUncommitedReservedIndecies(b *testing.B) {
 	leaves, _ := sampleHashes()
 	mtree := NewTree(hasher.Sha256Hasher{})
 	mtree.append(leaves)
 	for n := 0; n < b.N; n++ {
-		mtree.getShadowIndecies()
+		mtree.getUncommitedReservedIndecies()
 	}
 }
 
-func BenchmarkShadowLeaves(b *testing.B) {
+func BenchmarkUncommitedReservedLeaves(b *testing.B) {
 	leaves, _ := sampleHashes()
 	mtree := NewTree(hasher.Sha256Hasher{})
 	mtree.append(leaves)
-	shadowIndices := mtree.getShadowIndecies()
+	reservedIndices := mtree.getUncommitedReservedIndecies()
 	for n := 0; n < b.N; n++ {
-		mtree.getShadowLeaves(shadowIndices)
+		mtree.getUncommitedReservedLeaves(reservedIndices)
 	}
 }
 
@@ -299,9 +299,9 @@ func BenchmarkSiblingIndices(b *testing.B) {
 	leaves, _ := sampleHashes()
 	mtree := NewTree(hasher.Sha256Hasher{})
 	mtree.append(leaves)
-	shadowIndices := mtree.getShadowIndecies()
+	reservedIndices := mtree.getUncommitedReservedIndecies()
 	for n := 0; n < b.N; n++ {
-		siblingIndecies(shadowIndices)
+		siblingIndecies(reservedIndices)
 	}
 }
 
@@ -309,9 +309,9 @@ func BenchmarkParentIndices(b *testing.B) {
 	leaves, _ := sampleHashes()
 	mtree := NewTree(hasher.Sha256Hasher{})
 	mtree.append(leaves)
-	shadowIndices := mtree.getShadowIndecies()
+	reservedIndices := mtree.getUncommitedReservedIndecies()
 	for n := 0; n < b.N; n++ {
-		parentIndecies(shadowIndices)
+		parentIndecies(reservedIndices)
 	}
 }
 
@@ -319,8 +319,8 @@ func BenchmarkHelperNodeLeaves(b *testing.B) {
 	leaves, _ := sampleHashes()
 	mtree := NewTree(hasher.Sha256Hasher{})
 	mtree.append(leaves)
-	shadowIndices := mtree.getShadowIndecies()
+	reservedIndices := mtree.getUncommitedReservedIndecies()
 	for n := 0; n < b.N; n++ {
-		mtree.helperNodeLayers(shadowIndices)
+		mtree.helperNodeLayers(reservedIndices)
 	}
 }

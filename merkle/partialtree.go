@@ -31,7 +31,7 @@ func (pt *PartialTree) buildTree(partialLayers Layers, fullTreeDepth uint64) (La
 			currentLayer = append(currentLayer, nodes...)
 		}
 
-		sortLeavesByIndex(currentLayer)
+		sortLeavesAscending(currentLayer)
 
 		partialTree = append(partialTree, currentLayer)
 
@@ -136,7 +136,7 @@ func (pt *PartialTree) mergeUnverified(other PartialTree) {
 			combinedLayer = append(combinedLayer, otherLayer...)
 		}
 
-		sortLeavesByIndex(otherLayer)
+		sortLeavesAscending(otherLayer)
 
 		pt.upsertLayer(layerIndex, combinedLayer)
 
@@ -156,15 +156,17 @@ func (pt *PartialTree) upsertLayer(layerIndex uint64, newLayer Leaves) {
 
 // layerNodesHashes returns all hashes of all layers
 func (pt *PartialTree) layerNodesHashes() [][][]byte {
-	var allHashes [][][]byte
 	layers := pt.getLayers()
-	for i := 0; i < len(layers); i++ {
-		var layerHashes [][]byte
+	layersCount := len(layers)
+	allHashes := make([][][]byte, layersCount)
+	for i := 0; i < layersCount; i++ {
 		l := layers[i]
-		for j := 0; j < len(l); j++ {
-			layerHashes = append(layerHashes, l[j].Hash)
+		leavesCount := len(l)
+		layerHashes := make([][]byte, leavesCount)
+		for j := 0; j < leavesCount; j++ {
+			layerHashes[j] = l[j].Hash
 		}
-		allHashes = append(allHashes, layerHashes)
+		allHashes[i] = layerHashes
 	}
 	return allHashes
 }

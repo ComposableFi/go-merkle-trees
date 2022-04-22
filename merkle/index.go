@@ -4,18 +4,20 @@ import "sort"
 
 // siblingIndecies returns indecirs of sibling elements
 func siblingIndecies(idxs []uint64) []uint64 {
-	var siblings []uint64
-	for i := 0; i < len(idxs); i++ {
-		siblings = append(siblings, siblingIndex(idxs[i]))
+	indicesCount := len(idxs)
+	siblings := make([]uint64, indicesCount)
+	for i := 0; i < indicesCount; i++ {
+		siblings[i] = siblingIndex(idxs[i])
 	}
 	return siblings
 }
 
 // parentIndecies returns indecies of parent elements
 func parentIndecies(idxs []uint64) []uint64 {
-	var parents []uint64
-	for i := 0; i < len(idxs); i++ {
-		parents = append(parents, parentIndex(idxs[i]))
+	indicesCount := len(idxs)
+	parents := make([]uint64, indicesCount)
+	for i := 0; i < indicesCount; i++ {
+		parents[i] = parentIndex(idxs[i])
 	}
 	parents = removeDuplicateIndices(parents)
 	return parents
