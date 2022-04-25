@@ -110,7 +110,7 @@ func unevenLayers(treeLeavesCount uint64) map[uint64]uint64 {
 	depth := treeDepth(treeLeavesCount)
 	unevenLayers := make(map[uint64]uint64)
 	for i := uint64(0); i < depth; i++ {
-		if !isLeftIndex(treeLeavesCount) {
+		if !isEvenIndex(treeLeavesCount) {
 			unevenLayers[i] = treeLeavesCount
 		}
 		treeLeavesCount = uint64(math.Ceil(float64(treeLeavesCount) / 2))

@@ -41,21 +41,19 @@ func setupProofTestCases() ([]ProofTestCases, error) {
 	var merkleProofCases []ProofTestCases
 	for i := 0; i < len(maxCase); i++ {
 		var leavesHashes [][]byte
-		var Leaves Leaves
+		var leaves Leaves
 		for j := 0; j < i+1; j++ {
 			h, _ := hasher.Sha256Hasher{}.Hash([]byte(maxCase[j]))
 			leavesHashes = append(leavesHashes, h)
-			Leaves = append(Leaves, types.Leaf{Index: uint64(j), Hash: h})
+			leaves = append(leaves, types.Leaf{Index: uint64(j), Hash: h})
 		}
-		possibleProofElementCombinations := combinations(Leaves)
+		possibleProofElementCombinations := combinations(leaves)
 
 		var cases []MerkleProofTestCase
 		for _, proofElements := range possibleProofElementCombinations {
 			var indices []uint64
 			for _, proofElement := range proofElements {
 				indices = append(indices, proofElement.Index)
-				// leaves2 = append(leaves2, proofElement.Hash)
-
 			}
 			cases = append(cases, MerkleProofTestCase{LeafIndicesToProve: indices, Leaves: proofElements})
 		}
@@ -77,6 +75,7 @@ func combinations(leaves Leaves) Layers {
 	return combine(Leaves{}, leaves, Layers{})
 }
 
+// combine recursively converts the leaves into layers, the returning layers contain the possible combinations of the leaves.
 func combine(active Leaves, rest Leaves, combinations Layers) Layers {
 	if len(rest) == 0 {
 		if len(active) == 0 {
@@ -94,5 +93,4 @@ func combine(active Leaves, rest Leaves, combinations Layers) Layers {
 	combinations = combine(next, rest[1:], combinations)
 	combinations = combine(active, rest[1:], combinations)
 	return combinations
-
 }
