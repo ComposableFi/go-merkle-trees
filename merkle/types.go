@@ -4,6 +4,12 @@ import (
 	"github.com/ComposableFi/go-merkle-trees/types"
 )
 
+// Leaves is a representation of slice of leaf
+type Leaves []types.Leaf
+
+// Layers is a representation of slice of Leaves slice
+type Layers []Leaves
+
 // Tree is a Merkle Tree that is well suited for both basic and advanced usage.
 //
 // Basic features include the creation and verification of Merkle proofs from a set of leaves.
@@ -34,7 +40,7 @@ func NewTree(hasher types.Hasher) Tree {
 // multiple trees into one.
 // It is a rare case when you need to use this struct on it's own. It's mostly used inside
 type PartialTree struct {
-	layers [][]types.Leaf
+	layers Layers
 	hasher types.Hasher
 }
 
@@ -42,7 +48,7 @@ type PartialTree struct {
 // Since it's a partial tree, hashes must be accompanied by their index in the original tree.
 func NewPartialTree(hasher types.Hasher) PartialTree {
 	return PartialTree{
-		layers: [][]types.Leaf{},
+		layers: Layers{},
 		hasher: hasher,
 	}
 }
@@ -53,13 +59,13 @@ func NewPartialTree(hasher types.Hasher) PartialTree {
 // parameter to the Proof.
 type Proof struct {
 	proofHashes      [][]byte
-	leaves           []types.Leaf
+	leaves           Leaves
 	totalLeavesCount uint64
 	hasher           types.Hasher
 }
 
 // NewProof create new instance of merkle proof
-func NewProof(leaves []types.Leaf, proofHashes [][]byte, totalLeavesCount uint64, hasher types.Hasher) Proof {
+func NewProof(leaves Leaves, proofHashes [][]byte, totalLeavesCount uint64, hasher types.Hasher) Proof {
 	return Proof{
 		leaves:           leaves,
 		proofHashes:      proofHashes,

@@ -1,10 +1,9 @@
-package merkle_test
+package merkle
 
 import (
 	"testing"
 
 	"github.com/ComposableFi/go-merkle-trees/hasher"
-	"github.com/ComposableFi/go-merkle-trees/merkle"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
@@ -15,7 +14,7 @@ func TestCorrectProofs(t *testing.T) {
 	expectedRoot := testData.expectedRootHex
 	indicesToProve := []uint64{3, 4}
 
-	merkleTree, err := merkle.NewTree(hasher.Sha256Hasher{}).FromLeaves(testData.leafHashes)
+	merkleTree, err := NewTree(hasher.Sha256Hasher{}).FromLeaves(testData.leafHashes)
 	require.NoError(t, err)
 
 	proof := merkleTree.Proof(indicesToProve)
@@ -52,7 +51,7 @@ func TestVerifyProof(t *testing.T) {
 		leaves = append(leaves, h)
 	}
 
-	merkleTree := merkle.NewTree(hasher.Keccak256Hasher{})
+	merkleTree := NewTree(hasher.Keccak256Hasher{})
 	merkleTree, err := merkleTree.FromLeaves(leaves)
 	require.NoError(t, err)
 
@@ -74,6 +73,37 @@ func TestVerifyProof(t *testing.T) {
 		"ae3f8991955ed884613b0a5f40295902eea0e0abe5858fc520b72959bc016d4e",
 	})
 
+}
+
+func BenchmarkVerifyProof(b *testing.B) {
+	var leaves [][]byte
+	for _, v := range testAddresses {
+		b := common.FromHex(v)
+		h := crypto.Keccak256Hash(b).Bytes()
+		leaves = append(leaves, h)
+	}
+
+	merkleTree := NewTree(hasher.Keccak256Hasher{})
+	merkleTree, _ = merkleTree.FromLeaves(leaves)
+	for n := 0; n < b.N; n++ {
+		merkleTree.Proof([]uint64{uint64(0)})
+	}
+}
+
+func BenchmarkProofRoot(b *testing.B) {
+	var leaves [][]byte
+	for _, v := range testAddresses {
+		b := common.FromHex(v)
+		h := crypto.Keccak256Hash(b).Bytes()
+		leaves = append(leaves, h)
+	}
+
+	merkleTree := NewTree(hasher.Keccak256Hasher{})
+	merkleTree, _ = merkleTree.FromLeaves(leaves)
+	proof := merkleTree.Proof([]uint64{uint64(0)})
+	for n := 0; n < b.N; n++ {
+		proof.Root()
+	}
 }
 
 var testAddresses = []string{

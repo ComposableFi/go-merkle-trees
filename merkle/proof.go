@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"math"
 
-	"github.com/ComposableFi/go-merkle-trees/helpers"
 	"github.com/ComposableFi/go-merkle-trees/types"
 )
 
@@ -23,31 +22,32 @@ func (p Proof) Verify(root []byte) (bool, error) {
 // Verify method, but sometimes can be used on its own.
 func (p Proof) Root() ([]byte, error) {
 	treeDepth := treeDepth(p.totalLeavesCount)
-	sortLeavesByIndex(p.leaves)
-	var leafIndices []uint64
-	for _, l := range p.leaves {
-		leafIndices = append(leafIndices, l.Index)
+	sortLeavesAscending(p.leaves)
+	leafIndices := make([]uint64, len(p.leaves))
+	for i := 0; i < len(p.leaves); i++ {
+		leafIndices[i] = p.leaves[i].Index
 	}
 	proofIndicesLayers := proofIndeciesByLayers(leafIndices, p.totalLeavesCount)
-	var proofLayers [][]types.Leaf
+	proofLayersCount := len(proofIndicesLayers)
+	proofLayers := make(Layers, proofLayersCount)
 	proofCopy := make([][]byte, len(p.proofHashes))
 	copy(proofCopy, p.proofHashes)
-	for _, proofIndices := range proofIndicesLayers {
-		var proofHashes [][]byte
-		for i := 0; i < len(proofIndices); i++ {
-			proofHashes = append(proofHashes, proofCopy[0])
+	for i := 0; i < proofLayersCount; i++ {
+		proofIndices := proofIndicesLayers[i]
+		proofIndicesCount := len(proofIndices)
+		proofHashes := make([][]byte, proofIndicesCount)
+		for j := 0; j < proofIndicesCount; j++ {
+			proofHashes[j] = proofCopy[0]
 			proofCopy = proofCopy[1:]
 		}
-		m := MapIndiceAndLeaves(proofIndices, proofHashes)
-		proofLayers = append(proofLayers, m)
+		proofLayers[i] = mapIndiceToLeaves(proofIndices, proofHashes)
 	}
 
 	if len(proofLayers) > 0 {
 		firstLayer := proofLayers[0]
 		firstLayer = append(firstLayer, p.leaves...)
-		sortLeavesByIndex(firstLayer)
+		sortLeavesAscending(firstLayer)
 		proofLayers[0] = firstLayer
-
 	} else {
 		proofLayers = append(proofLayers, p.leaves)
 	}
@@ -75,12 +75,12 @@ func (p Proof) ProofHashes() [][]byte {
 }
 
 // ProofHashesHex returns all hashes from the proof, sorted from the left to right,
-// bottom to top, as a vector of lower hex strings.
+// bottom to top, as a slice of lower hex strings.
 func (p Proof) ProofHashesHex() []string {
-	var hexList []string
-	for _, p := range p.proofHashes {
-		hex := hex.EncodeToString(p)
-		hexList = append(hexList, hex)
+	hashesLen := len(p.proofHashes)
+	hexList := make([]string, hashesLen)
+	for i := 0; i < hashesLen; i++ {
+		hexList[i] = hex.EncodeToString(p.proofHashes[i])
 	}
 	return hexList
 }
@@ -91,19 +91,18 @@ func proofIndeciesByLayers(sortedLeafIndices []uint64, leavsCount uint64) [][]ui
 	unevenLayers := unevenLayers(leavsCount)
 	var proofIndices [][]uint64
 	for layerIndex := uint64(0); layerIndex < depth; layerIndex++ {
-		siblingIndices := helpers.SiblingIndecies(sortedLeafIndices)
+		siblingIndices := siblingIndecies(sortedLeafIndices)
 		leavesCount := unevenLayers[layerIndex]
 		layerLastNodeIndex := sortedLeafIndices[len(sortedLeafIndices)-1]
 		if layerLastNodeIndex == uint64(leavesCount)-1 {
-			_, siblingIndices = helpers.PopFromUint32Queue(siblingIndices)
+			_, siblingIndices = popFromIndexQueue(siblingIndices)
 		}
 
-		proofNodesIndices := helpers.Difference(siblingIndices, sortedLeafIndices)
+		proofNodesIndices := sliceDifference(siblingIndices, sortedLeafIndices)
 		proofIndices = append(proofIndices, proofNodesIndices)
-		sortedLeafIndices = helpers.ParentIndecies(sortedLeafIndices)
+		sortedLeafIndices = parentIndecies(sortedLeafIndices)
 	}
 	return proofIndices
-
 }
 
 // unevenLayers returns map of indices that are not even
@@ -111,11 +110,20 @@ func unevenLayers(treeLeavesCount uint64) map[uint64]uint64 {
 	depth := treeDepth(treeLeavesCount)
 	unevenLayers := make(map[uint64]uint64)
 	for i := uint64(0); i < depth; i++ {
-		unevenLayer := treeLeavesCount%2 != 0
-		if unevenLayer {
+		if !isEvenIndex(treeLeavesCount) {
 			unevenLayers[i] = treeLeavesCount
 		}
 		treeLeavesCount = uint64(math.Ceil(float64(treeLeavesCount) / 2))
 	}
 	return unevenLayers
+}
+
+// mapIndiceToLeaves maps the indices and leaves of a tree
+func mapIndiceToLeaves(indices []uint64, leavesHashes [][]byte) (result Leaves) {
+	indicesLen := len(indices)
+	result = make(Leaves, indicesLen)
+	for i := 0; i < indicesLen; i++ {
+		result[i] = types.Leaf{Index: indices[i], Hash: leavesHashes[i]}
+	}
+	return result
 }

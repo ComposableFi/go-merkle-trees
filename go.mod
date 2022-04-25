@@ -7,7 +7,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 )
 
-require golang.org/x/crypto v0.0.0-20211202192323-5770296d904e
+require golang.org/x/crypto v0.0.0-20211202192323-5770296d904e // indirect
 
 require (
 	github.com/btcsuite/btcd v0.20.1-beta // indirect
