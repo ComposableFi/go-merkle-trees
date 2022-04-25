@@ -428,14 +428,14 @@ func (m *Proof) CalculateRootWithNewLeaf(leaves []types.Leaf, newIndex uint64, n
 			return nil, err
 		}
 		peaksPos := GetPeaks(newMMRSize)
-		// reverse touched peaks
+		// Reverse touched peaks
 		var i uint
 		for peaksPos[i] < newPos {
 			i++
 		}
 
 		reversePeahashOfKes := peaksHashes[i:]
-		reverse(reversePeahashOfKes)
+		Reverse(reversePeahashOfKes)
 		peaksHashes = append(peaksHashes[:i], reversePeahashOfKes...)
 		iter := NewIterator()
 		iter.Items = peaksHashes
