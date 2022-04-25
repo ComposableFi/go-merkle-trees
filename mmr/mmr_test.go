@@ -207,9 +207,9 @@ func Test7LeafVerify(t *testing.T) {
 	// print tree structure
 	fmt.Println("                 7-leaf MMR:           ")
 	fmt.Println()
-	fmt.Println("    Height 3 |      7")
-	fmt.Println("    Height 2 |   3      6     10")
-	fmt.Println("    Height 1 | 1  2   4  5   8  9    11")
+	fmt.Println("    Height 3 |      6")
+	fmt.Println("    Height 2 |   2      5      9")
+	fmt.Println("    Height 1 | 0  1   3  4   7  8    10")
 	fmt.Println("             | |--|---|--|---|--|-----|-")
 	fmt.Println("Hash indices | 0  1   2  3   4  5     6")
 
@@ -484,7 +484,7 @@ func Test15LeafVerify(t *testing.T) {
 func Test1LeafVerify(t *testing.T) {
 	fmt.Println("                 1-leaf MMR:           ")
 	fmt.Println("                                       ")
-	fmt.Println("    Height 1 | 1                       ")
+	fmt.Println("    Height 1 | 0                       ")
 	fmt.Println("             | |                       ")
 	fmt.Println("Hash indices | 0                       ")
 

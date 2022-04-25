@@ -313,6 +313,7 @@ func (m *Proof) ProofItems() [][]byte {
 	return m.proof.Items
 }
 
+// LeavesToVerify sets leaves to the leaves property in Proof
 func (m *Proof) LeavesToVerify(leaves []types.Leaf) {
 	m.Leaves = leaves
 }

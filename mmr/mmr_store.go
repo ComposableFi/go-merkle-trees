@@ -30,6 +30,7 @@ func (b *Batch) append(pos uint64, elems [][]byte) {
 	b.memoryBatch = append(b.memoryBatch, BatchElem{pos, elems})
 }
 
+// GetElem returns an element in a store implementation using its position.
 func (b *Batch) GetElem(pos uint64) []byte {
 	i := len(b.memoryBatch)
 	for i > 0 {
