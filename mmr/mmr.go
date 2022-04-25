@@ -73,7 +73,7 @@ func (m *MMR) Push(elem []byte) (uint64, error) {
 	var height uint32
 	var pos = elemPos
 	// continue to merge tree node if next Pos higher than current
-	for posHeightInTree(pos+1) > height {
+	for PosHeightInTree(pos+1) > height {
 		pos++
 		leftPos := pos - parentOffset(height)
 		rightPos := leftPos + siblingOffset(height)
@@ -114,7 +114,7 @@ func (m *MMR) Root() ([]byte, error) {
 	}
 
 	var peaks [][]byte
-	for _, peakPos := range getPeaks(m.size) {
+	for _, peakPos := range GetPeaks(m.size) {
 		elem := m.batch.getElem(peakPos)
 		if elem == nil {
 			return nil, ErrInconsistentStore
@@ -204,7 +204,7 @@ func (m *MMR) genProofForPeak(proof *Iterator, posList []uint64, peakPos uint64)
 
 		// calculate sibling
 		sibPos, parentPos := func() (uint64, uint64) {
-			var nextHeight = posHeightInTree(pos + 1)
+			var nextHeight = PosHeightInTree(pos + 1)
 			var siblingOffset = siblingOffset(height)
 			if nextHeight > height {
 				return pos - siblingOffset, pos + 1
@@ -242,7 +242,7 @@ func (m *MMR) GenProof(posList []uint64) (*Proof, error) {
 	sort.Slice(posList, func(i, j int) bool {
 		return posList[i] < posList[j]
 	})
-	var peaks = getPeaks(m.size)
+	var peaks = GetPeaks(m.size)
 	var proof = NewIterator()
 	// generate merkle proof for each peaks
 	var baggingTrack uint
@@ -336,7 +336,7 @@ func (m *Proof) calculatePeakRoot(leaves []types.Leaf, peakPos uint64, proofs *I
 			return item, nil
 		}
 		// calculate sibling
-		var nextHeight = posHeightInTree(pos + 1)
+		var nextHeight = PosHeightInTree(pos + 1)
 		var sibPos, parentPos = func() (uint64, uint64) {
 			var siblingOffset = siblingOffset(height)
 			if nextHeight > height {
@@ -420,22 +420,22 @@ func (m *Proof) CalculateRoot() ([]byte, error) {
 // it is possible. https://github.com/jjyr/merkle-mountain-range#construct this is kinda tricky, but it works, and useful
 func (m *Proof) CalculateRootWithNewLeaf(leaves []types.Leaf, newIndex uint64, newElem []byte, newMMRSize uint64) ([]byte, error) {
 	newPos := LeafIndexToPos(newIndex)
-	posHeight := posHeightInTree(newPos)
-	nextHeight := posHeightInTree(newPos + 1)
+	posHeight := PosHeightInTree(newPos)
+	nextHeight := PosHeightInTree(newPos + 1)
 	if nextHeight > posHeight {
 		peaksHashes, err := m.calculatePeaksHashes(leaves, m.mmrSize, m.proof)
 		if err != nil {
 			return nil, err
 		}
-		peaksPos := getPeaks(newMMRSize)
-		// reverse touched peaks
+		peaksPos := GetPeaks(newMMRSize)
+		// Reverse touched peaks
 		var i uint
 		for peaksPos[i] < newPos {
 			i++
 		}
 
 		reversePeahashOfKes := peaksHashes[i:]
-		reverse(reversePeahashOfKes)
+		Reverse(reversePeahashOfKes)
 		peaksHashes = append(peaksHashes[:i], reversePeahashOfKes...)
 		iter := NewIterator()
 		iter.Items = peaksHashes
@@ -477,7 +477,7 @@ func (m *Proof) calculatePeaksHashes(leaves []types.Leaf, mmrSize uint64, proofs
 		return LeafIndexToPos(leaves[i].Index) < LeafIndexToPos(leaves[j].Index)
 	})
 
-	peaks := getPeaks(mmrSize)
+	peaks := GetPeaks(mmrSize)
 	var peaksHashes [][]byte
 	for _, peaksPos := range peaks {
 		lvs := takeWhileVec(&leaves, func(l types.Leaf) bool {

@@ -46,7 +46,7 @@ func getRightPeak(height uint32, pos, mmrSize uint64) *peak {
 	return &peak{height, pos}
 }
 
-func getPeaks(mmrSize uint64) (positions []uint64) {
+func GetPeaks(mmrSize uint64) (positions []uint64) {
 	var height, pos = leftPeakHeightPos(mmrSize)
 	positions = append(positions, pos)
 
@@ -63,7 +63,7 @@ func getPeaks(mmrSize uint64) (positions []uint64) {
 	return positions
 }
 
-func posHeightInTree(pos uint64) uint32 {
+func PosHeightInTree(pos uint64) uint32 {
 	pos++
 	allOnes := func(num uint64) bool { return num != 0 && zerosCount64(num) == bits.LeadingZeros64(num) }
 	jumpLeft := func(pos uint64) uint64 {
@@ -108,7 +108,7 @@ func pop(ph [][]byte) ([]byte, [][]byte) {
 	return ph[len(ph)-1], ph[:len(ph)-1]
 }
 
-func reverse(s interface{}) {
+func Reverse(s interface{}) {
 	n := reflect.ValueOf(s).Len()
 	swap := reflect.Swapper(s)
 	for i, j := 0, n-1; i < j; i, j = i+1, j-1 {

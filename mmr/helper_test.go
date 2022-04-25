@@ -1,8 +1,10 @@
-package mmr
+package mmr_test
 
 import (
 	"reflect"
 	"testing"
+
+	"github.com/ComposableFi/go-merkle-trees/mmr"
 )
 
 func TestPosHeightInTree(t *testing.T) {
@@ -20,7 +22,7 @@ func TestPosHeightInTree(t *testing.T) {
 	}
 
 	for name, test := range tests {
-		got := posHeightInTree(test.input)
+		got := mmr.PosHeightInTree(test.input)
 		if got != test.want {
 			t.Errorf("%s: want %v  got %v", name, test.want, got)
 		}
@@ -44,7 +46,7 @@ func TestGetPeaks(t *testing.T) {
 	}
 
 	for name, test := range tests {
-		got := getPeaks(test.input)
+		got := mmr.GetPeaks(test.input)
 		if !reflect.DeepEqual(got, test.want) {
 			t.Errorf("%s: want %v  got %v", name, test.want, got)
 		}
@@ -62,7 +64,7 @@ func TestLeafIndexToPos(t *testing.T) {
 	}
 
 	for name, test := range tests {
-		got := LeafIndexToPos(test.input)
+		got := mmr.LeafIndexToPos(test.input)
 		if got != test.want {
 			t.Errorf("%s: want %v  got %v", name, test.want, got)
 		}
@@ -80,7 +82,7 @@ func TestLeafIndexToMMRSize(t *testing.T) {
 	}
 
 	for name, test := range tests {
-		got := LeafIndexToMMRSize(test.input)
+		got := mmr.LeafIndexToMMRSize(test.input)
 		if got != test.want {
 			t.Errorf("%s: want %v  got %v", name, test.want, got)
 		}
@@ -98,7 +100,7 @@ func TestReverse(t *testing.T) {
 	}
 
 	for name, test := range tests {
-		reverse(test.input)
+		mmr.Reverse(test.input)
 		if !reflect.DeepEqual(test.input, test.want) {
 			t.Errorf("%s: want %v  got %v", name, test.want, test.input)
 		}

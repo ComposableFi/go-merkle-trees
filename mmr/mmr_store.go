@@ -33,7 +33,7 @@ func (b *Batch) append(pos uint64, elems [][]byte) {
 func (b *Batch) getElem(pos uint64) []byte {
 	memoryBatch := make([]BatchElem, len(b.memoryBatch))
 	copy(memoryBatch, b.memoryBatch)
-	reverse(memoryBatch)
+	Reverse(memoryBatch)
 
 	for _, mb := range memoryBatch {
 		startPos, elems := mb.pos, mb.elems
