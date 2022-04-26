@@ -95,7 +95,7 @@ func proofIndeciesByLayers(sortedLeafIndices []uint64, leavsCount uint64) [][]ui
 		leavesCount := unevenLayers[layerIndex]
 		layerLastNodeIndex := sortedLeafIndices[len(sortedLeafIndices)-1]
 		if layerLastNodeIndex == uint64(leavesCount)-1 {
-			_, siblingIndices = popFromIndexQueue(siblingIndices)
+			siblingIndices = popFromIndexQueue(siblingIndices)
 		}
 
 		proofNodesIndices := sliceDifference(siblingIndices, sortedLeafIndices)

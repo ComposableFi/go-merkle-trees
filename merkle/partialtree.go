@@ -35,7 +35,7 @@ func (pt *PartialTree) buildTree(partialLayers Layers, fullTreeDepth uint64) (La
 
 		partialTree = append(partialTree, currentLayer)
 
-		indices, hashes := extractIndicesAdnHashes(currentLayer)
+		indices, hashes := extractIndicesAndHashes(currentLayer)
 
 		// freeup for next round
 		currentLayer = make(Leaves, 0)
@@ -77,7 +77,7 @@ func (pt *PartialTree) buildTree(partialLayers Layers, fullTreeDepth uint64) (La
 	return partialTree, nil
 }
 
-// Root returns the root of the tree
+// Root returns the root of the tree, it is the first item hash of the last layer
 func (pt *PartialTree) Root() []byte {
 	if len(pt.layers) > 0 {
 		lastLayer := pt.layers[len(pt.layers)-1]
@@ -102,12 +102,12 @@ func (pt *PartialTree) contains(layerIndex, nodeIndex uint64) bool {
 	return false
 }
 
-/// Consumes other partial tree into itself, replacing any conflicting nodes with nodes from
-/// `other` in the process. Doesn't rehash the nodes, so the integrity of the result is
-/// not verified. It gives an advantage in speed, but should be used only if the integrity of
-/// the tree can't be broken, for example, it is used in the `.commit` method of the
-/// `MerkleTree`, since both partial trees are essentially constructed in place and there's
-/// no need to verify integrity of the result.
+// mergeUnverified gets other partial tree into itself, replacing any conflicting nodes with nodes from
+// `other` in the process. Doesn't rehash the nodes, so the integrity of the result is
+// not verified. It gives an advantage in speed, but should be used only if the integrity of
+// the tree can't be broken, for example, it is used in the `.commit` method of the
+// `MerkleTree`, since both partial trees are essentially constructed in place and there's
+// no need to verify integrity of the result.
 func (pt *PartialTree) mergeUnverified(other PartialTree) {
 	depthDifference := len(other.layers) - len(pt.layers)
 	var combinedTreeSize uint64
@@ -200,7 +200,7 @@ func popLayer(slice Layers) (Leaves, Layers) {
 	return popElem, newSlice
 }
 
-func extractIndicesAdnHashes(leaves Leaves) ([]uint64, [][]byte) {
+func extractIndicesAndHashes(leaves Leaves) ([]uint64, [][]byte) {
 	leavesLen := len(leaves)
 	indices := make([]uint64, leavesLen)
 	hashes := make([][]byte, leavesLen)

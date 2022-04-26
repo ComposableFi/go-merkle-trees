@@ -49,11 +49,11 @@ func (t *Tree) helperNodesHashes(leafIndices []uint64) [][]byte {
 
 // helperNodeLayers gets all helper nodes required to build a partial merkle tree for the given indices,
 // cloning all required hashes into the resulting slice.
-func (t *Tree) helperNodeLayers(leafIndeceis []uint64) Layers {
+func (t *Tree) helperNodeLayers(leafIndices []uint64) Layers {
 	var helperNodes Layers
 	for _, treeLayer := range t.layers() {
-		siblings := siblingIndecies(leafIndeceis)
-		helperIndices := sliceDifference(siblings, leafIndeceis)
+		siblings := siblingIndecies(leafIndices)
+		helperIndices := sliceDifference(siblings, leafIndices)
 
 		var helpersLayer Leaves
 		for _, idx := range helperIndices {
@@ -65,7 +65,7 @@ func (t *Tree) helperNodeLayers(leafIndeceis []uint64) Layers {
 
 		helperNodes = append(helperNodes, helpersLayer)
 
-		leafIndeceis = parentIndecies(leafIndeceis)
+		leafIndices = parentIndecies(leafIndices)
 	}
 	return helperNodes
 }
@@ -186,8 +186,8 @@ func (t *Tree) layers() Layers {
 	return t.currentWorkingTree.layers
 }
 
-/// uncommittedDiff creates a diff from a changes that weren't committed to the main tree yet. Can be used
-/// to get uncommitted root or can be merged with the main tree
+// uncommittedDiff creates a diff from a changes that weren't committed to the main tree yet. Can be used
+// to get uncommitted root or can be merged with the main tree
 func (t *Tree) uncommittedDiff() (PartialTree, error) {
 	if len(t.UncommittedLeaves) == 0 {
 		return PartialTree{}, nil

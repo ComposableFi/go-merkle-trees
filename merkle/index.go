@@ -36,11 +36,11 @@ func siblingIndex(idx uint64) uint64 {
 }
 
 func isEvenIndex(idx uint64) bool {
-	return idx%2 == 0
+	return idx&1 != 1
 }
 
 func getLeftIndex(idx int) int {
-	return idx * 2
+	return idx << 1
 }
 
 func getRightIndex(idx int) int {

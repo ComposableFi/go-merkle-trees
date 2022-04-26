@@ -1,9 +1,9 @@
 package merkle
 
 // popFromIndexQueue pops front element of uint64 slice
-func popFromIndexQueue(slice []uint64) (uint64, []uint64) {
-	popElem, newSlice := slice[len(slice)-1], slice[:len(slice)-1]
-	return popElem, newSlice
+func popFromIndexQueue(slice []uint64) []uint64 {
+	newSlice := slice[:len(slice)-1]
+	return newSlice
 
 }
 
