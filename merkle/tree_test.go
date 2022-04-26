@@ -188,11 +188,6 @@ func TestChangeTheResultWenCalledTwice(t *testing.T) {
 
 	require.Equal(t, "09b6890b23e32e607f0e5f670ab224e36af8f6599cbe88b468f4b0f761802dd6", merkleTree.RootHex())
 
-	merkleTree.rollback()
-	require.Equal(t, "e2a80e0e872a6c6eaed37b4c1f220e1935004805585b5f99617e48e9c8fe4034", merkleTree.RootHex())
-
-	merkleTree.rollback()
-	require.Equal(t, "1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2", merkleTree.RootHex())
 }
 
 func TestRollbackPreviousCommit(t *testing.T) {
@@ -238,11 +233,6 @@ func TestRollbackPreviousCommit(t *testing.T) {
 
 	require.Equal(t, "09b6890b23e32e607f0e5f670ab224e36af8f6599cbe88b468f4b0f761802dd6", merkleTree.RootHex())
 
-	merkleTree.rollback()
-	require.Equal(t, "e2a80e0e872a6c6eaed37b4c1f220e1935004805585b5f99617e48e9c8fe4034", merkleTree.RootHex())
-
-	merkleTree.rollback()
-	require.Equal(t, "1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2", merkleTree.RootHex())
 }
 
 func sampleHashes() ([][]byte, error) {

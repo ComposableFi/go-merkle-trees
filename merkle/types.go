@@ -20,7 +20,6 @@ type Layers []Leaves
 // can be found in databases and file systems.
 type Tree struct {
 	currentWorkingTree PartialTree
-	history            []PartialTree
 	UncommittedLeaves  [][]byte
 	hasher             types.Hasher
 }
@@ -29,7 +28,6 @@ type Tree struct {
 func NewTree(hasher types.Hasher) Tree {
 	return Tree{
 		currentWorkingTree: NewPartialTree(hasher),
-		history:            []PartialTree{},
 		UncommittedLeaves:  [][]byte{},
 		hasher:             hasher,
 	}

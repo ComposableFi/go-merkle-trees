@@ -109,21 +109,10 @@ func (t *Tree) commit() error {
 		return err
 	}
 	if len(diff.layers) > 0 {
-		t.history = append(t.history, diff)
 		t.currentWorkingTree.mergeUnverified(diff)
 		t.UncommittedLeaves = [][]byte{}
 	}
 	return nil
-}
-
-// rollback rolls back one commit and reverts the tree to the previous state.
-// Removes the most recent commit from the history.
-func (t *Tree) rollback() {
-	_, t.history = popPartialtree(t.history)
-	t.currentWorkingTree.clear()
-	for _, commit := range t.history {
-		t.currentWorkingTree.mergeUnverified(commit)
-	}
 }
 
 // uncommittedRoot calculates the root of the uncommitted changes as if they were committed.
