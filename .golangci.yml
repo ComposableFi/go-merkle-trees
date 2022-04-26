@@ -79,25 +79,56 @@ output:
   # sorts results by: filepath, line and column
   sort-results: false
 
+linters-settings:
+  lll:
+    # max line length, lines longer will be reported. Default is 120.
+    # '\t' is counted as 1 character by default, and can be changed with the tab-width option
+    line-length: 150 # todo: this should be decreased
+    # tab width in spaces. Default to 1.
+    tab-width: 1
+
+  funlen:
+    lines: 100 # todo: this should be decreased
+    statements: 100 # todo: this should be decreased
+
 linters:
   disable-all: true
   enable:
-    - megacheck
-    - govet
-    - gocyclo
-    - goimports
-    - gofmt
-    - gosec
-    - errcheck
-    - staticcheck
-    - unused
-    - gosimple
-    - structcheck
-    - varcheck
-    - ineffassign
+    - bodyclose
     - deadcode
+    - depguard
+    - dogsled
+    - errcheck
+    - exportloopref
+    - exhaustive
+    - funlen
+    - goconst
+    - gocritic
+    - gocyclo
+    - gofmt
+    - goimports
+    - gomnd
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - lll
+    - misspell
+    - nakedret
+    - noctx
+    - nolintlint
+    - rowserrcheck
+    - staticcheck
+    - structcheck
+    - stylecheck
     - typecheck
-    - revive
+    - unconvert
+    - unparam
+    - unused
+    - varcheck
+    - depguard
+    - dogsled
   fast: false
 
 issues:
