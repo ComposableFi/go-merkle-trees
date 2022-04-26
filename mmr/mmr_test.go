@@ -3,6 +3,7 @@ package mmr_test
 import (
 	"encoding/binary"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"math/rand"
 	"reflect"
@@ -62,7 +63,7 @@ func testMMR(count uint32, proofElem []uint32) error {
 	mmrTree.Commit()
 	result := proof.Verify(root)
 	if !result {
-		return fmt.Errorf("error verifying root")
+		return errors.New("error verifying root")
 	}
 
 	return nil
