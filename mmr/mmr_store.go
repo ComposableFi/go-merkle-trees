@@ -49,7 +49,7 @@ func (b *Batch) GetElem(pos uint64) []byte {
 }
 
 func (b *Batch) commit() {
-	for _, mb := range b.memoryBatch {
-		b.store.append(mb.pos, mb.elems)
+	for i := 0; i < len(b.memoryBatch); i++ {
+		b.store.append(b.memoryBatch[i].pos, b.memoryBatch[i].elems)
 	}
 }

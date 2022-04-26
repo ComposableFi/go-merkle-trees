@@ -1,9 +1,8 @@
 package mmr
 
 import (
-	"math/bits"
-
 	"github.com/ComposableFi/go-merkle-trees/types"
+	"math/bits"
 )
 
 func getPeakPosByHeight(height uint32) uint64 {
@@ -114,10 +113,6 @@ func LeafIndexToMMRSize(index uint64) uint64 {
 // pop removes the last item from a slice and returns it
 func pop(slice *[][]byte) []byte {
 	var sliceCopy = *slice
-	if len(sliceCopy) == 0 {
-		return nil
-	}
-
 	*slice = sliceCopy[:len(sliceCopy)-1]
 	return sliceCopy[len(sliceCopy)-1]
 }

@@ -9,8 +9,8 @@ func NewMemStore() MemStore {
 }
 
 func (m MemStore) append(pos uint64, elem [][]byte) {
-	for index, value := range elem {
-		m[pos+uint64(index)] = value
+	for i := 0; i < len(elem); i++ {
+		m[pos+uint64(i)] = elem[i]
 	}
 }
 

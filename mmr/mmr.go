@@ -113,8 +113,9 @@ func (m *MMR) Root() ([]byte, error) {
 	}
 
 	var peaks [][]byte
-	for _, peakPos := range GetPeaks(m.size) {
-		elem := m.batch.GetElem(peakPos)
+	peakPositions := GetPeaks(m.size)
+	for i := 0; i < len(peakPositions); i++ {
+		elem := m.batch.GetElem(peakPositions[i])
 		if elem == nil {
 			return nil, ErrInconsistentStore
 		}
@@ -141,15 +142,18 @@ func (m *MMR) RootHex() (string, error) {
 func (m *MMR) bagRHSPeaks(rhsPeaks [][]byte) []byte {
 	for len(rhsPeaks) > 1 {
 		var rp, lp []byte
-		if rp = pop(&rhsPeaks); rp == nil {
+		if len(rhsPeaks) == 0 {
 			log.Error("error trying to execute pop on right hand side peaks (rhsPeaks)")
 			return nil
 		}
+		rp = pop(&rhsPeaks)
 
-		if lp = pop(&rhsPeaks); lp == nil {
+		if len(rhsPeaks) == 0 {
 			log.Error("error trying to execute pop on right hand side peaks (rhsPeaks)")
 			return nil
 		}
+		lp = pop(&rhsPeaks)
+
 		hash, err := hasher.MergeAndHash(m.hasher, rp, lp)
 		if err != nil {
 			log.Error(err.Error())
@@ -185,8 +189,8 @@ func (m *MMR) genProofForPeak(proof *Iterator, posList []uint64, peakPos uint64)
 	}
 
 	var queue []peak
-	for _, p := range posList {
-		queue = append(queue, peak{pos: p, height: 0})
+	for i := 0; i < len(posList); i++ {
+		queue = append(queue, peak{pos: posList[i], height: 0})
 	}
 
 	for len(queue) > 0 {
@@ -245,9 +249,9 @@ func (m *MMR) GenProof(posList []uint64) (*Proof, error) {
 	var proof = NewIterator()
 	// generate merkle proof for each peaks
 	var baggingTrack uint
-	for _, peakPos := range peaks {
+	for i := 0; i < len(peaks); i++ {
 		pl := filterLeavesByPosition(&posList, func(u uint64) bool {
-			return u <= peakPos
+			return u <= peaks[i]
 		})
 		if len(pl) == 0 {
 			baggingTrack++
@@ -255,7 +259,7 @@ func (m *MMR) GenProof(posList []uint64) (*Proof, error) {
 			baggingTrack = 0
 		}
 
-		err := m.genProofForPeak(proof, pl, peakPos)
+		err := m.genProofForPeak(proof, pl, peaks[i])
 		if err != nil {
 			return nil, err
 		}
@@ -325,7 +329,8 @@ func (m *Proof) calculatePeakRoot(leaves []types.Leaf, peakPos uint64, proofs *I
 	}
 
 	var queue []leafWithashOfH
-	for _, l := range leaves {
+	for i := 0; i < len(leaves); i++ {
+		l := leaves[i]
 		queue = append(queue, leafWithashOfH{LeafIndexToPos(l.Index), l.Hash, 0})
 	}
 
@@ -391,13 +396,16 @@ func (m *Proof) calculatePeakRoot(leaves []types.Leaf, peakPos uint64, proofs *I
 func (m *Proof) baggingPeaksHashes(peaksHashes [][]byte) ([]byte, error) {
 	var rightPeak, leftPeak []byte
 	for len(peaksHashes) > 1 {
-		if rightPeak = pop(&peaksHashes); rightPeak == nil {
+		if len(peaksHashes) == 0 {
 			return nil, fmt.Errorf("there are no peak hashes left to pop")
 		}
+		rightPeak = pop(&peaksHashes)
 
-		if leftPeak = pop(&peaksHashes); leftPeak == nil {
+		if len(peaksHashes) == 0 {
 			return nil, fmt.Errorf("there are no peak hashes left to pop")
 		}
+		leftPeak = pop(&peaksHashes)
+
 		// when bagging the peaks of an MMR, hashes of the peaks are merged from right to left.
 		hash, err := hasher.MergeAndHash(m.Hasher, rightPeak, leftPeak)
 		if err != nil {
@@ -478,8 +486,8 @@ func (m *Proof) calculatePeaksHashes(leaves []types.Leaf, mmrSize uint64, proofs
 	// special handle the only 1 Hash Proof
 	if mmrSize == 1 && len(leaves) == 1 && LeafIndexToPos(leaves[0].Index) == 0 {
 		var items [][]byte
-		for _, l := range leaves {
-			items = append(items, l.Hash)
+		for i := 0; i < len(leaves); i++ {
+			items = append(items, leaves[i].Hash)
 		}
 		return items, nil
 	}
@@ -491,14 +499,14 @@ func (m *Proof) calculatePeaksHashes(leaves []types.Leaf, mmrSize uint64, proofs
 
 	peaks := GetPeaks(mmrSize)
 	var peaksHashes [][]byte
-	for _, peakPos := range peaks {
+	for i := 0; i < len(peaks); i++ {
 		// filter out the leaf of position peakPos or leaves that are children of a peak with position peakPos
 		lvs := filterLeaves(&leaves, func(l types.Leaf) bool {
-			return LeafIndexToPos(l.Index) <= peakPos
+			return LeafIndexToPos(l.Index) <= peaks[i]
 		})
 
 		var peakRoot []byte
-		if len(lvs) == 1 && LeafIndexToPos(lvs[0].Index) == peakPos {
+		if len(lvs) == 1 && LeafIndexToPos(lvs[0].Index) == peaks[i] {
 			// Hash is the peak
 			peakRoot = lvs[0].Hash
 		} else if len(lvs) == 0 {
@@ -512,7 +520,7 @@ func (m *Proof) calculatePeaksHashes(leaves []types.Leaf, mmrSize uint64, proofs
 			}
 		} else {
 			var err error
-			peakRoot, err = m.calculatePeakRoot(lvs, peakPos, proofs)
+			peakRoot, err = m.calculatePeakRoot(lvs, peaks[i], proofs)
 			if err != nil {
 				return nil, err
 			}
