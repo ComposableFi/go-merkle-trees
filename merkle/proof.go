@@ -30,9 +30,10 @@ func (p Proof) Root() ([]byte, error) {
 		leafIndices[i] = p.leaves[i].Index
 	}
 
-	proofLayers := p.extractProofHashesByLayers(leafIndices)
+	proofLayers := p.proofLayers(leafIndices)
 
 	if len(proofLayers) > 0 {
+		// set the first layer as proof
 		firstLayer := proofLayers[0]
 		firstLayer = append(firstLayer, p.leaves...)
 		sortLeavesAscending(firstLayer)
@@ -41,12 +42,15 @@ func (p Proof) Root() ([]byte, error) {
 		proofLayers = append(proofLayers, p.leaves)
 	}
 
+	// build the partial tree from proof leaves
 	treeDepth := treeDepth(p.totalLeavesCount)
 	partialTree := NewPartialTree(p.hasher)
 	PartialTree, err := partialTree.build(proofLayers, treeDepth)
 	if err != nil {
 		return []byte{}, err
 	}
+
+	// return root of partial tree
 	return PartialTree.Root(), err
 }
 
@@ -76,32 +80,14 @@ func (p Proof) ProofHashesHex() []string {
 	return hexList
 }
 
-func (p Proof) extractProofHashesByLayers(leafIndices []uint64) Layers {
-	layersProofIndices := proofIndeciesByLayers(leafIndices, p.totalLeavesCount)
-	proofLayersCount := len(layersProofIndices)
-	proofLayers := make(Layers, proofLayersCount)
+// proofLayers returns the proof indices by layers
+func (p Proof) proofLayers(leafIndices []uint64) Layers {
+	depth := treeDepth(p.totalLeavesCount)
+	unevenLayers := unevenLayers(p.totalLeavesCount)
+	proofLayers := make(Layers, depth)
 
-	// make a copy of proof hashes
-	proofCopy := make([][]byte, len(p.proofHashes))
-	copy(proofCopy, p.proofHashes)
-	for i := 0; i < proofLayersCount; i++ {
-		proofIndices := layersProofIndices[i]
-		proofIndicesCount := len(proofIndices)
-		proofHashes := make([][]byte, proofIndicesCount)
-		for j := 0; j < proofIndicesCount; j++ {
-			proofHashes[j] = proofCopy[0]
-			proofCopy = proofCopy[1:]
-		}
-		proofLayers[i] = mapIndiceToLeaves(proofIndices, proofHashes)
-	}
-	return proofLayers
-}
-
-// proofIndeciesByLayers returns the proof indices by layers
-func proofIndeciesByLayers(leafIndices []uint64, leavsCount uint64) [][]uint64 {
-	depth := treeDepth(leavsCount)
-	unevenLayers := unevenLayers(leavsCount)
-	var proofIndices [][]uint64
+	// copied proof index
+	lastProofIndex := 0
 
 	// loop through depth of tree and update proof indices
 	for layerIndex := uint64(0); layerIndex < depth; layerIndex++ {
@@ -110,12 +96,25 @@ func proofIndeciesByLayers(leafIndices []uint64, leavsCount uint64) [][]uint64 {
 
 		// append proof indices inot the result
 		proofNodesIndices := extractNewIndicesFromSiblings(siblingIndices, leafIndices)
-		proofIndices = append(proofIndices, proofNodesIndices)
+
+		// set the proof leaves from proof hashes
+		proofIndicesCount := len(proofNodesIndices)
+		proofLeaves := make(Leaves, proofIndicesCount)
+		for j := 0; j < proofIndicesCount; j++ {
+			proofLeaves[j] = types.Leaf{
+				Index: proofNodesIndices[j],
+				Hash:  p.proofHashes[lastProofIndex],
+			}
+			lastProofIndex++
+		}
+
+		// use proof indices and hash to set the layer leaves
+		proofLayers[layerIndex] = proofLeaves
 
 		// go one level up in leaves
 		leafIndices = parentIndecies(leafIndices)
 	}
-	return proofIndices
+	return proofLayers
 }
 
 // popLastEvenIndex removes last uneven index from siblings
@@ -139,14 +138,4 @@ func unevenLayers(treeLeavesCount uint64) map[uint64]uint64 {
 		treeLeavesCount = uint64(math.Ceil(float64(treeLeavesCount) / 2))
 	}
 	return unevenLayers
-}
-
-// mapIndiceToLeaves maps the indices and leaves of a tree
-func mapIndiceToLeaves(indices []uint64, leavesHashes [][]byte) (result Leaves) {
-	indicesLen := len(indices)
-	result = make(Leaves, indicesLen)
-	for i := 0; i < indicesLen; i++ {
-		result[i] = types.Leaf{Index: indices[i], Hash: leavesHashes[i]}
-	}
-	return result
 }
