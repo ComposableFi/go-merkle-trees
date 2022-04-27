@@ -311,6 +311,6 @@ func BenchmarkHelperNodeLeaves(b *testing.B) {
 	mtree.append(leaves)
 	reservedIndices := mtree.getUncommitedReservedIndecies()
 	for n := 0; n < b.N; n++ {
-		mtree.helperNodeLayers(reservedIndices)
+		mtree.currentLayersWithSiblings(reservedIndices)
 	}
 }

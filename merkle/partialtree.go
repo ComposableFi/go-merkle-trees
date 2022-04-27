@@ -120,7 +120,7 @@ func (pt *PartialTree) mergeUnverified(other PartialTree) {
 	for layerIndex := uint64(0); layerIndex < combinedTreeSize; layerIndex++ {
 		var combinedLayer, filteredLayer Leaves
 
-		selfLayer, ok := layerAtIndex(pt.layers, uint64(layerIndex))
+		selfLayer, ok := layerAtIndex(pt.layers, layerIndex)
 		if ok {
 			for i := 0; i < len(selfLayer); i++ {
 				node := selfLayer[i]
@@ -174,11 +174,6 @@ func (pt *PartialTree) layerNodesHashes() [][][]byte {
 // getLayers returns partial tree layers
 func (pt *PartialTree) getLayers() Layers {
 	return pt.layers
-}
-
-// clear clears all elements in the tree
-func (pt *PartialTree) clear() {
-	pt.layers = Layers{}
 }
 
 // reverseLayers reverses a slice of types.Leaf slice

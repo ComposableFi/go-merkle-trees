@@ -1,3 +1,4 @@
+// Package merkle is responsible for creating the tree and verify the proof
 package merkle
 
 import (
@@ -35,11 +36,11 @@ func (t *Tree) RootHex() string {
 	return hex.EncodeToString(root)
 }
 
-// helperNodesHashes returns helper nodes required to build a partial tree for the given indices
+// currentLayersWithSiblingsHashes returns sibling leaves required to build a partial tree for the given indices
 // to be able to extract a root from it. Useful in constructing Merkle proofs
-func (t *Tree) helperNodesHashes(leafIndices []uint64) [][]byte {
+func (t *Tree) currentLayersWithSiblingsHashes(leafIndices []uint64) [][]byte {
 	var helperNodesHashes [][]byte
-	for _, layer := range t.helperNodeLayers(leafIndices) {
+	for _, layer := range t.currentLayersWithSiblings(leafIndices) {
 		for _, li := range layer {
 			helperNodesHashes = append(helperNodesHashes, li.Hash)
 		}
@@ -47,36 +48,40 @@ func (t *Tree) helperNodesHashes(leafIndices []uint64) [][]byte {
 	return helperNodesHashes
 }
 
-// helperNodeLayers gets all helper nodes required to build a partial merkle tree for the given indices,
+// currentLayersWithSiblings gets all sibling layers required to build a partial merkle tree for the given indices,
 // cloning all required hashes into the resulting slice.
-func (t *Tree) helperNodeLayers(leafIndices []uint64) Layers {
-	var helperNodes Layers
-	for _, treeLayer := range t.layers() {
-		siblings := siblingIndecies(leafIndices)
-		helperIndices := sliceDifference(siblings, leafIndices)
+func (t *Tree) currentLayersWithSiblings(leavesIndices []uint64) Layers {
+	var layersNodesWithSiblings Layers
+	for _, layer := range t.layers() {
+		// get siblings of leaf indices and extract newly created indices
+		siblings := siblingIndecies(leavesIndices)
+		newIndices := extractNewIndicesFromSiblings(siblings, leavesIndices)
 
-		var helpersLayer Leaves
-		for _, idx := range helperIndices {
-			leaf, found := leafAtIndex(treeLayer, idx)
+		// get the exisitng leaves in the layer with sibling indecies
+		var existingLeavesInTree Leaves
+		for _, idx := range newIndices {
+			leaf, found := leafAtIndex(layer, idx)
 			if found {
-				helpersLayer = append(helpersLayer, leaf)
+				existingLeavesInTree = append(existingLeavesInTree, leaf)
 			}
 		}
 
-		helperNodes = append(helperNodes, helpersLayer)
+		layersNodesWithSiblings = append(layersNodesWithSiblings, existingLeavesInTree)
 
-		leafIndices = parentIndecies(leafIndices)
+		// go one level up in the leafInfices
+		leavesIndices = parentIndecies(leavesIndices)
 	}
-	return helperNodes
+	return layersNodesWithSiblings
 }
 
 // Proof Returns the Merkle proof required to prove the inclusion of items in a data set.
-func (t *Tree) Proof(leafIndices []uint64) Proof {
+func (t *Tree) Proof(proofIndices []uint64) Proof {
 	leavesLen := t.leavesLen()
 	leaves := t.leaves()
-	var proofLeaves Leaves
 
-	for _, index := range leafIndices {
+	// extract proof leaves from leaves by proof indices
+	var proofLeaves Leaves
+	for _, index := range proofIndices {
 		for _, leaf := range leaves {
 			if leaf.Index == index {
 				proofLeaves = append(proofLeaves, leaf)
@@ -84,25 +89,25 @@ func (t *Tree) Proof(leafIndices []uint64) Proof {
 			}
 		}
 	}
-	return NewProof(proofLeaves, t.helperNodesHashes(leafIndices), leavesLen, t.hasher)
+
+	siblingProofHashes := t.currentLayersWithSiblingsHashes(proofIndices)
+	return NewProof(proofLeaves, siblingProofHashes, leavesLen, t.hasher)
 }
 
 // insert inserts a new types.Leaf. Please note it won't modify the root just yet; For the changes
-// to be applied to the root, [`MerkleTree::commit`] method should be called first. To get the
+// to be applied to the root, commit method should be called first. To get the
 // root of the new tree without applying the changes, you can use
 func (t *Tree) insert(leaf []byte) {
 	t.UncommittedLeaves = append(t.UncommittedLeaves, leaf)
 }
 
-// append appends leaves to the tree. Behaves similarly to [`MerkleTree::insert`], but for a list of
-// items. Takes ownership of the elements.
+// append appends leaves to the tree.
 func (t *Tree) append(leaves [][]byte) {
 	t.UncommittedLeaves = append(t.UncommittedLeaves, leaves...)
 }
 
-// commit commits the changes made by [`MerkleTree::insert`] and [`MerkleTree::append`]
+// commit commits the changes made by insert and append
 // and modifies the root.
-// Commits are saved to the history, so the tree can be rolled back to any previous commit
 func (t *Tree) commit() error {
 	diff, err := t.uncommittedDiff()
 	if err != nil {
@@ -156,7 +161,7 @@ func (t *Tree) leavesLen() uint64 {
 	return uint64(len(leaves))
 }
 
-// leaves returns leaves of the current working tree
+// leaves returns leaves of the first layer that has the complete tree
 func (t *Tree) leaves() Leaves {
 	if len(t.layers()) > 0 {
 		return t.layers()[0]
@@ -193,7 +198,7 @@ func (t *Tree) uncommitedPartialTreeLayers() (Layers, uint64) {
 	reservedIndecies := t.getUncommitedReservedIndecies()
 	reservedNodeLeaves := t.getUncommitedReservedLeaves(reservedIndecies)
 
-	partialTreeLayers := t.helperNodeLayers(reservedIndecies)
+	partialTreeLayers := t.currentLayersWithSiblings(reservedIndecies)
 	partialTreeLayers = appendUncommitedReservedLayers(partialTreeLayers, reservedNodeLeaves)
 
 	leavesInNewTree := t.leavesLen() + uint64(len(t.UncommittedLeaves))
@@ -268,10 +273,4 @@ func appendUncommitedReservedLayers(partialTreeLayers Layers, reservedNodeLeaves
 		partialTreeLayers[0] = firstLayer
 	}
 	return partialTreeLayers
-}
-
-// popPartialtree pops last element in a partial tree slice
-func popPartialtree(slice []PartialTree) (PartialTree, []PartialTree) {
-	popElem, newSlice := slice[len(slice)-1], slice[0:len(slice)-1]
-	return popElem, newSlice
 }
