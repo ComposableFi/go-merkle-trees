@@ -50,12 +50,12 @@ func (t *Tree) currentLayersWithSiblingsHashes(leafIndices []uint64) [][]byte {
 
 // currentLayersWithSiblings gets all sibling layers required to build a partial merkle tree for the given indices,
 // cloning all required hashes into the resulting slice.
-func (t *Tree) currentLayersWithSiblings(leavesIndices []uint64) Layers {
+func (t *Tree) currentLayersWithSiblings(leafIndices []uint64) Layers {
 	var layersNodesWithSiblings Layers
 	for _, layer := range t.layers() {
 		// get siblings of leaf indices and extract newly created indices
-		siblings := siblingIndecies(leavesIndices)
-		newIndices := extractNewIndicesFromSiblings(siblings, leavesIndices)
+		siblings := siblingIndecies(leafIndices)
+		newIndices := extractNewIndicesFromSiblings(siblings, leafIndices)
 
 		// get the exisitng leaves in the layer with sibling indecies
 		var existingLeavesInTree Leaves
@@ -69,7 +69,7 @@ func (t *Tree) currentLayersWithSiblings(leavesIndices []uint64) Layers {
 		layersNodesWithSiblings = append(layersNodesWithSiblings, existingLeavesInTree)
 
 		// go one level up in the leafInfices
-		leavesIndices = parentIndecies(leavesIndices)
+		leafIndices = parentIndecies(leafIndices)
 	}
 	return layersNodesWithSiblings
 }
@@ -79,17 +79,19 @@ func (t *Tree) Proof(proofIndices []uint64) Proof {
 	leavesLen := t.leavesLen()
 	leaves := t.leaves()
 
-	// extract proof leaves from leaves by proof indices
+	// make proof leaves from proof indices
 	var proofLeaves Leaves
-	for _, index := range proofIndices {
-		for _, leaf := range leaves {
-			if leaf.Index == index {
+	for i := 0; i < len(proofIndices); i++ {
+		for j := 0; j < len(leaves); j++ {
+			leaf := leaves[j]
+			if leaves[j].Index == proofIndices[i] {
 				proofLeaves = append(proofLeaves, leaf)
 				break
 			}
 		}
 	}
 
+	// get all hashes of leaves and their siblings
 	siblingProofHashes := t.currentLayersWithSiblingsHashes(proofIndices)
 	return NewProof(proofLeaves, siblingProofHashes, leavesLen, t.hasher)
 }
@@ -114,7 +116,7 @@ func (t *Tree) commit() error {
 		return err
 	}
 	if len(diff.layers) > 0 {
-		t.currentWorkingTree.mergeUnverified(diff)
+		t.currentWorkingTree.mergeUnverifiedLayers(diff)
 		t.UncommittedLeaves = [][]byte{}
 	}
 	return nil

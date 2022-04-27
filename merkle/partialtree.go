@@ -20,11 +20,13 @@ func (pt *PartialTree) build(partialLayers Layers, depth uint64) (PartialTree, e
 // from merkle proof, or if a complete set of leaves provided as a first argument and no
 // helper indices given, will construct the whole tree.
 func (pt *PartialTree) buildTree(partialLayers Layers, fullTreeDepth uint64) (Layers, error) {
+	// reverse the layers to process backward
 	reversedLayers := reverseLayers(partialLayers)
 	var currentLayer Leaves
 	var partialTree Layers
 	for i := uint64(0); i < fullTreeDepth; i++ {
 
+		// add nodes to current layer for following process
 		if len(reversedLayers) > 0 {
 			var nodes Leaves
 			nodes, reversedLayers = popLayer(reversedLayers)
@@ -48,6 +50,7 @@ func (pt *PartialTree) buildTree(partialLayers Layers, fullTreeDepth uint64) (La
 			if len(hashes) > leftIndex {
 				rightIndex := getRightIndex(i)
 
+				// calculate left and right hash
 				leftHash := hashes[leftIndex]
 				var rightHash []byte
 				if len(hashes) > rightIndex {
@@ -56,11 +59,13 @@ func (pt *PartialTree) buildTree(partialLayers Layers, fullTreeDepth uint64) (La
 					rightHash = nil
 				}
 
+				// merge left and right hash and merge them
 				hash, err := hasher.MergeAndHash(pt.hasher, leftHash, rightHash)
 				if err != nil {
 					return Layers{}, err
 				}
 
+				// append parent node to the current layer for next round
 				currentLayer = append(currentLayer, types.Leaf{
 					Index: parnetNodeIndex,
 					Hash:  hash,
@@ -102,13 +107,13 @@ func (pt *PartialTree) contains(layerIndex, nodeIndex uint64) bool {
 	return false
 }
 
-// mergeUnverified gets other partial tree into itself, replacing any conflicting nodes with nodes from
+// mergeUnverifiedLayers gets other partial tree into itself, replacing any conflicting nodes with nodes from
 // `other` in the process. Doesn't rehash the nodes, so the integrity of the result is
 // not verified. It gives an advantage in speed, but should be used only if the integrity of
 // the tree can't be broken, for example, it is used in the `.commit` method of the
 // `MerkleTree`, since both partial trees are essentially constructed in place and there's
 // no need to verify integrity of the result.
-func (pt *PartialTree) mergeUnverified(other PartialTree) {
+func (pt *PartialTree) mergeUnverifiedLayers(other PartialTree) {
 	depthDifference := len(other.layers) - len(pt.layers)
 	var combinedTreeSize uint64
 	if depthDifference > 0 {
