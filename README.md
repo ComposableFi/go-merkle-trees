@@ -53,5 +53,12 @@ Hash(data []byte) ([]byte, error)
 
 
 ## Examples
+
 [Sha256](https://github.com/ComposableFi/go-merkle-trees/tree/main/examples/sha256)
+
 [Keccak](https://github.com/ComposableFi/go-merkle-trees/tree/main/examples/keccak)
+
+
+## Reference
+- Inspired from [rs-merkle](https://github.com/antouhou/rs-merkle) algoritms and tests.
+- Converted test cases from [snowbridge](https://github.com/Snowfork/snowbridge/blob/main/ethereum/test/test_merkle_tree.js).

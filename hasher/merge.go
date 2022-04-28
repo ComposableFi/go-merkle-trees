@@ -1,4 +1,4 @@
-// package hasher is responsible for hashing and merging the nodes
+// Package hasher is responsible for hashing and merging the nodes
 package hasher
 
 import "github.com/ComposableFi/go-merkle-trees/types"

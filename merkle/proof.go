@@ -10,12 +10,16 @@ import (
 
 // Verify uses proof to verify that a given set of elements is contained in the original data
 // set the proof was made for.
-func (p Proof) Verify(root []byte) (bool, error) {
+func (p Proof) Verify(expectedRoot []byte) (bool, error) {
+
+	// extract root from proof
 	extractedRoot, err := p.Root()
 	if err != nil {
 		return false, err
 	}
-	return bytes.Equal(extractedRoot, root), nil
+
+	// return true if extracted root is uqual to expected root
+	return bytes.Equal(extractedRoot, expectedRoot), nil
 }
 
 // Root calculates Merkle root based on provided leaves and proof hashes. Used inside the
@@ -80,17 +84,21 @@ func (p Proof) ProofHashesHex() []string {
 	return hexList
 }
 
-// proofLayers returns the proof indices by layers
+// proofLayers returns the proof layers by indices
 func (p Proof) proofLayers(leafIndices []uint64) Layers {
+
 	depth := treeDepth(p.totalLeavesCount)
-	unevenLayers := unevenLayers(p.totalLeavesCount)
 	proofLayers := make(Layers, depth)
+
+	// get uneven layers to remove any of uneven sibling indices in following loop
+	unevenLayers := unevenLayersCountMap(p.totalLeavesCount)
 
 	// copied proof index
 	lastProofIndex := 0
 
 	// loop through depth of tree and update proof indices
 	for layerIndex := uint64(0); layerIndex < depth; layerIndex++ {
+
 		// get siblings without last event index
 		siblingIndices := popLastEvenIndexFromSiblings(leafIndices, unevenLayers[layerIndex])
 
@@ -101,10 +109,14 @@ func (p Proof) proofLayers(leafIndices []uint64) Layers {
 		proofIndicesCount := len(proofNodesIndices)
 		proofLeaves := make(Leaves, proofIndicesCount)
 		for j := 0; j < proofIndicesCount; j++ {
+
+			// set the proof leaf at index
 			proofLeaves[j] = types.Leaf{
 				Index: proofNodesIndices[j],
 				Hash:  p.proofHashes[lastProofIndex],
 			}
+
+			// set the last checked index for next round of partent loop
 			lastProofIndex++
 		}
 
@@ -119,23 +131,38 @@ func (p Proof) proofLayers(leafIndices []uint64) Layers {
 
 // popLastEvenIndex removes last uneven index from siblings
 func popLastEvenIndexFromSiblings(leafIndices []uint64, unevenLeavesCount uint64) []uint64 {
+
+	// get siblings
 	siblingIndices := siblingIndecies(leafIndices)
-	layerLastNodeIndex := leafIndices[len(leafIndices)-1]
-	if layerLastNodeIndex == unevenLeavesCount-1 {
+
+	// remove from siblings if last node index is equal to eneven layer index
+	lastNodeIndex := leafIndices[len(leafIndices)-1]
+	if lastNodeIndex == unevenLeavesCount-1 {
 		siblingIndices = popFromIndexQueue(siblingIndices)
 	}
+
 	return siblingIndices
 }
 
-// unevenLayers returns map of indices that are not even
-func unevenLayers(treeLeavesCount uint64) map[uint64]uint64 {
-	depth := treeDepth(treeLeavesCount)
+// unevenLayersCountMap returns map of layer indices that are not even
+func unevenLayersCountMap(totalLeavesCount uint64) map[uint64]uint64 {
+
+	// set depth to prevent modification by loop
+	depth := treeDepth(totalLeavesCount)
+
 	unevenLayers := make(map[uint64]uint64)
+
+	// loop until reach the full depth of tree
 	for i := uint64(0); i < depth; i++ {
-		if !isEvenIndex(treeLeavesCount) {
-			unevenLayers[i] = treeLeavesCount
+
+		// if count is not even, append it to result
+		if !isEvenIndex(totalLeavesCount) {
+			unevenLayers[i] = totalLeavesCount
 		}
-		treeLeavesCount = uint64(math.Ceil(float64(treeLeavesCount) / 2))
+
+		// update the index to check and make it half
+		totalLeavesCount = uint64(math.Ceil(float64(totalLeavesCount) / 2))
 	}
+
 	return unevenLayers
 }

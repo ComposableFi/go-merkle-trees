@@ -137,7 +137,7 @@ func TestGetCorrectRootAfterCommit(t *testing.T) {
 	leaves := merkleTree.baseLeaves()
 	reconstructedTree, err := merkleTree.FromLeaves(leaves)
 	require.NoError(t, err)
-	require.Equal(t, "09b6890b23e32e607f0e5f670ab224e36af8f6599cbe88b468f4b0f761802dd6", reconstructedTree.RootHex())
+	require.Equal(t, "a6107f11a0272f14d751d6f2819345d576f76c2b895d692d633ea21bd7a0b60d", reconstructedTree.RootHex())
 
 }
 
@@ -258,6 +258,12 @@ func BenchmarkSha256Hash(b *testing.B) {
 	}
 }
 
+func BenchmarkKeccak256Hasher(b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		hasher.Keccak256Hasher{}.Hash([]byte("a"))
+	}
+}
+
 func BenchmarkFromLeaves(b *testing.B) {
 	leaves, _ := sampleHashes()
 	for n := 0; n < b.N; n++ {
@@ -305,7 +311,7 @@ func BenchmarkParentIndices(b *testing.B) {
 	}
 }
 
-func BenchmarkHelperNodeLeaves(b *testing.B) {
+func BenchmarkCurrentLayersWithSiblings(b *testing.B) {
 	leaves, _ := sampleHashes()
 	mtree := NewTree(hasher.Sha256Hasher{})
 	mtree.append(leaves)
