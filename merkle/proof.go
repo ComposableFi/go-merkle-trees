@@ -161,7 +161,7 @@ func unevenLayersCountMap(totalLeavesCount uint64) map[uint64]uint64 {
 		}
 
 		// update the index to check and make it half
-		totalLeavesCount = uint64(math.Ceil(float64(totalLeavesCount) / 2))
+		totalLeavesCount = uint64(math.Ceil(float64(totalLeavesCount) / halfDivider))
 	}
 
 	return unevenLayers

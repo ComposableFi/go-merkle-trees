@@ -1,6 +1,6 @@
 package merkle
 
-const halfCoefficient = 2
+const halfDivider = 2
 
 // siblingIndecies returns indecies of sibling elements
 func siblingIndecies(leafIndices []uint64) []uint64 {
@@ -77,7 +77,7 @@ func getRightIndex(index int) int {
 // parentIndex returns index of a parent element
 // the half of sibling index is the parent node index
 func parentIndex(index uint64) uint64 {
-	return siblingIndex(index) / halfCoefficient
+	return siblingIndex(index) / halfDivider
 }
 
 // extractNewIndicesFromSiblings finds the sibling indices which is not present in leaf indices
