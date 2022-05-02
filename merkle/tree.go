@@ -247,7 +247,7 @@ func (t *Tree) uncommittedDiff() (PartialTree, error) {
 	return tree.build(partialTreeLayers, uncommittedTreeDepth)
 }
 
-// uncommitedPartialTreeLayers calculates reserved indices and leaves then returns uncommited partial tree layers
+// uncommitedPartialTreeLayers calculates reserved indices and leaves then returns uncommitted partial tree layers
 func (t *Tree) uncommitedPartialTreeLayers() (Layers, uint64) {
 
 	// reserve indices for uncommitted leaves
@@ -269,7 +269,7 @@ func (t *Tree) uncommitedPartialTreeLayers() (Layers, uint64) {
 	return partialTreeLayers, uncommittedTreeDepth
 }
 
-// getUncommitedReservedIndecies returns uncommited reserved indices of the uncommited leaves
+// getUncommitedReservedIndecies returns uncommitted reserved indices of the uncommitted leaves
 func (t *Tree) getUncommitedReservedIndecies() []uint64 {
 
 	// if there are no uncommitted leaves there is nothing to reserve
@@ -289,7 +289,7 @@ func (t *Tree) getUncommitedReservedIndecies() []uint64 {
 	return reservedIndecies
 }
 
-// getUncommitedReservedLeaves returns uncommited reserved leaves of the uncommited leaves
+// getUncommitedReservedLeaves returns uncommitted reserved leaves of the uncommitted leaves
 func (t *Tree) getUncommitedReservedLeaves(reservedIndecies []uint64) Leaves {
 
 	// read uncommitted leaves hashes and set into reserved leaves by indices
