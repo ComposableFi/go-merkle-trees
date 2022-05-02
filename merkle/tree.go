@@ -164,18 +164,18 @@ func (t *Tree) commit() error {
 // uncommittedRoot calculates the root of the uncommitted changes as if they were committed.
 // Will return the same hash as root of merkle tree after commit
 func (t *Tree) uncommittedRoot() ([]byte, error) {
-	uncommitedTree, err := t.uncommittedDiff()
+	uncommittedTree, err := t.uncommittedDiff()
 	if err != nil {
 		return []byte{}, err
 	}
-	return uncommitedTree.Root(), nil
+	return uncommittedTree.Root(), nil
 }
 
 // uncommittedRootHex calculates the root of the uncommitted changes as if they were committed. Serializes
 // the result as a hex string.
 func (t *Tree) uncommittedRootHex() (string, error) {
 
-	// get uncommited root
+	// get uncommitted root
 	root, err := t.uncommittedRoot()
 	if err != nil {
 		return "", err
@@ -240,27 +240,27 @@ func (t *Tree) uncommittedDiff() (PartialTree, error) {
 	}
 
 	// get uncommitted partial layer
-	partialTreeLayers, uncommittedTreeDepth := t.uncommitedPartialTreeLayers()
+	partialTreeLayers, uncommittedTreeDepth := t.uncommittedPartialTreeLayers()
 
 	// build partial tree and return
 	tree := NewPartialTree(t.hasher)
 	return tree.build(partialTreeLayers, uncommittedTreeDepth)
 }
 
-// uncommitedPartialTreeLayers calculates reserved indices and leaves then returns uncommitted partial tree layers
-func (t *Tree) uncommitedPartialTreeLayers() (Layers, uint64) {
+// uncommittedPartialTreeLayers calculates reserved indices and leaves then returns uncommitted partial tree layers
+func (t *Tree) uncommittedPartialTreeLayers() (Layers, uint64) {
 
 	// reserve indices for uncommitted leaves
-	reservedIndecies := t.getUncommitedReservedIndecies()
+	reservedIndecies := t.getUncommittedReservedIndecies()
 
 	// extract uncommitted leaves from uncommitted indices
-	reservedLeaves := t.getUncommitedReservedLeaves(reservedIndecies)
+	reservedLeaves := t.getUncommittedReservedLeaves(reservedIndecies)
 
 	// update layers with new siblings of each layer
 	partialTreeLayers := t.currentLayersWithSiblings(reservedIndecies)
 
 	// upsert partial layer by uncommitted reseved nodes
-	partialTreeLayers = upsertUncommitedReservedLayers(partialTreeLayers, reservedLeaves)
+	partialTreeLayers = upsertUncommittedReservedLayers(partialTreeLayers, reservedLeaves)
 
 	// calculate new tree depth
 	leavesInNewTree := t.leavesLen() + uint64(len(t.UncommittedLeaves))
@@ -269,8 +269,8 @@ func (t *Tree) uncommitedPartialTreeLayers() (Layers, uint64) {
 	return partialTreeLayers, uncommittedTreeDepth
 }
 
-// getUncommitedReservedIndecies returns uncommitted reserved indices of the uncommitted leaves
-func (t *Tree) getUncommitedReservedIndecies() []uint64 {
+// getUncommittedReservedIndecies returns uncommitted reserved indices of the uncommitted leaves
+func (t *Tree) getUncommittedReservedIndecies() []uint64 {
 
 	// if there are no uncommitted leaves there is nothing to reserve
 	if len(t.UncommittedLeaves) == 0 {
@@ -289,8 +289,8 @@ func (t *Tree) getUncommitedReservedIndecies() []uint64 {
 	return reservedIndecies
 }
 
-// getUncommitedReservedLeaves returns uncommitted reserved leaves of the uncommitted leaves
-func (t *Tree) getUncommitedReservedLeaves(reservedIndecies []uint64) Leaves {
+// getUncommittedReservedLeaves returns uncommitted reserved leaves of the uncommitted leaves
+func (t *Tree) getUncommittedReservedLeaves(reservedIndecies []uint64) Leaves {
 
 	// read uncommitted leaves hashes and set into reserved leaves by indices
 	indicesCount := len(reservedIndecies)
@@ -347,7 +347,7 @@ func treeDepth(leavesCount uint64) uint64 {
 	return uint64(math.Ceil(depth))
 }
 
-func upsertUncommitedReservedLayers(partialTreeLayers Layers, reservedNodeLeaves Leaves) Layers {
+func upsertUncommittedReservedLayers(partialTreeLayers Layers, reservedNodeLeaves Leaves) Layers {
 
 	if len(partialTreeLayers) == 0 {
 		// no partial layers available yet, so we ned to create one

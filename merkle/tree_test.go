@@ -272,22 +272,22 @@ func BenchmarkFromLeaves(b *testing.B) {
 	}
 }
 
-func BenchmarkUncommitedReservedIndecies(b *testing.B) {
+func BenchmarkUncommittedReservedIndecies(b *testing.B) {
 	leaves, _ := sampleHashes()
 	mtree := NewTree(hasher.Sha256Hasher{})
 	mtree.append(leaves)
 	for n := 0; n < b.N; n++ {
-		mtree.getUncommitedReservedIndecies()
+		mtree.getUncommittedReservedIndecies()
 	}
 }
 
-func BenchmarkUncommitedReservedLeaves(b *testing.B) {
+func BenchmarkUncommittedReservedLeaves(b *testing.B) {
 	leaves, _ := sampleHashes()
 	mtree := NewTree(hasher.Sha256Hasher{})
 	mtree.append(leaves)
-	reservedIndices := mtree.getUncommitedReservedIndecies()
+	reservedIndices := mtree.getUncommittedReservedIndecies()
 	for n := 0; n < b.N; n++ {
-		mtree.getUncommitedReservedLeaves(reservedIndices)
+		mtree.getUncommittedReservedLeaves(reservedIndices)
 	}
 }
 
@@ -295,7 +295,7 @@ func BenchmarkSiblingIndices(b *testing.B) {
 	leaves, _ := sampleHashes()
 	mtree := NewTree(hasher.Sha256Hasher{})
 	mtree.append(leaves)
-	reservedIndices := mtree.getUncommitedReservedIndecies()
+	reservedIndices := mtree.getUncommittedReservedIndecies()
 	for n := 0; n < b.N; n++ {
 		siblingIndecies(reservedIndices)
 	}
@@ -305,7 +305,7 @@ func BenchmarkParentIndices(b *testing.B) {
 	leaves, _ := sampleHashes()
 	mtree := NewTree(hasher.Sha256Hasher{})
 	mtree.append(leaves)
-	reservedIndices := mtree.getUncommitedReservedIndecies()
+	reservedIndices := mtree.getUncommittedReservedIndecies()
 	for n := 0; n < b.N; n++ {
 		parentIndecies(reservedIndices)
 	}
@@ -315,7 +315,7 @@ func BenchmarkCurrentLayersWithSiblings(b *testing.B) {
 	leaves, _ := sampleHashes()
 	mtree := NewTree(hasher.Sha256Hasher{})
 	mtree.append(leaves)
-	reservedIndices := mtree.getUncommitedReservedIndecies()
+	reservedIndices := mtree.getUncommittedReservedIndecies()
 	for n := 0; n < b.N; n++ {
 		mtree.currentLayersWithSiblings(reservedIndices)
 	}
