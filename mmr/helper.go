@@ -1,16 +1,16 @@
 package mmr
 
 import (
-	"math/bits"
-	"reflect"
-
 	"github.com/ComposableFi/go-merkle-trees/types"
+	"math/bits"
 )
 
 func getPeakPosByHeight(height uint32) uint64 {
 	return (1 << (height + 1)) - 2
 }
 
+// leftPeakHeightPos derives and returns the height and position of the leftmost peak of an MMR from
+// the MMR size.
 func leftPeakHeightPos(mmrSize uint64) (uint32, uint64) {
 	var prevPos uint64
 	var height uint32 = 1
@@ -46,6 +46,12 @@ func getRightPeak(height uint32, pos, mmrSize uint64) *peak {
 	return &peak{height, pos}
 }
 
+// GetPeaks returns the positions of the peaks of the MMR using the MMR size.
+// 1. It starts by finding the leftmost peak.
+// 2. It then finds the next peak (right peak) by moving to the right sibling. If that node isn't in the MMR (which it won't),
+//    it take its left child. If that child is not in the MMR either, it keeps taking its left child until it finds a node
+//    that exists in the MMR.
+// 3. The process is repeated until it is at the last node.
 func GetPeaks(mmrSize uint64) (positions []uint64) {
 	var height, pos = leftPeakHeightPos(mmrSize)
 	positions = append(positions, pos)
@@ -63,7 +69,9 @@ func GetPeaks(mmrSize uint64) (positions []uint64) {
 	return positions
 }
 
+// PosHeightInTree calculates and returns the height of a node in the tree using its position.
 func PosHeightInTree(pos uint64) uint32 {
+	// increase position by 1 since this algorithm starts the node position with 0
 	pos++
 	allOnes := func(num uint64) bool { return num != 0 && zerosCount64(num) == bits.LeadingZeros64(num) }
 	jumpLeft := func(pos uint64) uint64 {
@@ -72,6 +80,8 @@ func PosHeightInTree(pos uint64) uint32 {
 		return pos - (mostSignificantBits - 1)
 	}
 
+	// in merkle mountain ranges, the leftmost nodes usually have a position (in binary) of all ones.
+	// keep jumping to the left until the leftmost node is obtained.
 	for !allOnes(pos) {
 		pos = jumpLeft(pos)
 	}
@@ -100,20 +110,11 @@ func LeafIndexToMMRSize(index uint64) uint64 {
 	return 2*leavesCount - uint64(peakCount)
 }
 
-func pop(ph [][]byte) ([]byte, [][]byte) {
-	if len(ph) == 0 {
-		return nil, ph[:]
-	}
-	// return the last Items in the slice and the rest of the slice excluding the last Items
-	return ph[len(ph)-1], ph[:len(ph)-1]
-}
-
-func Reverse(s interface{}) {
-	n := reflect.ValueOf(s).Len()
-	swap := reflect.Swapper(s)
-	for i, j := 0, n-1; i < j; i, j = i+1, j-1 {
-		swap(i, j)
-	}
+// pop removes the last item from a slice and returns it
+func pop(slice *[][]byte) []byte {
+	var sliceCopy = *slice
+	*slice = sliceCopy[:len(sliceCopy)-1]
+	return sliceCopy[len(sliceCopy)-1]
 }
 
 func pushLeaf(leaves *[]types.Leaf, l types.Leaf) {
