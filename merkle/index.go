@@ -1,5 +1,7 @@
 package merkle
 
+import "math"
+
 const halfDivider = 2
 
 // siblingIndecies returns indecies of sibling elements
@@ -18,30 +20,17 @@ func siblingIndecies(leafIndices []uint64) []uint64 {
 
 // parentIndecies returns indecies of parent elements
 func parentIndecies(leafIndices []uint64) []uint64 {
-
+	indicesCount := len(leafIndices)
 	var parents []uint64
-
-	// loop through all indices
-	for i := 0; i < len(leafIndices); i++ {
-
-		// get parent index
+	var lastParentSeend uint64 = math.MaxUint64
+	for i := 0; i < indicesCount; i++ {
 		parentIndex := parentIndex(leafIndices[i])
-
-		// check if it is duplicate
-		isDuplicate := false
-		for j := 0; j < len(parents); j++ {
-			if parentIndex == parents[j] {
-				isDuplicate = true
-			}
+		if parentIndex == lastParentSeend {
+			continue
 		}
-
-		// appent to result if it is not duplicated
-		if !isDuplicate {
-			parents = append(parents, parentIndex)
-		}
-
+		parents = append(parents, parentIndex)
+		lastParentSeend = parentIndex
 	}
-
 	return parents
 }
 
