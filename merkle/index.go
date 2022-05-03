@@ -1,5 +1,9 @@
 package merkle
 
+import (
+	"math"
+)
+
 // siblingIndecies returns indecies of sibling elements
 func siblingIndecies(idxs []uint64) []uint64 {
 	indicesCount := len(idxs)
@@ -14,18 +18,14 @@ func siblingIndecies(idxs []uint64) []uint64 {
 func parentIndecies(idxs []uint64) []uint64 {
 	indicesCount := len(idxs)
 	var parents []uint64
+	var lastParentSeend uint64 = math.MaxUint64
 	for i := 0; i < indicesCount; i++ {
 		parentIndex := parentIndex(idxs[i])
-		isDuplicate := false
-		for j := 0; j < len(parents); j++ {
-			if parentIndex == parents[j] {
-				isDuplicate = true
-			}
+		if parentIndex == lastParentSeend {
+			continue
 		}
-		if !isDuplicate {
-			parents = append(parents, parentIndex)
-		}
-
+		parents = append(parents, parentIndex)
+		lastParentSeend = parentIndex
 	}
 	return parents
 }
