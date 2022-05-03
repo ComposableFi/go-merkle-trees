@@ -1,3 +1,5 @@
+// Package mmr is responsible for calculating the merkle mountain range root,
+// proof and the verification
 package mmr
 
 import (
@@ -168,12 +170,12 @@ func (m *MMR) bagRHSPeaks(rhsPeaks [][]byte) []byte {
 	return nil
 }
 
-/// generate merkle proof for a peak
-/// the pos_list must be sorted, otherwise the behaviour is undefined
-///
-/// 1. find a lower tree in peak that can generate a complete merkle proof for position
-/// 2. find that tree by compare positions
-/// 3. generate proof for each positions
+// generate merkle proof for a peak
+// the pos_list must be sorted, otherwise the behaviour is undefined
+//
+// 1. find a lower tree in peak that can generate a complete merkle proof for position
+// 2. find that tree by compare positions
+// 3. generate proof for each positions
 func (m *MMR) genProofForPeak(proof *Iterator, posList []uint64, peakPos uint64) error {
 	if len(posList) == 1 && reflect.DeepEqual(posList, []uint64{peakPos}) {
 		return nil
@@ -359,12 +361,10 @@ func (m *Proof) calculatePeakRoot(leaves []types.Leaf, peakPos uint64, proofs *I
 		var siblingItem []byte
 		if len(queue) > 0 && queue[0].pos == sibPos {
 			siblingItem, queue = queue[0].hash, queue[1:]
-		} else {
+		} else if siblingItem = proofs.Next(); siblingItem == nil {
 			// if the next item in the queue isn't the sibling of the leaf, the next item in the proof would be
 			// the sibling item. If there's no item left in the proof, then the proof is corrupted.
-			if siblingItem = proofs.Next(); siblingItem == nil {
-				return nil, ErrCorruptedProof
-			}
+			return nil, ErrCorruptedProof
 		}
 
 		var parentItem []byte
@@ -525,6 +525,7 @@ func (m *Proof) calculatePeaksHashes(leaves []types.Leaf, mmrSize uint64, proofs
 				return nil, err
 			}
 		}
+
 		peaksHashes = append(peaksHashes, peakRoot)
 	}
 	// ensure nothing left in leaves
@@ -557,7 +558,7 @@ func filterLeaves(v *[]types.Leaf, p func(types.Leaf) bool) []types.Leaf {
 		}
 	}
 	*v = vCopy[:0]
-	return vCopy[:]
+	return vCopy
 }
 
 func filterLeavesByPosition(v *[]uint64, p func(uint64) bool) []uint64 {
@@ -569,5 +570,5 @@ func filterLeavesByPosition(v *[]uint64, p func(uint64) bool) []uint64 {
 		}
 	}
 	*v = vCopy[:0]
-	return vCopy[:]
+	return vCopy
 }

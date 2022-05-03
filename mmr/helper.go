@@ -1,12 +1,19 @@
 package mmr
 
 import (
-	"github.com/ComposableFi/go-merkle-trees/types"
 	"math/bits"
+
+	"github.com/ComposableFi/go-merkle-trees/types"
+)
+
+const (
+	zeroLeadingZeros = 64
+	halfDivider      = 2
+	trailingPosision = 2
 )
 
 func getPeakPosByHeight(height uint32) uint64 {
-	return (1 << (height + 1)) - 2
+	return (1 << (height + 1)) - trailingPosision
 }
 
 // leftPeakHeightPos derives and returns the height and position of the leftmost peak of an MMR from
@@ -24,11 +31,11 @@ func leftPeakHeightPos(mmrSize uint64) (uint32, uint64) {
 }
 
 func siblingOffset(height uint32) uint64 {
-	return (2 << height) - 1
+	return (halfDivider << height) - 1
 }
 
 func parentOffset(height uint32) uint64 {
-	return 2 << height
+	return halfDivider << height
 }
 
 func getRightPeak(height uint32, pos, mmrSize uint64) *peak {
@@ -75,7 +82,7 @@ func PosHeightInTree(pos uint64) uint32 {
 	pos++
 	allOnes := func(num uint64) bool { return num != 0 && zerosCount64(num) == bits.LeadingZeros64(num) }
 	jumpLeft := func(pos uint64) uint64 {
-		var bitLength = uint32(64 - bits.LeadingZeros64(pos))
+		var bitLength = uint32(zeroLeadingZeros - bits.LeadingZeros64(pos))
 		var mostSignificantBits uint64 = 1 << (bitLength - 1)
 		return pos - (mostSignificantBits - 1)
 	}
@@ -90,7 +97,7 @@ func PosHeightInTree(pos uint64) uint32 {
 }
 
 func zerosCount64(num uint64) int {
-	return 64 - bits.OnesCount64(num)
+	return zeroLeadingZeros - bits.OnesCount64(num)
 }
 
 // LeafIndexToPos returns the position of a leaf from its index.

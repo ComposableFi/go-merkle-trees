@@ -22,7 +22,7 @@ func uint32ToHash(num uint32) []byte {
 	if err != nil {
 		panic(err)
 	}
-	return h[:]
+	return h
 }
 
 func testMMR(count uint32, proofElem []uint32) error {
@@ -835,7 +835,7 @@ func BenchmarkMMR_GenProof(b *testing.B) {
 
 	rand.Seed(time.Now().UnixNano())
 	randomPositionIndex := rand.Int63n(int64(len(positions)))
-	b.Run(fmt.Sprintf("MMR gen proof"), func(b *testing.B) {
+	b.Run("MMR gen proof", func(b *testing.B) {
 		mmrTree.GenProof([]uint64{positions[randomPositionIndex]})
 	})
 }
