@@ -147,7 +147,6 @@ func TestGenRootFromProof(t *testing.T) {
 		uint64(newElem),
 		uint32ToHash(uint32(newElem)),
 		merkleMmr.LeafIndexToMMRSize(uint64(newElem)),
-		//merkleMmr.LeafIndexToMMRSize(uint64(newElem)),
 	)
 	if err != nil {
 		t.Errorf("%s: %s", "merkleMmr root calculateRootWithNewLeaf", err.Error())

@@ -506,6 +506,8 @@ func (m *Proof) calculatePeaksHashes(leaves []types.Leaf, mmrSize uint64, proofs
 		})
 
 		var peakRoot []byte
+		// TODO
+		// nolint
 		if len(lvs) == 1 && LeafIndexToPos(lvs[0].Index) == peaks[i] {
 			// Hash is the peak
 			peakRoot = lvs[0].Hash
