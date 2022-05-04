@@ -203,6 +203,7 @@ func hexToByte(h string) []byte {
 	return b
 }
 
+// nolint
 func Test7LeafVerify(t *testing.T) {
 	// print tree structure
 	fmt.Println("                 7-leaf MMR:           ")
@@ -318,6 +319,7 @@ func Test7LeafVerify(t *testing.T) {
 	}
 }
 
+// nolint
 func Test15LeafVerify(t *testing.T) {
 	fmt.Println("                                    15-leaf MMR:                            ")
 	fmt.Println("                                                                            ")
@@ -611,6 +613,7 @@ func TestFixture7Leaves(t *testing.T) {
 	}
 }
 
+// nolint
 func TestFixture15Leaves(t *testing.T) {
 	type proof struct {
 		leafIndex uint64
