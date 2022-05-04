@@ -22,7 +22,7 @@ func uint32ToHash(num uint32) []byte {
 	if err != nil {
 		panic(err)
 	}
-	return h[:]
+	return h
 }
 
 func testMMR(count uint32, proofElem []uint32) error {
@@ -147,7 +147,6 @@ func TestGenRootFromProof(t *testing.T) {
 		uint64(newElem),
 		uint32ToHash(uint32(newElem)),
 		merkleMmr.LeafIndexToMMRSize(uint64(newElem)),
-		//merkleMmr.LeafIndexToMMRSize(uint64(newElem)),
 	)
 	if err != nil {
 		t.Errorf("%s: %s", "merkleMmr root calculateRootWithNewLeaf", err.Error())
@@ -204,6 +203,7 @@ func hexToByte(h string) []byte {
 	return b
 }
 
+// nolint
 func Test7LeafVerify(t *testing.T) {
 	// print tree structure
 	fmt.Println("                 7-leaf MMR:           ")
@@ -319,6 +319,7 @@ func Test7LeafVerify(t *testing.T) {
 	}
 }
 
+// nolint
 func Test15LeafVerify(t *testing.T) {
 	fmt.Println("                                    15-leaf MMR:                            ")
 	fmt.Println("                                                                            ")
@@ -612,6 +613,7 @@ func TestFixture7Leaves(t *testing.T) {
 	}
 }
 
+// nolint
 func TestFixture15Leaves(t *testing.T) {
 	type proof struct {
 		leafIndex uint64
@@ -835,7 +837,7 @@ func BenchmarkMMR_GenProof(b *testing.B) {
 
 	rand.Seed(time.Now().UnixNano())
 	randomPositionIndex := rand.Int63n(int64(len(positions)))
-	b.Run(fmt.Sprintf("MMR gen proof"), func(b *testing.B) {
+	b.Run("MMR gen proof", func(b *testing.B) {
 		mmrTree.GenProof([]uint64{positions[randomPositionIndex]})
 	})
 }

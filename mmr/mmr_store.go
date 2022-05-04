@@ -36,6 +36,8 @@ func (b *Batch) GetElem(pos uint64) []byte {
 	for i > 0 {
 		mb := b.memoryBatch[i-1]
 		startPos, elems := mb.pos, mb.elems
+		// TODO
+		// nolint
 		if pos < startPos {
 			i -= 1
 			continue

@@ -32,10 +32,10 @@ func main() {
 	root := merkleTree.Root()
 	fmt.Printf("Merkle root is %v \n", merkleTree.RootHex())
 
-	// build merkle proof for 42 (its index is 1);
+	// build merkle proof for "Dorood" (its index is 1);
 	proof := merkleTree.Proof([]uint64{1})
 
-	fmt.Printf("merkle proof hashes are:\n")
+	fmt.Printf("Merkle proof hashes are:\n")
 	for _, v := range proof.ProofHashesHex() {
 		fmt.Printf(" - %v\n", v)
 	}
@@ -45,9 +45,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	} else if !verifyResult {
-		panic("merkle proof verify result is false")
+		panic("Merkle proof verify result is false")
 	}
-	fmt.Printf("merkle proof verify result is %v\n", verifyResult)
+	fmt.Printf("Merkle proof verify result is %v\n", verifyResult)
 
 	leavesMmr := []types.Leaf{{Index: uint64(0), Hash: leavesI[0]}}
 	mmrTree := mmr.NewMMR(0, mmr.NewMemStore(), leavesMmr, hasher.Keccak256Hasher{})

@@ -10,7 +10,7 @@ func BenchmarkBuildPartialTree(b *testing.B) {
 	leaves, _ := sampleHashes()
 	mtree := NewTree(hasher.Sha256Hasher{})
 	mtree.append(leaves)
-	partialTreeLayers, uncommittedTreeDepth := mtree.uncommitedPartialTreeLayers()
+	partialTreeLayers, uncommittedTreeDepth := mtree.uncommittedPartialTreeLayers()
 	ptree := NewPartialTree(mtree.hasher)
 	for n := 0; n < b.N; n++ {
 		ptree.build(partialTreeLayers, uncommittedTreeDepth)
@@ -21,7 +21,7 @@ func BenchmarkReverseLayers(b *testing.B) {
 	leaves, _ := sampleHashes()
 	mtree := NewTree(hasher.Sha256Hasher{})
 	mtree.append(leaves)
-	partialTreeLayers, _ := mtree.uncommitedPartialTreeLayers()
+	partialTreeLayers, _ := mtree.uncommittedPartialTreeLayers()
 	for n := 0; n < b.N; n++ {
 		reverseLayers(partialTreeLayers)
 	}
@@ -31,7 +31,7 @@ func BenchmarkLayerNodesHashes(b *testing.B) {
 	leaves, _ := sampleHashes()
 	mtree := NewTree(hasher.Sha256Hasher{})
 	mtree.append(leaves)
-	partialTreeLayers, uncommittedTreeDepth := mtree.uncommitedPartialTreeLayers()
+	partialTreeLayers, uncommittedTreeDepth := mtree.uncommittedPartialTreeLayers()
 	ptree := NewPartialTree(mtree.hasher)
 	ptree.build(partialTreeLayers, uncommittedTreeDepth)
 	for n := 0; n < b.N; n++ {

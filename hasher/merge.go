@@ -1,3 +1,4 @@
+// Package hasher is responsible for hashing and merging the nodes
 package hasher
 
 import "github.com/ComposableFi/go-merkle-trees/types"
@@ -7,5 +8,5 @@ func MergeAndHash(hasher types.Hasher, left []byte, right []byte) ([]byte, error
 	if right == nil {
 		return left, nil
 	}
-	return hasher.Hash(append(left[:], right[:]...))
+	return hasher.Hash(append(left, right...))
 }
