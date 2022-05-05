@@ -499,35 +499,33 @@ func (m *Proof) calculatePeaksHashes(leaves []types.Leaf, mmrSize uint64, proofs
 
 	peaks := GetPeaks(mmrSize)
 	var peaksHashes [][]byte
-	for i := 0; i < len(peaks); i++ {
+	peaksLoop: for i := 0; i < len(peaks); i++ {
 		// filter out the leaf of position peakPos or leaves that are children of a peak with position peakPos
 		lvs := filterLeaves(&leaves, func(l types.Leaf) bool {
 			return LeafIndexToPos(l.Index) <= peaks[i]
 		})
 
 		var peakRoot []byte
-		// TODO
-		// nolint
-		if len(lvs) == 1 && LeafIndexToPos(lvs[0].Index) == peaks[i] {
+		switch {
+		case len(lvs) == 1 && LeafIndexToPos(lvs[0].Index) == peaks[i]:
 			// Hash is the peak
 			peakRoot = lvs[0].Hash
-		} else if len(lvs) == 0 {
+		case len(lvs) == 0:
 			// if empty, means the next proof is a peak root or rhs bagged root
 			if proof := proofs.Next(); proof != nil {
 				peakRoot = proof
 			} else {
 				// means that either all right peaks are bagged, or proof is corrupted
 				// so we break loop and check no items left
-				break
+				break peaksLoop
 			}
-		} else {
+		default:
 			var err error
 			peakRoot, err = m.calculatePeakRoot(lvs, peaks[i], proofs)
 			if err != nil {
 				return nil, err
 			}
 		}
-
 		peaksHashes = append(peaksHashes, peakRoot)
 	}
 	// ensure nothing left in leaves

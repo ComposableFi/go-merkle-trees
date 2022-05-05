@@ -33,18 +33,17 @@ func (b *Batch) append(pos uint64, elems [][]byte) {
 // GetElem returns an element in a store implementation using its position.
 func (b *Batch) GetElem(pos uint64) []byte {
 	i := len(b.memoryBatch)
-	for i > 0 {
+	batchLoop: for i > 0 {
 		mb := b.memoryBatch[i-1]
 		startPos, elems := mb.pos, mb.elems
-		// TODO
-		// nolint
-		if pos < startPos {
+		switch {
+		case pos < startPos:
 			i -= 1
 			continue
-		} else if pos < startPos+uint64(len(elems)) {
+		case pos < startPos+uint64(len(elems)):
 			return elems[pos-startPos]
-		} else {
-			break
+		default:
+			break batchLoop
 		}
 	}
 	return b.store.GetElem(pos)
