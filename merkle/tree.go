@@ -1,3 +1,4 @@
+// Package merkle is responsible for creating the tree and verify the proof
 package merkle
 
 import (
@@ -10,139 +11,177 @@ import (
 
 // FromLeaves clones the leaves and builds the tree from them
 func (t Tree) FromLeaves(leaves [][]byte) (Tree, error) {
+
+	// populate initial tree leaves
 	t.append(leaves)
+
+	// create tree
 	err := t.commit()
 	if err != nil {
 		return Tree{}, err
 	}
+
+	// return tree
 	return t, nil
 }
 
 // Root returns the tree root - the top hash of the tree. Used in the inclusion proof verification.
 func (t *Tree) Root() []byte {
+
 	layers := t.layers()
 	if len(layers) > 0 {
+
+		// get first node of last layer
 		lastLayer := layers[len(layers)-1]
-		firstItem := lastLayer[0]
-		return firstItem.Hash
+		firstNode := lastLayer[0]
+
+		// return first node hash as root
+		return firstNode.Hash
 	}
+
 	return []byte{}
 }
 
 // RootHex returns a hex encoded string instead of
 func (t *Tree) RootHex() string {
+
+	// get root
 	root := t.Root()
+
+	// convert to hex string and return
 	return hex.EncodeToString(root)
 }
 
-// helperNodesHashes returns helper nodes required to build a partial tree for the given indices
+// currentLayersWithSiblingsHashes returns sibling leaves required to build a partial tree for the given indices
 // to be able to extract a root from it. Useful in constructing Merkle proofs
-func (t *Tree) helperNodesHashes(leafIndices []uint64) [][]byte {
-	var helperNodesHashes [][]byte
-	for _, layer := range t.helperNodeLayers(leafIndices) {
+func (t *Tree) currentLayersWithSiblingsHashes(leafIndices []uint64) [][]byte {
+
+	// loop through all layers and siblings hashes
+	var newSiblingAndExistingHashes [][]byte
+	for _, layer := range t.currentLayersWithSiblings(leafIndices) {
 		for _, li := range layer {
-			helperNodesHashes = append(helperNodesHashes, li.Hash)
+			newSiblingAndExistingHashes = append(newSiblingAndExistingHashes, li.Hash)
 		}
 	}
-	return helperNodesHashes
+
+	return newSiblingAndExistingHashes
 }
 
-// helperNodeLayers gets all helper nodes required to build a partial merkle tree for the given indices,
+// currentLayersWithSiblings gets all sibling layers required to build a partial merkle tree for the given indices,
 // cloning all required hashes into the resulting slice.
-func (t *Tree) helperNodeLayers(leafIndeceis []uint64) Layers {
-	var helperNodes Layers
-	for _, treeLayer := range t.layers() {
-		siblings := siblingIndecies(leafIndeceis)
-		helperIndices := sliceDifference(siblings, leafIndeceis)
+func (t *Tree) currentLayersWithSiblings(leafIndices []uint64) Layers {
 
-		var helpersLayer Leaves
-		for _, idx := range helperIndices {
-			leaf, found := leafAtIndex(treeLayer, idx)
+	var layersNodesWithSiblings Layers
+	for _, layer := range t.layers() {
+		// get siblings of leaf indices and extract newly created indices
+		siblings := siblingIndecies(leafIndices)
+
+		// detect newly extracted siblings
+		newSiblingIndices := extractNewIndicesFromSiblings(siblings, leafIndices)
+
+		// get the exisitng leaves in the layer with sibling indecies
+		var existingLeavesInTree Leaves
+		for i := 0; i < len(newSiblingIndices); i++ {
+
+			leafIndex := newSiblingIndices[i]
+			leaf, found := leafAtIndex(layer, leafIndex)
 			if found {
-				helpersLayer = append(helpersLayer, leaf)
+
+				// append new sibling index
+				existingLeavesInTree = append(existingLeavesInTree, leaf)
 			}
 		}
 
-		helperNodes = append(helperNodes, helpersLayer)
+		// append to result
+		layersNodesWithSiblings = append(layersNodesWithSiblings, existingLeavesInTree)
 
-		leafIndeceis = parentIndecies(leafIndeceis)
+		// go one level up in the leafInfices
+		leafIndices = parentIndecies(leafIndices)
 	}
-	return helperNodes
+
+	return layersNodesWithSiblings
 }
 
 // Proof Returns the Merkle proof required to prove the inclusion of items in a data set.
-func (t *Tree) Proof(leafIndices []uint64) Proof {
+func (t *Tree) Proof(proofIndices []uint64) Proof {
 	leavesLen := t.leavesLen()
 	leaves := t.leaves()
-	var proofLeaves Leaves
 
-	for _, index := range leafIndices {
-		for _, leaf := range leaves {
-			if leaf.Index == index {
+	// make proof leaves from proof indices
+	var proofLeaves Leaves
+	for i := 0; i < len(proofIndices); i++ {
+		for j := 0; j < len(leaves); j++ {
+			leaf := leaves[j]
+			if leaf.Index == proofIndices[i] {
 				proofLeaves = append(proofLeaves, leaf)
 				break
 			}
 		}
 	}
-	return NewProof(proofLeaves, t.helperNodesHashes(leafIndices), leavesLen, t.hasher)
+
+	// get all hashes of leaves and their siblings
+	siblingProofHashes := t.currentLayersWithSiblingsHashes(proofIndices)
+
+	// create new proof object using proof leaves and hashes
+	return NewProof(proofLeaves, siblingProofHashes, leavesLen, t.hasher)
 }
 
 // insert inserts a new types.Leaf. Please note it won't modify the root just yet; For the changes
-// to be applied to the root, [`MerkleTree::commit`] method should be called first. To get the
+// to be applied to the root, commit method should be called first. To get the
 // root of the new tree without applying the changes, you can use
 func (t *Tree) insert(leaf []byte) {
 	t.UncommittedLeaves = append(t.UncommittedLeaves, leaf)
 }
 
-// append appends leaves to the tree. Behaves similarly to [`MerkleTree::insert`], but for a list of
-// items. Takes ownership of the elements.
+// append appends leaves to the tree.
 func (t *Tree) append(leaves [][]byte) {
 	t.UncommittedLeaves = append(t.UncommittedLeaves, leaves...)
 }
 
-// commit commits the changes made by [`MerkleTree::insert`] and [`MerkleTree::append`]
+// commit commits the changes made by insert and append
 // and modifies the root.
-// Commits are saved to the history, so the tree can be rolled back to any previous commit
 func (t *Tree) commit() error {
+
+	// get difference committed and not committed tree layers
 	diff, err := t.uncommittedDiff()
 	if err != nil {
 		return err
 	}
+
+	// if there is new layers update the tree
 	if len(diff.layers) > 0 {
-		t.history = append(t.history, diff)
-		t.currentWorkingTree.mergeUnverified(diff)
+
+		// merge existing and newly created partial tree
+		t.currentWorkingTree.mergeUnverifiedLayers(diff)
+
+		// free up the uncommitted leaves after storing the tree
 		t.UncommittedLeaves = [][]byte{}
 	}
-	return nil
-}
 
-// rollback rolls back one commit and reverts the tree to the previous state.
-// Removes the most recent commit from the history.
-func (t *Tree) rollback() {
-	_, t.history = popPartialtree(t.history)
-	t.currentWorkingTree.clear()
-	for _, commit := range t.history {
-		t.currentWorkingTree.mergeUnverified(commit)
-	}
+	return nil
 }
 
 // uncommittedRoot calculates the root of the uncommitted changes as if they were committed.
 // Will return the same hash as root of merkle tree after commit
 func (t *Tree) uncommittedRoot() ([]byte, error) {
-	uncommitedTree, err := t.uncommittedDiff()
+	uncommittedTree, err := t.uncommittedDiff()
 	if err != nil {
 		return []byte{}, err
 	}
-	return uncommitedTree.Root(), nil
+	return uncommittedTree.Root(), nil
 }
 
 // uncommittedRootHex calculates the root of the uncommitted changes as if they were committed. Serializes
 // the result as a hex string.
 func (t *Tree) uncommittedRootHex() (string, error) {
+
+	// get uncommitted root
 	root, err := t.uncommittedRoot()
 	if err != nil {
 		return "", err
 	}
+
+	// convert to hex string and return
 	return hex.EncodeToString(root), nil
 }
 
@@ -154,11 +193,16 @@ func (t *Tree) depth() int {
 
 // baseLeaves returns a copy of the tree leaves - the base level of the tree.
 func (t *Tree) baseLeaves() [][]byte {
-	layers := t.layersNodesHashes()
-	if len(layers) > 0 {
-		return [][]byte{}
+
+	// get all hashes of leaves of all layersLeavesHashes
+	layersLeavesHashes := t.layersNodesHashes()
+
+	// if leaves are available
+	if len(layersLeavesHashes) > 0 {
+		return layersLeavesHashes[0]
 	}
-	return layers[0]
+
+	return [][]byte{}
 }
 
 // leavesLen returns the number of leaves in the tree.
@@ -167,7 +211,7 @@ func (t *Tree) leavesLen() uint64 {
 	return uint64(len(leaves))
 }
 
-// leaves returns leaves of the current working tree
+// leaves returns leaves of the first layer that has the complete tree
 func (t *Tree) leaves() Leaves {
 	if len(t.layers()) > 0 {
 		return t.layers()[0]
@@ -186,73 +230,99 @@ func (t *Tree) layers() Layers {
 	return t.currentWorkingTree.layers
 }
 
-/// uncommittedDiff creates a diff from a changes that weren't committed to the main tree yet. Can be used
-/// to get uncommitted root or can be merged with the main tree
+// uncommittedDiff creates a diff from a changes that weren't committed to the main tree yet. Can be used
+// to get uncommitted root or can be merged with the main tree
 func (t *Tree) uncommittedDiff() (PartialTree, error) {
+
+	// if there is no uncommitted leaves, there is no more partial
 	if len(t.UncommittedLeaves) == 0 {
 		return PartialTree{}, nil
 	}
 
-	partialTreeLayers, uncommittedTreeDepth := t.uncommitedPartialTreeLayers()
+	// get uncommitted partial layer
+	partialTreeLayers, uncommittedTreeDepth := t.uncommittedPartialTreeLayers()
 
+	// build partial tree and return
 	tree := NewPartialTree(t.hasher)
 	return tree.build(partialTreeLayers, uncommittedTreeDepth)
 }
 
-// uncommitedPartialTreeLayers calculates reserved indices and leaves then returns uncommitted partial tree layers
-func (t *Tree) uncommitedPartialTreeLayers() (Layers, uint64) {
-	reservedIndecies := t.getUncommitedReservedIndecies()
-	reservedNodeLeaves := t.getUncommitedReservedLeaves(reservedIndecies)
+// uncommittedPartialTreeLayers calculates reserved indices and leaves then returns uncommitted partial tree layers
+func (t *Tree) uncommittedPartialTreeLayers() (Layers, uint64) {
 
-	partialTreeLayers := t.helperNodeLayers(reservedIndecies)
-	partialTreeLayers = appendUncommitedReservedLayers(partialTreeLayers, reservedNodeLeaves)
+	// reserve indices for uncommitted leaves
+	reservedIndecies := t.getUncommittedReservedIndecies()
 
+	// extract uncommitted leaves from uncommitted indices
+	reservedLeaves := t.getUncommittedReservedLeaves(reservedIndecies)
+
+	// update layers with new siblings of each layer
+	partialTreeLayers := t.currentLayersWithSiblings(reservedIndecies)
+
+	// upsert partial layer by uncommitted reseved nodes
+	partialTreeLayers = upsertUncommittedReservedLayers(partialTreeLayers, reservedLeaves)
+
+	// calculate new tree depth
 	leavesInNewTree := t.leavesLen() + uint64(len(t.UncommittedLeaves))
 	uncommittedTreeDepth := treeDepth(leavesInNewTree)
+
 	return partialTreeLayers, uncommittedTreeDepth
 }
 
-// getUncommitedReservedIndecies returns uncommitted reserved indices of the uncommitted leaves
-func (t *Tree) getUncommitedReservedIndecies() []uint64 {
+// getUncommittedReservedIndecies returns uncommitted reserved indices of the uncommitted leaves
+func (t *Tree) getUncommittedReservedIndecies() []uint64 {
+
+	// if there are no uncommitted leaves there is nothing to reserve
 	if len(t.UncommittedLeaves) == 0 {
 		return []uint64{}
 	}
 
 	commitedLeavesCount := t.leavesLen()
 	unCommitedLeavesCount := len(t.UncommittedLeaves)
+
+	// populate uncommitted indices according to the last committed leaves indices
 	reservedIndecies := make([]uint64, unCommitedLeavesCount)
 	for i := 0; i < unCommitedLeavesCount; i++ {
 		reservedIndecies[i] = commitedLeavesCount + uint64(i)
 	}
+
 	return reservedIndecies
 }
 
-// getUncommitedReservedLeaves returns uncommitted reserved leaves of the uncommitted leaves
-func (t *Tree) getUncommitedReservedLeaves(reservedIndecies []uint64) Leaves {
+// getUncommittedReservedLeaves returns uncommitted reserved leaves of the uncommitted leaves
+func (t *Tree) getUncommittedReservedLeaves(reservedIndecies []uint64) Leaves {
+
+	// read uncommitted leaves hashes and set into reserved leaves by indices
 	indicesCount := len(reservedIndecies)
-	reservedNodeLeaves := make(Leaves, indicesCount)
+	reservedLeaves := make(Leaves, indicesCount)
 	for i := 0; i < indicesCount; i++ {
-		reservedNodeLeaves[i] = types.Leaf{Index: reservedIndecies[i], Hash: t.UncommittedLeaves[i]}
+		reservedLeaves[i] = types.Leaf{Index: reservedIndecies[i], Hash: t.UncommittedLeaves[i]}
 	}
-	return reservedNodeLeaves
+
+	return reservedLeaves
 }
 
-// leafAtIndex returns types.Leaf object at the index
-func leafAtIndex(leavesAndHash Leaves, index uint64) (types.Leaf, bool) {
-	for i := 0; i < len(leavesAndHash); i++ {
-		l := leavesAndHash[i]
+// leafAtIndex returns leaf object by index
+func leafAtIndex(leaves Leaves, index uint64) (types.Leaf, bool) {
+
+	// loop through leaves and return leaf at certain index
+	for i := 0; i < len(leaves); i++ {
+		l := leaves[i]
 		if l.Index == index {
 			return l, true
 		}
 	}
+
 	return types.Leaf{}, false
 }
 
-// layerAtIndex returns layer object at the index
+// layerAtIndex returns layer object by intex
 func layerAtIndex(layers Layers, index uint64) (Leaves, bool) {
+
 	if len(layers) > int(index) {
 		return layers[index], true
 	}
+
 	return Leaves{}, false
 }
 
@@ -263,26 +333,36 @@ func sortLeavesAscending(li Leaves) {
 
 // treeDepth returns the depth of a tree
 func treeDepth(leavesCount uint64) uint64 {
+
 	if leavesCount == 1 {
 		return 1
 	}
-	return uint64(math.Ceil(math.Log2(float64(leavesCount))))
+
+	// math formula for tree depth
+	// logarithm of the number of leaf nodes in the tree
+	// https://en.wikipedia.org/wiki/Merkle_tree
+	depth := math.Log2(float64(leavesCount))
+
+	// round and return
+	return uint64(math.Ceil(depth))
 }
 
-func appendUncommitedReservedLayers(partialTreeLayers Layers, reservedNodeLeaves Leaves) Layers {
+func upsertUncommittedReservedLayers(partialTreeLayers Layers, reservedNodeLeaves Leaves) Layers {
+
 	if len(partialTreeLayers) == 0 {
+		// no partial layers available yet, so we ned to create one
 		partialTreeLayers = append(partialTreeLayers, reservedNodeLeaves)
 	} else {
+		// get first layer and append leaves
 		firstLayer := partialTreeLayers[0]
 		firstLayer = append(firstLayer, reservedNodeLeaves...)
+
+		// sort leaves after new nodes addition
 		sortLeavesAscending(firstLayer)
+
+		// update the first layer
 		partialTreeLayers[0] = firstLayer
 	}
-	return partialTreeLayers
-}
 
-// popPartialtree pops last element in a partial tree slice
-func popPartialtree(slice []PartialTree) (PartialTree, []PartialTree) {
-	popElem, newSlice := slice[len(slice)-1], slice[0:len(slice)-1]
-	return popElem, newSlice
+	return partialTreeLayers
 }

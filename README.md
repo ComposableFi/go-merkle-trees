@@ -25,7 +25,13 @@ firmware, power surges, and other causes.
 
 ## About Merkle Mountain Range
 
-A type of merkle tree that can be visualized as many (perfect) merkle trees which are then combined into 1, by creating a single root from all of their peaks. The rules for making the tree(s) however are rigidly deterministic such that the entire structure depends only on the number of items put into it. When appending leaves, nodes are not updated, only appended. This makes for a minimal amount of total hash computations (~2n), while maintaining the property that no nodes are updated when appending new leaves (nodes are merely added). Because of this, the merkle inclusion proofs are also only appended to meaning that later proofs are sufficient (supersets of) earlier proofs.
+A type of merkle tree that can be visualized as many (perfect) merkle trees which are then combined into 1,
+by creating a single root from all of their peaks. The rules for making the tree(s) 
+however are rigidly deterministic such that the entire structure depends only on 
+the number of items put into it. When appending leaves, nodes are not updated, only appended.
+This makes for a minimal amount of total hash computations (~2n), 
+while maintaining the property that no nodes are updated when appending new leaves (nodes are merely added). 
+Because of this, the merkle inclusion proofs are also only appended to meaning that later proofs are sufficient (supersets of) earlier proofs.
 
 ## Usage
 
@@ -53,5 +59,12 @@ Hash(data []byte) ([]byte, error)
 
 
 ## Examples
+
 [Sha256](https://github.com/ComposableFi/go-merkle-trees/tree/main/examples/sha256)
+
 [Keccak](https://github.com/ComposableFi/go-merkle-trees/tree/main/examples/keccak)
+
+
+## Reference
+- Inspired from [rs-merkle](https://github.com/antouhou/rs-merkle) algoritms and tests.
+- Converted test cases from [snowbridge](https://github.com/Snowfork/snowbridge/blob/main/ethereum/test/test_merkle_tree.js).

@@ -137,7 +137,7 @@ func TestGetCorrectRootAfterCommit(t *testing.T) {
 	leaves := merkleTree.baseLeaves()
 	reconstructedTree, err := merkleTree.FromLeaves(leaves)
 	require.NoError(t, err)
-	require.Equal(t, "09b6890b23e32e607f0e5f670ab224e36af8f6599cbe88b468f4b0f761802dd6", reconstructedTree.RootHex())
+	require.Equal(t, "a6107f11a0272f14d751d6f2819345d576f76c2b895d692d633ea21bd7a0b60d", reconstructedTree.RootHex())
 
 }
 
@@ -188,11 +188,6 @@ func TestChangeTheResultWenCalledTwice(t *testing.T) {
 
 	require.Equal(t, "09b6890b23e32e607f0e5f670ab224e36af8f6599cbe88b468f4b0f761802dd6", merkleTree.RootHex())
 
-	merkleTree.rollback()
-	require.Equal(t, "e2a80e0e872a6c6eaed37b4c1f220e1935004805585b5f99617e48e9c8fe4034", merkleTree.RootHex())
-
-	merkleTree.rollback()
-	require.Equal(t, "1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2", merkleTree.RootHex())
 }
 
 func TestRollbackPreviousCommit(t *testing.T) {
@@ -238,11 +233,6 @@ func TestRollbackPreviousCommit(t *testing.T) {
 
 	require.Equal(t, "09b6890b23e32e607f0e5f670ab224e36af8f6599cbe88b468f4b0f761802dd6", merkleTree.RootHex())
 
-	merkleTree.rollback()
-	require.Equal(t, "e2a80e0e872a6c6eaed37b4c1f220e1935004805585b5f99617e48e9c8fe4034", merkleTree.RootHex())
-
-	merkleTree.rollback()
-	require.Equal(t, "1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2", merkleTree.RootHex())
 }
 
 func sampleHashes() ([][]byte, error) {
@@ -268,6 +258,12 @@ func BenchmarkSha256Hash(b *testing.B) {
 	}
 }
 
+func BenchmarkKeccak256Hasher(b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		hasher.Keccak256Hasher{}.Hash([]byte("a"))
+	}
+}
+
 func BenchmarkFromLeaves(b *testing.B) {
 	leaves, _ := sampleHashes()
 	for n := 0; n < b.N; n++ {
@@ -276,22 +272,22 @@ func BenchmarkFromLeaves(b *testing.B) {
 	}
 }
 
-func BenchmarkUncommitedReservedIndecies(b *testing.B) {
+func BenchmarkUncommittedReservedIndecies(b *testing.B) {
 	leaves, _ := sampleHashes()
 	mtree := NewTree(hasher.Sha256Hasher{})
 	mtree.append(leaves)
 	for n := 0; n < b.N; n++ {
-		mtree.getUncommitedReservedIndecies()
+		mtree.getUncommittedReservedIndecies()
 	}
 }
 
-func BenchmarkUncommitedReservedLeaves(b *testing.B) {
+func BenchmarkUncommittedReservedLeaves(b *testing.B) {
 	leaves, _ := sampleHashes()
 	mtree := NewTree(hasher.Sha256Hasher{})
 	mtree.append(leaves)
-	reservedIndices := mtree.getUncommitedReservedIndecies()
+	reservedIndices := mtree.getUncommittedReservedIndecies()
 	for n := 0; n < b.N; n++ {
-		mtree.getUncommitedReservedLeaves(reservedIndices)
+		mtree.getUncommittedReservedLeaves(reservedIndices)
 	}
 }
 
@@ -299,7 +295,7 @@ func BenchmarkSiblingIndices(b *testing.B) {
 	leaves, _ := sampleHashes()
 	mtree := NewTree(hasher.Sha256Hasher{})
 	mtree.append(leaves)
-	reservedIndices := mtree.getUncommitedReservedIndecies()
+	reservedIndices := mtree.getUncommittedReservedIndecies()
 	for n := 0; n < b.N; n++ {
 		siblingIndecies(reservedIndices)
 	}
@@ -309,18 +305,18 @@ func BenchmarkParentIndices(b *testing.B) {
 	leaves, _ := sampleHashes()
 	mtree := NewTree(hasher.Sha256Hasher{})
 	mtree.append(leaves)
-	reservedIndices := mtree.getUncommitedReservedIndecies()
+	reservedIndices := mtree.getUncommittedReservedIndecies()
 	for n := 0; n < b.N; n++ {
 		parentIndecies(reservedIndices)
 	}
 }
 
-func BenchmarkHelperNodeLeaves(b *testing.B) {
+func BenchmarkCurrentLayersWithSiblings(b *testing.B) {
 	leaves, _ := sampleHashes()
 	mtree := NewTree(hasher.Sha256Hasher{})
 	mtree.append(leaves)
-	reservedIndices := mtree.getUncommitedReservedIndecies()
+	reservedIndices := mtree.getUncommittedReservedIndecies()
 	for n := 0; n < b.N; n++ {
-		mtree.helperNodeLayers(reservedIndices)
+		mtree.currentLayersWithSiblings(reservedIndices)
 	}
 }
